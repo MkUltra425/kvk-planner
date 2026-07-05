@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -140,11 +141,20 @@
     background:var(--glass);
     border:1px solid var(--glass-border);
     border-radius:10px;
-    padding:10px 14px;
+    padding:12px 14px 10px;
     cursor:pointer;
     text-align:center;
     transition:background 0.15s, border-color 0.15s;
+    position:relative;
+    overflow:hidden;
   }
+  .day-chip::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:var(--text-dim);
+  }
+  .day-chip.group-preprep::before{background:var(--violet);}
+  .day-chip.group-prep::before{background:var(--teal);}
+  .day-chip.group-battle::before{background:var(--crimson);}
   .day-chip:hover{background:rgba(255,255,255,0.07);}
   .day-chip.active{border-color:var(--teal);background:rgba(79,209,197,0.10);}
   .day-chip .dow{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;}
@@ -259,6 +269,14 @@
   }
   .item-row:hover .del-btn{opacity:1;}
   .del-btn:hover{color:var(--crimson);}
+
+  .move-btn{
+    opacity:0;flex:0 0 auto;background:transparent;border:none;color:var(--text-dim);
+    cursor:pointer;font-size:9px;padding:1px 3px;line-height:1;
+  }
+  .item-row:hover .move-btn{opacity:1;}
+  .move-btn:hover{color:var(--teal);}
+  .move-btn:disabled{opacity:0 !important;cursor:default;}
 
   .expand-btn{
     display:block;background:transparent;border:none;color:var(--text-dim);
@@ -445,19 +463,19 @@ var PREP_START = Date.UTC(2026,6,13,0,0,0);
 var BATTLE_START = Date.UTC(2026,6,18,12,0,0);
 
 var DAYS = [
-  { date:"2026-07-11", dow:"Sat", phase:"Pre-prep",
+  { date:"2026-07-11", dow:"Sat", phase:"Pre-prep", group:"preprep",
     focus:"Roster lockdown",
     tasks:["Finalize alliance roster and trap-type groupings","Confirm rally squad leads and alt lineups","Publish pinned comms message with the prep schedule"],
     buffs:["None scheduled — hold buffs for prep start"],
     ministers:["Not yet open"],
     scoring:[] },
-  { date:"2026-07-12", dow:"Sun", phase:"Pre-prep",
+  { date:"2026-07-12", dow:"Sun", phase:"Pre-prep", group:"preprep",
     focus:"Final briefing and systems check",
     tasks:["Confirm 5-alliance castle rotation order with NAP5","Brief officers on the battle phase plan","Test rally coordination tooling end to end"],
     buffs:["Stage a construction speed buff for last-minute builds"],
     ministers:["Not yet open"],
     scoring:[] },
-  { date:"2026-07-13", dow:"Mon", phase:"Construction",
+  { date:"2026-07-13", dow:"Mon", phase:"Construction", group:"prep",
     focus:"Construction push",
     tasks:["Post the kickoff announcement kingdom-wide","Open trap and rally sign-ups","Track the daily point leaderboard"],
     buffs:["Construction speed buff — schedule for peak online hours"],
@@ -473,7 +491,7 @@ var DAYS = [
       ["Use 1m of speedups to learn master skills", 30],
       ["Finish 1 intel mission", 6000]
     ] },
-  { date:"2026-07-14", dow:"Tue", phase:"Research",
+  { date:"2026-07-14", dow:"Tue", phase:"Research", group:"prep",
     focus:"Research push",
     tasks:["Monitor gathering and trap participation","Follow up with members who haven't logged points","Post a mid-prep progress update"],
     buffs:["Research speed buff — schedule for peak online hours"],
@@ -497,7 +515,7 @@ var DAYS = [
       ["Use any 1 master emblem", 6000],
       ["Use 1 master's manuscript", 60]
     ] },
-  { date:"2026-07-15", dow:"Wed", phase:"Pet training",
+  { date:"2026-07-15", dow:"Wed", phase:"Pet training", group:"prep",
     focus:"Training push",
     tasks:["Run the mid-week point check against targets","Assign rally squads for battle day","Confirm trap layout with castle map lead"],
     buffs:["Troop training speed buff — schedule for peak online hours"],
@@ -515,7 +533,7 @@ var DAYS = [
       ["Use any 1 master emblem", 6000],
       ["Use 1 master's manuscript", 60]
     ] },
-  { date:"2026-07-16", dow:"Thu", phase:"Troop training",
+  { date:"2026-07-16", dow:"Thu", phase:"Troop training", group:"prep",
     focus:"Combat readiness",
     tasks:["Finalize battle roster and trap layout","Run the battle-day briefing with officers","Confirm castle rotation slot and timing with NAP5"],
     buffs:["Attack buff — stage ahead of battle day"],
@@ -541,7 +559,7 @@ var DAYS = [
       ["Gather 200 stone in the wilderness", 2],
       ["Gather 50 iron in the wilderness", 2]
     ] },
-  { date:"2026-07-17", dow:"Fri", phase:"Power boost",
+  { date:"2026-07-17", dow:"Fri", phase:"Power boost", group:"prep",
     focus:"Final lockdown",
     tasks:["Last call for point gathering","Lock rally timers and countdowns","Distribute the battle-day schedule and callout doc"],
     buffs:["Defense buff — stage for battle morning"],
@@ -567,7 +585,7 @@ var DAYS = [
       ["Gather 200 stone in the wilderness", 2],
       ["Gather 50 iron in the wilderness", 2]
     ] },
-  { date:"2026-07-18", dow:"Sat", phase:"Battle phase",
+  { date:"2026-07-18", dow:"Sat", phase:"Battle phase", group:"battle",
     focus:"Castle assault — live coverage",
     tasks:["Run live castle battle coordination and callouts","Host play-by-play commentary and prop bets","Run the post-battle debrief and MVP shoutouts"],
     buffs:["Rally attack and defense buffs — active through battle window"],
@@ -588,7 +606,15 @@ var DAYS = [
 
 var storageKey = "kvk-jul2026";
 var state = null;
-var selectedIdx = 4;
+var selectedIdx = 0;
+
+function computeDefaultIdx(){
+  var today = todayStr();
+  for(var i=0; i<DAYS.length; i++){
+    if(DAYS[i].date === today) return i;
+  }
+  return 0;
+}
 var EDIT_MODE = false;
 var EDIT_PASSPHRASE = "1884-R5-2026";
 var dbRef = null;
@@ -686,7 +712,7 @@ function renderStrip(){
   var today = todayStr();
   DAYS.forEach(function(d, i){
     var chip = document.createElement('div');
-    chip.className = 'day-chip' + (i===selectedIdx ? ' active' : '') + (d.date===today ? ' today' : '');
+    chip.className = 'day-chip group-' + d.group + (i===selectedIdx ? ' active' : '') + (d.date===today ? ' today' : '');
     var dn = d.date.split('-')[2];
     chip.innerHTML = '<div class="dow">'+d.dow+'</div><div class="dnum">'+dn+'</div><div class="phase">'+d.phase+'</div>';
     chip.addEventListener('click', function(){
@@ -739,6 +765,39 @@ function makeItemRow(listKind, idx, item, checkable){
   var details = null;
 
   if(EDIT_MODE){
+    if(checkable){
+      var moveUp = document.createElement('button');
+      moveUp.className = 'move-btn';
+      moveUp.textContent = '\u25b2';
+      moveUp.setAttribute('aria-label','Move task up');
+      moveUp.disabled = (idx === 0);
+      moveUp.addEventListener('click', function(){
+        var arr = state.days[DAYS[selectedIdx].date][listKind];
+        if(idx > 0){
+          var tmp = arr[idx-1]; arr[idx-1] = arr[idx]; arr[idx] = tmp;
+          saveState();
+          renderPanel();
+        }
+      });
+      row.appendChild(moveUp);
+
+      var moveDown = document.createElement('button');
+      moveDown.className = 'move-btn';
+      moveDown.textContent = '\u25bc';
+      moveDown.setAttribute('aria-label','Move task down');
+      var curArr = state.days[DAYS[selectedIdx].date][listKind];
+      moveDown.disabled = (idx === curArr.length - 1);
+      moveDown.addEventListener('click', function(){
+        var arr = state.days[DAYS[selectedIdx].date][listKind];
+        if(idx < arr.length - 1){
+          var tmp = arr[idx+1]; arr[idx+1] = arr[idx]; arr[idx] = tmp;
+          saveState();
+          renderPanel();
+        }
+      });
+      row.appendChild(moveDown);
+    }
+
     var del = document.createElement('button');
     del.className = 'del-btn';
     del.textContent = '\u00d7';
@@ -1166,6 +1225,7 @@ function renderCurrentView(){
 }
 
 function init(){
+  selectedIdx = computeDefaultIdx();
   applyEditModeUI();
   tickClocks();
   setInterval(tickClocks, 1000);
