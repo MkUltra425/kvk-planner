@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>1884 War Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyBu26l53s3uQzTqNum-1Sulx6g_UBfl7qU",
+    authDomain: "kvk-planner-1884.firebaseapp.com",
+    databaseURL: "https://kvk-planner-1884-default-rtdb.firebaseio.com",
+    projectId: "kvk-planner-1884",
+    storageBucket: "kvk-planner-1884.firebasestorage.app",
+    messagingSenderId: "856858420056",
+    appId: "1:856858420056:web:6e1b9c1323ec63ae18bb2d"
+  };
+  try{ firebase.initializeApp(firebaseConfig); }catch(e){ console.warn("Firebase not configured yet:", e); }
+</script>
+<style>
+  :root{
+    --bg-0:#0a0e14;
+    --bg-1:#0f1520;
+    --glass:rgba(255,255,255,0.045);
+    --glass-border:rgba(255,255,255,0.09);
+    --glass-hi:rgba(255,255,255,0.09);
+    --text-hi:#eef2f7;
+    --text-mid:#9aa7ba;
+    --text-dim:#5c6779;
+    --teal:#4fd1c5;
+    --teal-dim:#1c3d3a;
+    --amber:#e8a33d;
+    --amber-dim:#3d3016;
+    --violet:#9b8cf0;
+    --violet-dim:#2c2748;
+    --crimson:#e35b56;
+    --crimson-dim:#3d1f1e;
+    --green:#5fbf7a;
+    --green-dim:#1c3324;
+    --yellow:#e0c23d;
+    --yellow-dim:#3a3316;
+    --line:rgba(255,255,255,0.07);
+  }
+  *{box-sizing:border-box;}
+  html, body{margin:0;height:100%;background:var(--bg-0);}
+  .board{
+    font-family:'Inter',sans-serif;
+    color:var(--text-hi);
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(79,209,197,0.10), transparent),
+      radial-gradient(ellipse 900px 600px at 100% 0%, rgba(232,163,61,0.08), transparent),
+      var(--bg-0);
+    padding:28px 24px 40px;
+    border-radius:16px;
+    min-height:100vh;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--teal);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal);}
+  h1{
+    font-family:'Rajdhani',sans-serif;
+    font-weight:700;
+    font-size:34px;
+    letter-spacing:0.01em;
+    margin:6px 0 2px;
+    color:var(--text-hi);
+  }
+  .kingdom-input{
+    background:transparent;border:none;color:inherit;font:inherit;
+    padding:0;width:100%;outline:none;border-bottom:1px dashed transparent;
+  }
+  .kingdom-input:hover, .kingdom-input:focus{border-bottom:1px dashed var(--glass-border);}
+  .kingdom-input[readonly]{cursor:default;}
+  .sub{color:var(--text-mid);font-size:13.5px;margin:0 0 22px;}
+
+  .header-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:6px;}
+  .header-row h1{margin:0;flex:1;min-width:0;}
+  .lock-btn{
+    flex:0 0 auto;display:flex;align-items:center;gap:7px;
+    background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:7px 14px;
+    border-radius:9px;cursor:pointer;white-space:nowrap;
+  }
+  .lock-btn:hover{border-color:var(--glass-hi);}
+  .lock-btn.unlocked{border-color:var(--green);color:var(--green);background:rgba(95,191,122,0.08);}
+  .lock-icn{width:9px;height:9px;border-radius:50%;background:var(--text-dim);flex:0 0 auto;}
+  .lock-btn.unlocked .lock-icn{background:var(--green);}
+
+  .clocks{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:26px;}
+  .clock{
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    border-radius:14px;
+    padding:18px 20px;
+    position:relative;
+    overflow:hidden;
+    backdrop-filter:blur(6px);
+  }
+  .clock::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg, transparent, var(--accent-c,var(--teal)), transparent);
+    opacity:0.6;
+  }
+  .clock.battle{--accent-c:var(--crimson);}
+  .clock-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--text-mid);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .clock-label span.tag{color:var(--accent-c,var(--teal));}
+  .clock-time{
+    font-family:'Rajdhani',sans-serif;font-weight:700;font-size:30px;
+    color:var(--text-hi);letter-spacing:0.02em;
+    display:flex;gap:14px;
+  }
+  .clock-time .seg{display:flex;flex-direction:column;align-items:center;}
+  .clock-time .num{line-height:1;}
+  .clock-time .unit{font-family:'Inter',sans-serif;font-weight:500;font-size:9.5px;color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;margin-top:2px;}
+  .clock-sub{margin-top:8px;font-size:12px;color:var(--text-dim);}
+  .clock-live{color:var(--accent-c,var(--teal));font-weight:600;}
+
+  .strip{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(84px, 1fr));
+    gap:8px;
+    margin-bottom:22px;
+  }
+  .day-chip{
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    border-radius:10px;
+    padding:10px 14px;
+    cursor:pointer;
+    text-align:center;
+    transition:background 0.15s, border-color 0.15s;
+  }
+  .day-chip:hover{background:rgba(255,255,255,0.07);}
+  .day-chip.active{border-color:var(--teal);background:rgba(79,209,197,0.10);}
+  .day-chip .dow{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;}
+  .day-chip .dnum{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:20px;margin:2px 0;color:var(--text-hi);}
+  .day-chip .phase{font-size:9.5px;color:var(--text-mid);}
+  .day-chip.today .dnum{color:var(--teal);}
+  .day-chip.today::after{content:'today';font-size:8.5px;color:var(--teal);letter-spacing:0.06em;text-transform:uppercase;}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  @media (max-width:760px){.cols{grid-template-columns:1fr;} .clocks{grid-template-columns:1fr;}}
+
+  .scoring-panel{margin-top:14px;}
+  .panel.scoring .panel-icn{background:rgba(232,163,61,0.14);color:var(--amber);}
+  .scoring-grid{display:grid;grid-template-columns:1fr;}
+  .score-row{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:6px 4px;border-bottom:1px solid var(--line);
+  }
+  .score-row .del-btn{opacity:0;}
+  .score-row:hover .del-btn{opacity:1;}
+  .score-row:last-child{border-bottom:none;}
+
+  .rating-indicator{
+    width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:transparent;align-self:center;
+  }
+  .rating-indicator.best{background:var(--green);}
+  .rating-indicator.okay{background:var(--yellow);}
+  .rating-indicator.bad{background:var(--crimson);}
+
+  .rating-group{display:flex;gap:4px;flex:0 0 auto;opacity:0;transition:opacity 0.15s;}
+  .score-row:hover .rating-group{opacity:1;}
+  .rate-dot{
+    width:11px;height:11px;border-radius:50%;padding:0;cursor:pointer;
+    background:transparent;flex:0 0 auto;
+  }
+  .rate-dot.best{border:1.5px solid var(--green);}
+  .rate-dot.okay{border:1.5px solid var(--yellow);}
+  .rate-dot.bad{border:1.5px solid var(--crimson);}
+  .rate-dot.best.active{background:var(--green);}
+  .rate-dot.okay.active{background:var(--yellow);}
+  .rate-dot.bad.active{background:var(--crimson);}
+
+  .scoring-filters{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+  .filter-chip{
+    display:flex;align-items:center;gap:5px;
+    background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
+    font-family:'Inter',sans-serif;font-size:11px;padding:5px 10px;border-radius:8px;cursor:pointer;
+  }
+  .filter-chip .fdot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
+  .filter-chip[data-f="best"] .fdot{background:var(--green);}
+  .filter-chip[data-f="okay"] .fdot{background:var(--yellow);}
+  .filter-chip[data-f="bad"] .fdot{background:var(--crimson);}
+  .filter-chip[data-f="unrated"] .fdot{background:var(--text-dim);}
+  .filter-chip[data-f="all"] .fdot{background:var(--text-mid);}
+  .filter-chip:hover{border-color:var(--glass-hi);}
+  .filter-chip.active{border-color:var(--teal);color:var(--teal);background:rgba(79,209,197,0.08);}
+  .score-text{
+    flex:1;font-size:12.5px;line-height:1.4;color:var(--text-hi);
+    background:transparent;border:none;outline:none;font-family:inherit;resize:none;padding:0;overflow:hidden;
+  }
+  .score-points{
+    flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;
+    color:var(--amber);background:transparent;border:none;outline:none;text-align:right;
+    width:64px;
+  }
+  .score-empty{font-size:12.5px;color:var(--text-dim);padding:6px 4px;}
+
+  .panel{
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    border-radius:14px;
+    padding:16px 16px 12px;
+    backdrop-filter:blur(6px);
+  }
+  .panel-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .panel-icn{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex:0 0 auto;}
+  .panel-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;letter-spacing:0.01em;}
+  .panel.tasks .panel-icn{background:var(--teal-dim);color:var(--teal);}
+  .panel.buffs .panel-icn{background:var(--amber-dim);color:var(--amber);}
+  .panel.ministers .panel-icn{background:var(--violet-dim);color:var(--violet);}
+
+  .item-row{
+    display:flex;align-items:flex-start;gap:8px;padding:7px 4px;
+    border-bottom:1px solid var(--line);
+  }
+  .item-wrapper{border-bottom:1px solid var(--line);}
+  .item-wrapper .item-row{border-bottom:none;}
+  .item-wrapper:last-of-type{border-bottom:none;}
+  .item-row:last-of-type{border-bottom:none;}
+  .item-row input[type=checkbox]{
+    appearance:none;width:16px;height:16px;border-radius:5px;
+    border:1.5px solid var(--text-dim);flex:0 0 auto;margin-top:2px;cursor:pointer;
+    position:relative;background:transparent;
+  }
+  .panel.tasks .item-row input[type=checkbox]:checked{background:var(--teal);border-color:var(--teal);}
+  .item-row input[type=checkbox]:checked::after{
+    content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;
+    border-right:2px solid #0a0e14;border-bottom:2px solid #0a0e14;transform:rotate(45deg);
+  }
+  .item-text{
+    flex:1;font-size:13px;line-height:1.4;color:var(--text-hi);
+    background:transparent;border:none;outline:none;font-family:inherit;
+    resize:none;padding:0;overflow:hidden;display:block;
+  }
+  .item-row.done .item-text{color:var(--text-dim);text-decoration:line-through;}
+  .bullet{width:16px;height:16px;border-radius:5px;flex:0 0 auto;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:9px;}
+  .panel.buffs .bullet{background:var(--amber-dim);color:var(--amber);}
+  .panel.ministers .bullet{background:var(--violet-dim);color:var(--violet);}
+  .del-btn{
+    opacity:0;flex:0 0 auto;background:transparent;border:none;color:var(--text-dim);
+    cursor:pointer;font-size:14px;padding:0 2px;line-height:1;
+  }
+  .item-row:hover .del-btn{opacity:1;}
+  .del-btn:hover{color:var(--crimson);}
+
+  .expand-btn{
+    display:block;background:transparent;border:none;color:var(--text-dim);
+    cursor:pointer;font-size:11px;letter-spacing:0.04em;padding:0 0 6px 24px;
+    font-family:'Inter',sans-serif;text-align:left;
+  }
+  .expand-btn:hover{color:var(--text-mid);}
+  .expand-btn.open{color:var(--teal);}
+  .expand-btn.has-notes:not(.open){color:var(--teal);}
+  .item-notes{
+    display:none;width:100%;font-size:12.5px;line-height:1.5;color:var(--text-mid);
+    background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:8px;
+    outline:none;resize:none;overflow:hidden;padding:8px 10px;margin:0 0 8px 24px;
+    font-family:inherit;width:calc(100% - 24px);
+  }
+  .item-notes:focus{border-color:var(--glass-border);color:var(--text-hi);}
+  .item-notes::placeholder{color:var(--text-dim);}
+  .add-row{
+    display:flex;align-items:center;gap:6px;margin-top:6px;padding:6px 4px;
+    cursor:pointer;color:var(--text-dim);font-size:12.5px;
+  }
+  .add-row:hover{color:var(--text-mid);}
+  .add-row .plus{width:16px;height:16px;border-radius:5px;border:1.5px dashed var(--text-dim);display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 auto;}
+
+  .foot{margin-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  .foot-note{font-size:11.5px;color:var(--text-dim);}
+  .reset-btn{
+    background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
+    font-family:'Inter',sans-serif;font-size:11.5px;padding:6px 12px;border-radius:8px;cursor:pointer;
+  }
+  .reset-btn:hover{border-color:var(--crimson);color:var(--crimson);}
+  .save-flag{font-size:10.5px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
+
+  .view-toggle{display:flex;gap:6px;margin-bottom:16px;}
+  .view-btn{
+    background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:7px 16px;
+    border-radius:9px;cursor:pointer;
+  }
+  .view-btn:hover{background:rgba(255,255,255,0.05);}
+  .view-btn.active{border-color:var(--teal);color:var(--teal);background:rgba(79,209,197,0.08);}
+
+  .summary-note{font-size:12.5px;color:var(--text-dim);margin-bottom:16px;line-height:1.5;}
+  .summary-scroll{overflow:visible;}
+  .summary-grid{display:grid;grid-template-columns:repeat(8, minmax(0, 1fr));gap:10px;}
+  .summary-day{
+    background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;
+    padding:14px;
+  }
+  .summary-day-head{margin-bottom:10px;}
+  .summary-day-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;color:var(--text-hi);line-height:1.2;}
+  .summary-day-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:2px;}
+  .summary-section{margin-bottom:12px;}
+  .summary-section:last-child{margin-bottom:0;}
+  .summary-col-title{
+    font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--text-dim);margin-bottom:6px;
+  }
+  .summary-col-title.tasks{color:var(--teal);}
+  .summary-col-title.buffs{color:var(--amber);}
+  .summary-col-title.ministers{color:var(--violet);}
+  .summary-empty{font-size:11px;color:var(--text-dim);padding:2px 0;}
+  .summary-item{
+    display:flex;align-items:flex-start;gap:6px;padding:4px 0;
+  }
+  .summary-item input[type=checkbox]{
+    appearance:none;width:13px;height:13px;border-radius:4px;
+    border:1.5px solid var(--text-dim);flex:0 0 auto;margin-top:2px;cursor:pointer;
+    position:relative;background:transparent;
+  }
+  .summary-item input[type=checkbox]:checked{background:var(--teal);border-color:var(--teal);}
+  .summary-item input[type=checkbox]:checked::after{
+    content:'';position:absolute;left:3px;top:0px;width:3px;height:6px;
+    border-right:1.5px solid #0a0e14;border-bottom:1.5px solid #0a0e14;transform:rotate(45deg);
+  }
+  .summary-task-btn{
+    flex:1;text-align:left;background:transparent;border:none;color:var(--text-hi);
+    font-family:inherit;font-size:11.5px;line-height:1.35;cursor:pointer;padding:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .summary-task-btn:hover{color:var(--teal);text-decoration:underline;}
+  .summary-item.done .summary-task-btn{color:var(--text-dim);text-decoration:line-through;}
+  .summary-plain{
+    font-size:11.5px;line-height:1.35;color:var(--text-mid);padding:3px 0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .summary-col-title.missions{color:var(--green);}
+  .summary-mission{
+    display:flex;align-items:center;gap:6px;padding:3px 0;
+  }
+  .summary-mission .mdot{width:7px;height:7px;border-radius:50%;background:var(--green);flex:0 0 auto;}
+  .summary-mission .mtext{
+    flex:1;font-size:11.5px;line-height:1.35;color:var(--text-hi);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .summary-mission .mpts{
+    flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--amber);
+  }
+  .flash{animation:flashglow 1.4s ease;}
+  @keyframes flashglow{
+    0%{background:rgba(79,209,197,0.22);}
+    100%{background:transparent;}
+  }
+</style>
+</head>
+<body>
+<div class="board" id="board">
+
+  <div class="eyebrow"><span class="dot"></span>Alliance ops — kvk preparation</div>
+  <div class="header-row">
+    <h1><input class="kingdom-input" id="kingdomName" value="1884 War Room" spellcheck="false" readonly></h1>
+    <button class="lock-btn" id="lockBtn"><i class="lock-icn"></i>View only</button>
+  </div>
+  <p class="sub">Daily R5 tasks, King's buffs, minister appointments and area of focus — Jul 11 – Jul 18, UTC</p>
+
+  <div class="clocks">
+    <div class="clock" id="clockPrep">
+      <div class="clock-label"><span>Preparation phase</span><span class="tag">Mon Jul 13, 00:00 UTC</span></div>
+      <div class="clock-time" id="prepTime">--</div>
+      <div class="clock-sub" id="prepSub"></div>
+    </div>
+    <div class="clock battle" id="clockBattle">
+      <div class="clock-label"><span>Battle phase</span><span class="tag">Sat Jul 18, 12:00 UTC</span></div>
+      <div class="clock-time" id="battleTime">--</div>
+      <div class="clock-sub" id="battleSub"></div>
+    </div>
+  </div>
+
+  <div class="view-toggle" id="viewToggle">
+    <button class="view-btn active" data-view="day">Day view</button>
+    <button class="view-btn" data-view="summary">Summary</button>
+  </div>
+
+  <div id="dayView">
+    <div class="strip" id="dayStrip"></div>
+
+    <div class="cols">
+      <div class="panel tasks">
+        <div class="panel-head"><div class="panel-icn">R5</div><div class="panel-title">R5 tasks</div></div>
+        <div id="tasksList"></div>
+        <div class="add-row" data-add="tasks"><span class="plus">+</span>Add task</div>
+      </div>
+      <div class="panel buffs">
+        <div class="panel-head"><div class="panel-icn">&#9733;</div><div class="panel-title">Kingdom buffs (King)</div></div>
+        <div id="buffsList"></div>
+        <div class="add-row" data-add="buffs"><span class="plus">+</span>Add buff</div>
+      </div>
+      <div class="panel ministers">
+        <div class="panel-head"><div class="panel-icn">&#9878;</div><div class="panel-title">Minister appointments</div></div>
+        <div id="ministersList"></div>
+        <div class="add-row" data-add="ministers">Add appointment</div>
+      </div>
+    </div>
+
+    <div class="panel scoring scoring-panel">
+      <div class="panel-head"><div class="panel-icn">pt</div><div class="panel-title">Scoring tasks &amp; point values</div></div>
+      <div class="scoring-filters" id="scoringFilters"></div>
+      <div class="scoring-grid" id="scoringList"></div>
+      <div class="add-row" data-add="scoring"><span class="plus">+</span>Add scoring task</div>
+    </div>
+
+    <div class="foot">
+      <div class="foot-note">Tap any text to edit. Checkboxes and edits sync for everyone viewing this board.</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="save-flag" id="saveFlag"></span>
+        <button class="reset-btn" id="resetBtn">Reset this day to defaults</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="summaryView" style="display:none;">
+    <div class="summary-note">All days side by side. Click a task to jump to it in day view. Kingdom buffs and minister appointments are shown for reference — edit those from day view.</div>
+    <div class="summary-scroll">
+      <div class="summary-grid" id="summaryDays"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+
+var PREP_START = Date.UTC(2026,6,13,0,0,0);
+var BATTLE_START = Date.UTC(2026,6,18,12,0,0);
+
+var DAYS = [
+  { date:"2026-07-11", dow:"Sat", phase:"Pre-prep",
+    focus:"Roster lockdown",
+    tasks:["Finalize alliance roster and trap-type groupings","Confirm rally squad leads and alt lineups","Publish pinned comms message with the prep schedule"],
+    buffs:["None scheduled — hold buffs for prep start"],
+    ministers:["Not yet open"],
+    scoring:[] },
+  { date:"2026-07-12", dow:"Sun", phase:"Pre-prep",
+    focus:"Final briefing and systems check",
+    tasks:["Confirm 5-alliance castle rotation order with NAP5","Brief officers on the battle phase plan","Test rally coordination tooling end to end"],
+    buffs:["Stage a construction speed buff for last-minute builds"],
+    ministers:["Not yet open"],
+    scoring:[] },
+  { date:"2026-07-13", dow:"Mon", phase:"Construction",
+    focus:"Construction push",
+    tasks:["Post the kickoff announcement kingdom-wide","Open trap and rally sign-ups","Track the daily point leaderboard"],
+    buffs:["Construction speed buff — schedule for peak online hours"],
+    ministers:["Chancellor — construction focus"],
+    scoring:[
+      ["Raise governor gear charm max score by 1", 70],
+      ["Use 1 Truegold to upgrade a building", 2000],
+      ["Use 1 Truegold Dust for tech research", 1000],
+      ["Use 1 Tempered Truegold to upgrade a building", 30000],
+      ["Use 1m of speedups for construction", 30],
+      ["Use 1m of speedups for research", 30],
+      ["Use 1m of speedups for troop training or promotion", 30],
+      ["Use 1m of speedups to learn master skills", 30],
+      ["Finish 1 intel mission", 6000]
+    ] },
+  { date:"2026-07-14", dow:"Tue", phase:"Research",
+    focus:"Research push",
+    tasks:["Monitor gathering and trap participation","Follow up with members who haven't logged points","Post a mid-prep progress update"],
+    buffs:["Research speed buff — schedule for peak online hours"],
+    ministers:["Duke — research focus"],
+    scoring:[
+      ["Use 1 Truegold to upgrade a building", 2000],
+      ["Use 1 Truegold Dust for tech research", 1000],
+      ["Use 1 Tempered Truegold to upgrade a building", 30000],
+      ["Use 1m of speedups for construction", 30],
+      ["Use 1m of speedups for research", 30],
+      ["Use 1m of speedups for troop training or promotion", 30],
+      ["Use 1m of speedups to learn master skills", 30],
+      ["Play hero roulette 1 time", 8000],
+      ["Use 1 rare hero shard to ascend heroes", 350],
+      ["Use 1 epic hero shard to ascend heroes", 1220],
+      ["Use 1 mythic hero shard to ascend heroes", 3040],
+      ["Gather 1000 bread in the wilderness", 2],
+      ["Gather 1000 wood in the wilderness", 2],
+      ["Gather 200 stone in the wilderness", 2],
+      ["Gather 50 iron in the wilderness", 2],
+      ["Use any 1 master emblem", 6000],
+      ["Use 1 master's manuscript", 60]
+    ] },
+  { date:"2026-07-15", dow:"Wed", phase:"Pet training",
+    focus:"Training push",
+    tasks:["Run the mid-week point check against targets","Assign rally squads for battle day","Confirm trap layout with castle map lead"],
+    buffs:["Troop training speed buff — schedule for peak online hours"],
+    ministers:["General — training focus"],
+    scoring:[
+      ["Raise pet advancement score by 1", 50],
+      ["Use 1 advanced taming mark to refine pets", 15000],
+      ["Use 1 common taming mark to refine pets", 1150],
+      ["Raise governor gear charm max score by 1", 70],
+      ["Play hero roulette 1 time", 8000],
+      ["Use 1 rare hero shard to ascend heroes", 350],
+      ["Use 1 epic hero shard to ascend heroes", 1220],
+      ["Use 1 mythic hero shard to ascend heroes", 3040],
+      ["Finish 1 intel mission", 6000],
+      ["Use any 1 master emblem", 6000],
+      ["Use 1 master's manuscript", 60]
+    ] },
+  { date:"2026-07-16", dow:"Thu", phase:"Troop training",
+    focus:"Combat readiness",
+    tasks:["Finalize battle roster and trap layout","Run the battle-day briefing with officers","Confirm castle rotation slot and timing with NAP5"],
+    buffs:["Attack buff — stage ahead of battle day"],
+    ministers:["Marshal — attack focus"],
+    scoring:[
+      ["Raise governor gear charm max score by 1", 70],
+      ["Use 1 hero gear forgehammer", 4000],
+      ["Use 1 widget for hero exclusive gear", 8000],
+      ["Use 1 Mithril", 40000],
+      ["Train 1 level 1 troop", 3],
+      ["Train 1 level 2 troop", 4],
+      ["Train 1 level 3 troop", 5],
+      ["Train 1 level 4 troop", 8],
+      ["Train 1 level 5 troop", 12],
+      ["Train 1 level 6 troop", 18],
+      ["Train 1 level 7 troop", 25],
+      ["Train 1 level 8 troop", 35],
+      ["Train 1 level 9 troop", 45],
+      ["Train 1 level 10 troop", 60],
+      ["Train 1 level 11 troop", 75],
+      ["Gather 1000 bread in the wilderness", 2],
+      ["Gather 1000 wood in the wilderness", 2],
+      ["Gather 200 stone in the wilderness", 2],
+      ["Gather 50 iron in the wilderness", 2]
+    ] },
+  { date:"2026-07-17", dow:"Fri", phase:"Power boost",
+    focus:"Final lockdown",
+    tasks:["Last call for point gathering","Lock rally timers and countdowns","Distribute the battle-day schedule and callout doc"],
+    buffs:["Defense buff — stage for battle morning"],
+    ministers:["Governor — defense focus"],
+    scoring:[
+      ["Raise pet advancement score by 1", 50],
+      ["Use 1 advanced taming mark to refine pets", 15000],
+      ["Use 1 common taming mark to refine pets", 1150],
+      ["Use 1 Mithril", 40000],
+      ["Raise governor gear max score by 1", 36],
+      ["Use 1 hero gear forgehammer", 4000],
+      ["Use 1 widget for hero exclusive gear", 8000],
+      ["Use 1 Truegold to upgrade a building", 2000],
+      ["Use 1 Truegold Dust for tech research", 1000],
+      ["Use 1 Tempered Truegold to upgrade a building", 30000],
+      ["Use 1m of speedups for construction", 30],
+      ["Use 1m of speedups for research", 30],
+      ["Use 1m of speedups for troop training or promotion", 30],
+      ["Use 1m of speedups to learn master skills", 30],
+      ["Finish 1 intel mission", 6000],
+      ["Gather 1000 bread in the wilderness", 2],
+      ["Gather 1000 wood in the wilderness", 2],
+      ["Gather 200 stone in the wilderness", 2],
+      ["Gather 50 iron in the wilderness", 2]
+    ] },
+  { date:"2026-07-18", dow:"Sat", phase:"Battle phase",
+    focus:"Castle assault — live coverage",
+    tasks:["Run live castle battle coordination and callouts","Host play-by-play commentary and prop bets","Run the post-battle debrief and MVP shoutouts"],
+    buffs:["Rally attack and defense buffs — active through battle window"],
+    ministers:["Appointments locked for battle phase"],
+    scoring:[
+      ["Every 1,000 power occupying King's Castle or a turret, per 60s", 1],
+      ["Kill 1 level 1-2 enemy troop", 1],
+      ["Kill 1 level 3 enemy troop", 2],
+      ["Kill 1 level 4 enemy troop", 3],
+      ["Kill 1 level 5 enemy troop", 4],
+      ["Kill 1 level 6 enemy troop", 5],
+      ["Kill 1 level 7 enemy troop", 7],
+      ["Kill 1 level 8 enemy troop", 9],
+      ["Kill 1 level 9 enemy troop", 11],
+      ["Kill 1 level 10 enemy troop", 13]
+    ] }
+];
+
+var storageKey = "kvk-jul2026";
+var state = null;
+var selectedIdx = 4;
+var EDIT_MODE = false;
+var EDIT_PASSPHRASE = "1884-R5-2026";
+var dbRef = null;
+try{
+  if(typeof firebase !== 'undefined') dbRef = firebase.database().ref(storageKey);
+}catch(e){ console.warn("Firebase database not reachable:", e); }
+
+function defaultState(){
+  var s = { kingdomName:"1884 War Room", days:{} };
+  DAYS.forEach(function(d){
+    s.days[d.date] = {
+      focus: d.focus,
+      tasks: d.tasks.map(function(t){ return {text:t, done:false, notes:""}; }),
+      buffs: d.buffs.map(function(t){ return {text:t}; }),
+      ministers: d.ministers.map(function(t){ return {text:t}; }),
+      scoring: d.scoring.map(function(pair){ return {text:pair[0], points:pair[1], rating:null}; })
+    };
+  });
+  return s;
+}
+
+function migrateState(parsed){
+  if(!parsed || !parsed.days) return defaultState();
+  var def = defaultState();
+  DAYS.forEach(function(d){
+    if(!parsed.days[d.date]) parsed.days[d.date] = def.days[d.date];
+  });
+  Object.keys(parsed.days).forEach(function(dateKey){
+    var dd = parsed.days[dateKey];
+    if(dd && Array.isArray(dd.tasks)){
+      dd.tasks.forEach(function(t){ if(typeof t.notes !== 'string') t.notes = ""; });
+    }
+    if(dd && !Array.isArray(dd.scoring)){
+      dd.scoring = def.days[dateKey] ? def.days[dateKey].scoring : [];
+    }
+    if(dd && Array.isArray(dd.scoring)){
+      dd.scoring.forEach(function(s){ if(typeof s.rating === 'undefined') s.rating = null; });
+    }
+  });
+  return parsed;
+}
+
+function flag(msg){
+  var el = document.getElementById('saveFlag');
+  el.textContent = msg;
+  setTimeout(function(){ if(el.textContent===msg) el.textContent = ""; }, 1500);
+}
+
+async function saveState(){
+  if(!dbRef){ flag("no database connected"); return; }
+  try{
+    await dbRef.set(state);
+    flag("synced");
+  }catch(e){
+    flag("sync failed — check connection");
+  }
+}
+
+function pad(n){ return n<10 ? "0"+n : ""+n; }
+
+function renderClock(targetMs, timeEl, subEl, clockEl){
+  var now = Date.now();
+  var diff = targetMs - now;
+  if(diff <= 0){
+    timeEl.innerHTML = '<span class="clock-live">LIVE</span>';
+    subEl.textContent = "underway";
+    return;
+  }
+  var totalSec = Math.floor(diff/1000);
+  var d = Math.floor(totalSec/86400);
+  var h = Math.floor((totalSec%86400)/3600);
+  var m = Math.floor((totalSec%3600)/60);
+  var s = totalSec%60;
+  timeEl.innerHTML =
+    '<div class="seg"><span class="num">'+d+'</span><span class="unit">days</span></div>'+
+    '<div class="seg"><span class="num">'+pad(h)+'</span><span class="unit">hrs</span></div>'+
+    '<div class="seg"><span class="num">'+pad(m)+'</span><span class="unit">min</span></div>'+
+    '<div class="seg"><span class="num">'+pad(s)+'</span><span class="unit">sec</span></div>';
+  subEl.textContent = "counting down";
+}
+
+function tickClocks(){
+  renderClock(PREP_START, document.getElementById('prepTime'), document.getElementById('prepSub'));
+  renderClock(BATTLE_START, document.getElementById('battleTime'), document.getElementById('battleSub'));
+}
+
+function todayStr(){
+  var n = new Date();
+  return n.getUTCFullYear()+"-"+pad(n.getUTCMonth()+1)+"-"+pad(n.getUTCDate());
+}
+
+function renderStrip(){
+  var strip = document.getElementById('dayStrip');
+  strip.innerHTML = "";
+  var today = todayStr();
+  DAYS.forEach(function(d, i){
+    var chip = document.createElement('div');
+    chip.className = 'day-chip' + (i===selectedIdx ? ' active' : '') + (d.date===today ? ' today' : '');
+    var dn = d.date.split('-')[2];
+    chip.innerHTML = '<div class="dow">'+d.dow+'</div><div class="dnum">'+dn+'</div><div class="phase">'+d.phase+'</div>';
+    chip.addEventListener('click', function(){
+      selectedIdx = i;
+      renderStrip();
+      renderPanel();
+    });
+    strip.appendChild(chip);
+  });
+}
+
+function makeItemRow(listKind, idx, item, checkable){
+  var row = document.createElement('div');
+  row.className = 'item-row' + (checkable && item.done ? ' done' : '');
+
+  if(checkable){
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!item.done;
+    cb.disabled = !EDIT_MODE;
+    cb.addEventListener('change', function(){
+      item.done = cb.checked;
+      row.className = 'item-row' + (item.done ? ' done' : '');
+      saveState();
+    });
+    row.appendChild(cb);
+  } else {
+    var b = document.createElement('div');
+    b.className = 'bullet';
+    b.textContent = '\u2022';
+    row.appendChild(b);
+  }
+
+  var ta = document.createElement('textarea');
+  ta.className = 'item-text';
+  ta.value = item.text;
+  ta.rows = 1;
+  ta.spellcheck = false;
+  ta.readOnly = !EDIT_MODE;
+  ta.addEventListener('input', function(){
+    autosize(ta);
+  });
+  ta.addEventListener('blur', function(){
+    if(!EDIT_MODE) return;
+    item.text = ta.value;
+    saveState();
+  });
+  row.appendChild(ta);
+
+  var details = null;
+
+  if(EDIT_MODE){
+    var del = document.createElement('button');
+    del.className = 'del-btn';
+    del.textContent = '\u00d7';
+    del.setAttribute('aria-label','Remove item');
+    del.addEventListener('click', function(){
+      var dayData = state.days[DAYS[selectedIdx].date];
+      dayData[listKind].splice(idx, 1);
+      saveState();
+      renderPanel();
+    });
+    row.appendChild(del);
+  }
+
+  if(!checkable) return row;
+
+  var wrapper = document.createElement('div');
+  wrapper.className = 'item-wrapper';
+  wrapper.appendChild(row);
+
+  var toggle = document.createElement('button');
+  toggle.className = 'expand-btn' + ((item.notes && item.notes.trim()) ? ' has-notes' : '');
+  toggle.textContent = 'Content';
+  toggle.setAttribute('aria-label','Show task details');
+  wrapper.appendChild(toggle);
+
+  details = document.createElement('textarea');
+  details.className = 'item-notes';
+  details.value = item.notes || '';
+  details.placeholder = EDIT_MODE ? 'Add details for this task…' : 'No details added.';
+  details.rows = 1;
+  details.spellcheck = false;
+  details.readOnly = !EDIT_MODE;
+  details.addEventListener('input', function(){ autosize(details); });
+  details.addEventListener('blur', function(){
+    if(!EDIT_MODE) return;
+    item.notes = details.value;
+    toggle.className = 'expand-btn open' + ((item.notes && item.notes.trim()) ? ' has-notes' : '');
+    saveState();
+  });
+  wrapper.appendChild(details);
+
+  var isOpen = false;
+  toggle.addEventListener('click', function(){
+    isOpen = !isOpen;
+    details.style.display = isOpen ? 'block' : 'none';
+    toggle.classList.toggle('open', isOpen);
+    if(isOpen) requestAnimationFrame(function(){ autosize(details); });
+  });
+
+  return wrapper;
+}
+
+function autosize(ta){
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+
+function renderList(containerId, listKind, checkable){
+  var container = document.getElementById(containerId);
+  container.innerHTML = "";
+  var dayData = state.days[DAYS[selectedIdx].date];
+  dayData[listKind].forEach(function(item, idx){
+    container.appendChild(makeItemRow(listKind, idx, item, checkable));
+  });
+  requestAnimationFrame(function(){
+    container.querySelectorAll('.item-text').forEach(autosize);
+  });
+}
+
+function renderPanel(){
+  var d = DAYS[selectedIdx];
+  var dayData = state.days[d.date];
+
+  renderList('tasksList', 'tasks', true);
+  renderList('buffsList', 'buffs', false);
+  renderList('ministersList', 'ministers', false);
+  renderScoringFilters();
+  renderScoring();
+}
+
+var scoringFilter = 'all';
+
+function renderScoringFilters(){
+  var container = document.getElementById('scoringFilters');
+  container.innerHTML = "";
+  var labels = { all:'All', best:'Best day', okay:'Okay', bad:'Avoid', unrated:'Unrated' };
+  ['all','best','okay','bad','unrated'].forEach(function(key){
+    var chip = document.createElement('button');
+    chip.className = 'filter-chip' + (scoringFilter === key ? ' active' : '');
+    chip.setAttribute('data-f', key);
+    chip.innerHTML = '<span class="fdot"></span>' + labels[key];
+    chip.addEventListener('click', function(){
+      scoringFilter = key;
+      renderScoringFilters();
+      renderScoring();
+    });
+    container.appendChild(chip);
+  });
+}
+
+function renderScoring(){
+  var container = document.getElementById('scoringList');
+  container.innerHTML = "";
+  var dayData = state.days[DAYS[selectedIdx].date];
+
+  var visibleItems = [];
+  dayData.scoring.forEach(function(item, idx){
+    var key = item.rating || 'unrated';
+    if(scoringFilter === 'all' || scoringFilter === key) visibleItems.push(idx);
+  });
+
+  if(!dayData.scoring.length){
+    var empty = document.createElement('div');
+    empty.className = 'score-empty';
+    empty.textContent = 'No scoring tasks for this day.';
+    container.appendChild(empty);
+    return;
+  }
+  if(!visibleItems.length){
+    var empty2 = document.createElement('div');
+    empty2.className = 'score-empty';
+    empty2.textContent = 'No tasks match the current filter.';
+    container.appendChild(empty2);
+    return;
+  }
+
+  visibleItems.forEach(function(idx){
+    var item = dayData.scoring[idx];
+    var row = document.createElement('div');
+    row.className = 'score-row';
+
+    var indicator = document.createElement('div');
+    indicator.className = 'rating-indicator' + (item.rating ? ' ' + item.rating : '');
+    row.appendChild(indicator);
+
+    var ta = document.createElement('textarea');
+    ta.className = 'score-text';
+    ta.value = item.text;
+    ta.rows = 1;
+    ta.spellcheck = false;
+    ta.readOnly = !EDIT_MODE;
+    ta.addEventListener('input', function(){ autosize(ta); });
+    ta.addEventListener('blur', function(){ if(!EDIT_MODE) return; item.text = ta.value; saveState(); });
+    row.appendChild(ta);
+
+    var pts = document.createElement('input');
+    pts.className = 'score-points';
+    pts.type = 'text';
+    pts.inputMode = 'numeric';
+    pts.readOnly = !EDIT_MODE;
+    pts.value = Number(item.points).toLocaleString();
+    pts.addEventListener('blur', function(){
+      if(!EDIT_MODE) return;
+      var n = parseInt(pts.value.replace(/[^0-9-]/g,''), 10);
+      item.points = isNaN(n) ? 0 : n;
+      pts.value = item.points.toLocaleString();
+      saveState();
+    });
+    row.appendChild(pts);
+
+    if(EDIT_MODE){
+      var ratingGroup = document.createElement('div');
+      ratingGroup.className = 'rating-group';
+      ['best','okay','bad'].forEach(function(r){
+        var dot = document.createElement('button');
+        dot.className = 'rate-dot ' + r + (item.rating === r ? ' active' : '');
+        dot.setAttribute('aria-label', r);
+        dot.addEventListener('click', function(){
+          item.rating = (item.rating === r) ? null : r;
+          saveState();
+          renderScoring();
+        });
+        ratingGroup.appendChild(dot);
+      });
+      row.appendChild(ratingGroup);
+
+      var del = document.createElement('button');
+      del.className = 'del-btn';
+      del.textContent = '\u00d7';
+      del.setAttribute('aria-label','Remove scoring task');
+      del.addEventListener('click', function(){
+        dayData.scoring.splice(idx, 1);
+        saveState();
+        renderScoring();
+      });
+      row.appendChild(del);
+    }
+
+    container.appendChild(row);
+  });
+  requestAnimationFrame(function(){
+    container.querySelectorAll('.score-text').forEach(autosize);
+  });
+}
+
+function addItem(listKind){
+  var dayData = state.days[DAYS[selectedIdx].date];
+  if(listKind === 'scoring'){
+    dayData.scoring.push({text:'New scoring task', points:0, rating:null});
+    saveState();
+    renderScoring();
+    return;
+  }
+  var newItem = listKind==='tasks' ? {text:'New task', done:false, notes:''} : {text: listKind==='buffs' ? 'New buff' : 'New appointment'};
+  dayData[listKind].push(newItem);
+  saveState();
+  renderPanel();
+}
+
+function applyEditModeUI(){
+  document.querySelectorAll('.add-row').forEach(function(el){
+    el.style.display = EDIT_MODE ? 'flex' : 'none';
+  });
+  document.getElementById('resetBtn').style.display = EDIT_MODE ? 'inline-block' : 'none';
+}
+
+document.querySelectorAll('.add-row').forEach(function(el){
+  el.addEventListener('click', function(){
+    if(!EDIT_MODE) return;
+    addItem(el.getAttribute('data-add'));
+  });
+});
+
+document.getElementById('resetBtn').addEventListener('click', function(){
+  if(!EDIT_MODE) return;
+  var d = DAYS[selectedIdx];
+  var def = defaultState();
+  state.days[d.date] = def.days[d.date];
+  saveState();
+  renderPanel();
+});
+
+var kingdomInput = document.getElementById('kingdomName');
+kingdomInput.addEventListener('blur', function(){
+  if(!EDIT_MODE) return;
+  state.kingdomName = kingdomInput.value;
+  saveState();
+});
+
+var lockBtn = document.getElementById('lockBtn');
+lockBtn.addEventListener('click', function(){
+  if(EDIT_MODE){
+    EDIT_MODE = false;
+    lockBtn.classList.remove('unlocked');
+    lockBtn.innerHTML = '<span class="lock-icn"></span>View only';
+    kingdomInput.setAttribute('readonly', 'readonly');
+    applyEditModeUI();
+    renderCurrentView();
+    return;
+  }
+  var entered = window.prompt('Enter the R5 edit passphrase:');
+  if(entered === null) return;
+  if(entered === EDIT_PASSPHRASE){
+    EDIT_MODE = true;
+    lockBtn.classList.add('unlocked');
+    lockBtn.innerHTML = '<span class="lock-icn"></span>Editing';
+    kingdomInput.removeAttribute('readonly');
+    applyEditModeUI();
+    renderCurrentView();
+  } else {
+    window.alert('Incorrect passphrase.');
+  }
+});
+
+function switchView(view){
+  document.querySelectorAll('.view-btn').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-view') === view);
+  });
+  document.getElementById('dayView').style.display = view === 'day' ? 'block' : 'none';
+  document.getElementById('summaryView').style.display = view === 'summary' ? 'block' : 'none';
+  if(view === 'summary') renderSummary();
+}
+
+document.querySelectorAll('.view-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    switchView(btn.getAttribute('data-view'));
+  });
+});
+
+function goToTask(dateIdx, taskIdx){
+  selectedIdx = dateIdx;
+  switchView('day');
+  renderStrip();
+  renderPanel();
+  requestAnimationFrame(function(){
+    var wrappers = document.querySelectorAll('#tasksList .item-wrapper');
+    var target = wrappers[taskIdx];
+    if(target){
+      target.scrollIntoView({behavior:'smooth', block:'center'});
+      target.classList.add('flash');
+      setTimeout(function(){ target.classList.remove('flash'); }, 1400);
+    }
+  });
+}
+
+function renderSummary(){
+  var container = document.getElementById('summaryDays');
+  container.innerHTML = "";
+  var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  DAYS.forEach(function(d, dayIdx){
+    var dayData = state.days[d.date];
+    var dt = new Date(d.date + 'T00:00:00Z');
+    var dateStr = d.dow + ' ' + monthNames[dt.getUTCMonth()] + ' ' + dt.getUTCDate();
+
+    var card = document.createElement('div');
+    card.className = 'summary-day';
+
+    var head = document.createElement('div');
+    head.className = 'summary-day-head';
+    head.innerHTML = '<div class="summary-day-title">'+d.phase+'</div><div class="summary-day-date">'+dateStr+'</div>';
+    card.appendChild(head);
+
+    var tasksSec = document.createElement('div');
+    tasksSec.className = 'summary-section';
+    tasksSec.innerHTML = '<div class="summary-col-title tasks">R5 tasks</div>';
+    if(!dayData.tasks.length){
+      var e1 = document.createElement('div');
+      e1.className = 'summary-empty';
+      e1.textContent = 'No tasks.';
+      tasksSec.appendChild(e1);
+    } else {
+      dayData.tasks.forEach(function(item, taskIdx){
+        var row = document.createElement('div');
+        row.className = 'summary-item' + (item.done ? ' done' : '');
+
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = !!item.done;
+        cb.disabled = !EDIT_MODE;
+        cb.addEventListener('click', function(e){ e.stopPropagation(); });
+        cb.addEventListener('change', function(){
+          item.done = cb.checked;
+          row.className = 'summary-item' + (item.done ? ' done' : '');
+          saveState();
+        });
+        row.appendChild(cb);
+
+        var btn = document.createElement('button');
+        btn.className = 'summary-task-btn';
+        btn.textContent = item.text;
+        btn.title = item.text;
+        btn.addEventListener('click', function(){
+          goToTask(dayIdx, taskIdx);
+        });
+        row.appendChild(btn);
+
+        tasksSec.appendChild(row);
+      });
+    }
+    card.appendChild(tasksSec);
+
+    var buffsSec = document.createElement('div');
+    buffsSec.className = 'summary-section';
+    buffsSec.innerHTML = '<div class="summary-col-title buffs">Buffs</div>';
+    if(!dayData.buffs.length){
+      var e2 = document.createElement('div');
+      e2.className = 'summary-empty';
+      e2.textContent = 'None scheduled.';
+      buffsSec.appendChild(e2);
+    } else {
+      dayData.buffs.forEach(function(item){
+        var p = document.createElement('div');
+        p.className = 'summary-plain';
+        p.textContent = item.text;
+        p.title = item.text;
+        buffsSec.appendChild(p);
+      });
+    }
+    card.appendChild(buffsSec);
+
+    var minSec = document.createElement('div');
+    minSec.className = 'summary-section';
+    minSec.innerHTML = '<div class="summary-col-title ministers">Ministers</div>';
+    if(!dayData.ministers.length){
+      var e3 = document.createElement('div');
+      e3.className = 'summary-empty';
+      e3.textContent = 'None open.';
+      minSec.appendChild(e3);
+    } else {
+      dayData.ministers.forEach(function(item){
+        var p = document.createElement('div');
+        p.className = 'summary-plain';
+        p.textContent = item.text;
+        p.title = item.text;
+        minSec.appendChild(p);
+      });
+    }
+    card.appendChild(minSec);
+
+    var missionsSec = document.createElement('div');
+    missionsSec.className = 'summary-section';
+    missionsSec.innerHTML = '<div class="summary-col-title missions">Missions</div>';
+    var bestTasks = dayData.scoring.filter(function(s){ return s.rating === 'best'; });
+    if(!bestTasks.length){
+      var e4 = document.createElement('div');
+      e4.className = 'summary-empty';
+      e4.textContent = 'None marked yet.';
+      missionsSec.appendChild(e4);
+    } else {
+      bestTasks.forEach(function(item){
+        var row = document.createElement('div');
+        row.className = 'summary-mission';
+        var dot = document.createElement('div');
+        dot.className = 'mdot';
+        row.appendChild(dot);
+        var t = document.createElement('div');
+        t.className = 'mtext';
+        t.textContent = item.text;
+        t.title = item.text;
+        row.appendChild(t);
+        missionsSec.appendChild(row);
+      });
+    }
+    card.appendChild(missionsSec);
+
+    container.appendChild(card);
+  });
+}
+
+function renderCurrentView(){
+  renderStrip();
+  var summaryVisible = document.getElementById('summaryView').style.display !== 'none';
+  if(summaryVisible){ renderSummary(); } else { renderPanel(); }
+}
+
+function init(){
+  applyEditModeUI();
+  tickClocks();
+  setInterval(tickClocks, 1000);
+
+  if(!dbRef){
+    state = defaultState();
+    kingdomInput.value = state.kingdomName || "1884 War Room";
+    renderCurrentView();
+    flag("no database connected — edits won't save");
+    return;
+  }
+
+  dbRef.on('value', function(snap){
+    var val = snap.val();
+    state = val ? migrateState(val) : defaultState();
+    kingdomInput.value = state.kingdomName || "1884 War Room";
+    renderCurrentView();
+  }, function(){
+    state = defaultState();
+    kingdomInput.value = state.kingdomName || "1884 War Room";
+    renderCurrentView();
+    flag("connection error — showing local defaults");
+  });
+}
+
+init();
+
+})();
+</script>
+</body>
+</html>
