@@ -171,7 +171,7 @@
   .day-chip.today::after{content:'today';font-size:8.5px;color:var(--teal);letter-spacing:0.06em;text-transform:uppercase;}
 
   .cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
-  @media (max-width:760px){.cols{grid-template-columns:1fr;} .clocks{grid-template-columns:1fr;}}
+  @media (max-width:760px){.cols{grid-template-columns:1fr;}}
 
   .scoring-panel{margin-top:14px;}
   .panel.scoring .panel-icn{background:rgba(232,163,61,0.14);color:var(--amber);}
@@ -449,6 +449,83 @@
   @keyframes flashglow{
     0%{background:rgba(79,209,197,0.22);}
     100%{background:transparent;}
+  }
+
+  /* ================================================================
+     TOUCH DEVICES — controls that only appear on hover are invisible
+     and unreachable on phones/tablets. Force them visible whenever the
+     device has no real hover capability, regardless of screen width.
+  ================================================================= */
+  @media (hover: none){
+    .del-btn, .move-btn, .rating-group, .ms-del{ opacity:1 !important; }
+    .item-row input[type=checkbox], .summary-item input[type=checkbox]{ width:19px; height:19px; }
+    .day-chip, .view-btn, .ms-tab, .filter-chip, .lock-btn, .ms-btn, .reset-btn{ -webkit-tap-highlight-color:transparent; }
+  }
+
+  /* ================================================================
+     NARROW VIEWPORTS
+  ================================================================= */
+  @media (max-width:640px){
+    .board{ padding:18px 14px 28px; border-radius:0; }
+    .eyebrow{ font-size:9.5px; }
+    h1{ font-size:24px; }
+    .header-row{ flex-wrap:wrap; gap:10px; }
+    .header-row h1{ flex:1 1 100%; }
+    .lock-btn{ font-size:11px; padding:6px 12px; }
+    .sub{ font-size:12px; margin-bottom:16px; }
+
+    .clocks{ gap:8px; margin-bottom:18px; }
+    .clock{ padding:10px 8px; }
+    .clock-label{ font-size:8px; flex-wrap:wrap; gap:3px; margin-bottom:6px; }
+    .clock-time{ font-size:16px; gap:5px; flex-wrap:wrap; row-gap:2px; }
+    .clock-time .unit{ font-size:6.5px; }
+    .clock-sub{ font-size:10px; margin-top:5px; }
+
+    .strip{ grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; }
+    .day-chip{ padding:8px 6px 7px; }
+    .day-chip .dow{ font-size:9px; }
+    .day-chip .dnum{ font-size:16px; }
+    .day-chip .phase{ font-size:8.5px; }
+
+    .cols{ gap:10px; }
+    .panel{ padding:14px 12px 10px; }
+    .panel-title{ font-size:14px; }
+
+    .view-toggle{ gap:5px; }
+    .view-btn{ font-size:11px; padding:6px 12px; flex:1; text-align:center; }
+
+    .item-text, .item-notes{ font-size:14px; }
+    .score-text{ font-size:13px; }
+    .score-points{ width:52px; font-size:11px; }
+    .scoring-filters{ gap:5px; }
+    .filter-chip{ font-size:10px; padding:5px 8px; }
+
+    /* Summary: force-fit 8 columns becomes unreadable on a phone —
+       switch to a horizontally scrollable strip of comfortably-sized
+       cards instead, so text stays legible. Swipe to see other days. */
+    .summary-grid{
+      grid-template-columns:none;
+      grid-auto-flow:column;
+      grid-auto-columns:150px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scroll-snap-type:x proximity;
+      padding-bottom:6px;
+    }
+    .summary-day{ scroll-snap-align:start; }
+    .summary-note{ font-size:11px; }
+
+    /* Minister scheduler: fixed pixel columns need to shrink hard */
+    .ms-csv-cols{ font-size:9px; }
+    .ms-csv-zone{ padding:12px; }
+    .ms-tab{ font-size:10.5px; padding:5px 10px; }
+    .ms-stat-v{ font-size:14px; }
+    .ms-stat-l{ font-size:8px; }
+    .ms-list{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .ms-row, .ms-head-row{ font-size:11px; padding:6px 8px; gap:6px; min-width:400px; }
+    .ms-time{ font-size:10px; }
+    .ms-actions{ flex-wrap:wrap; }
+    .ms-btn{ font-size:10.5px; padding:6px 10px; flex:1 1 auto; }
   }
 </style>
 </head>
