@@ -1,4 +1,4 @@
- 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -175,6 +175,20 @@
   @media (max-width:760px){.cols{grid-template-columns:1fr;}}
 
   .scoring-panel{margin-top:14px;}
+  .scoring-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
+  @media (max-width:900px){.scoring-cols{grid-template-columns:1fr;}}
+  .tomorrow-panel{}
+  .tomorrow-panel .panel-icn{background:rgba(155,140,240,0.14);color:var(--violet);}
+  .tomorrow-empty{font-size:12.5px;color:var(--text-dim);padding:6px 4px;}
+  .tomorrow-row{
+    display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--line);
+  }
+  .tomorrow-row:last-child{border-bottom:none;}
+  .tomorrow-row .rating-indicator{margin:0;}
+  .tomorrow-row .tomorrow-text{
+    flex:1;font-size:12.5px;line-height:1.4;color:var(--text-mid);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
   .panel.scoring .panel-icn{background:rgba(232,163,61,0.14);color:var(--amber);}
   .scoring-grid{display:grid;grid-template-columns:1fr;}
   .score-row{
@@ -341,14 +355,24 @@
   .panel.buffs .bullet{background:var(--amber-dim);color:var(--amber);}
   .panel.ministers .bullet{background:var(--violet-dim);color:var(--violet);}
 
-  .cat-tag{
-    flex:0 0 auto;margin-top:2px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;
-    padding:2px 7px;border-radius:999px;border:1px solid currentColor;background:transparent;cursor:pointer;
-    letter-spacing:0.02em;white-space:nowrap;line-height:1.4;
+  .task-meta-row{
+    display:flex;align-items:center;gap:8px;padding:4px 4px 2px 24px;
   }
-  .cat-tag.empty{opacity:0;color:var(--text-dim);border-color:var(--glass-border);font-size:11px;padding:1px 6px;}
-  .item-row:hover .cat-tag.empty{opacity:1;}
-  .cat-tag:disabled{cursor:default;}
+  .task-subject{
+    flex:1;min-width:0;background:transparent;border:none;border-bottom:1px dashed transparent;
+    color:var(--text-mid);font-family:'Inter',sans-serif;font-size:12px;font-style:italic;
+    padding:2px 0;outline:none;
+  }
+  .task-subject:hover, .task-subject:focus{border-bottom-color:var(--glass-border);}
+  .task-subject[readonly]{cursor:default;}
+  .task-subject::placeholder{color:var(--text-dim);}
+  .task-cat-select{
+    flex:0 0 auto;background:transparent;border:1px solid var(--glass-border);border-radius:8px;
+    color:var(--text-mid);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
+    padding:3px 6px;outline:none;cursor:pointer;max-width:110px;
+  }
+  .task-cat-select:disabled{cursor:default;opacity:0.85;-webkit-appearance:none;appearance:none;border-color:transparent;padding-left:0;}
+  .task-cat-select option{background:var(--bg-1);color:var(--text-hi);}
   .del-btn{
     opacity:0;flex:0 0 auto;background:transparent;border:none;color:var(--text-dim);
     cursor:pointer;font-size:14px;padding:0 2px;line-height:1;
@@ -473,7 +497,7 @@
      device has no real hover capability, regardless of screen width.
   ================================================================= */
   @media (hover: none){
-    .del-btn, .move-btn, .rating-group, .ms-del, .cat-tag.empty{ opacity:1 !important; }
+    .del-btn, .move-btn, .rating-group, .ms-del{ opacity:1 !important; }
     .item-row input[type=checkbox], .summary-item input[type=checkbox]{ width:19px; height:19px; }
     .day-chip, .view-btn, .ms-tab, .filter-chip, .lock-btn, .ms-btn, .reset-btn{ -webkit-tap-highlight-color:transparent; }
   }
@@ -595,11 +619,18 @@
       </div>
     </div>
 
-    <div class="panel scoring scoring-panel">
-      <div class="panel-head"><div class="panel-icn">pt</div><div class="panel-title">Scoring tasks &amp; point values</div></div>
-      <div class="scoring-filters" id="scoringFilters"></div>
-      <div class="scoring-grid" id="scoringList"></div>
-      <div class="add-row" data-add="scoring"><span class="plus">+</span>Add scoring task</div>
+    <div class="scoring-cols">
+      <div class="panel scoring scoring-panel">
+        <div class="panel-head"><div class="panel-icn">pt</div><div class="panel-title">Scoring tasks &amp; point values</div></div>
+        <div class="scoring-filters" id="scoringFilters"></div>
+        <div class="scoring-grid" id="scoringList"></div>
+        <div class="add-row" data-add="scoring"><span class="plus">+</span>Add scoring task</div>
+      </div>
+
+      <div class="panel tomorrow-panel">
+        <div class="panel-head"><div class="panel-icn">&#8594;</div><div class="panel-title" id="tomorrowTitle">Tomorrow's tasks</div></div>
+        <div class="scoring-grid" id="tomorrowList"></div>
+      </div>
     </div>
 
     <div class="panel ms-panel" id="msPanel" style="display:none;"></div>
@@ -803,7 +834,7 @@ function defaultState(){
   DAYS.forEach(function(d){
     s.days[d.date] = {
       focus: d.focus,
-      tasks: d.tasks.map(function(t){ return {text:t, done:false, notes:"", category:null}; }),
+      tasks: d.tasks.map(function(t){ return {text:t, done:false, notes:"", category:null, subject:""}; }),
       buffs: d.buffs.map(function(t){ return {text:t}; }),
       ministers: d.ministers.map(function(t){ return {text:t}; }),
       scoring: d.scoring.map(function(pair){ return {text:pair[0], points:pair[1], rating:null}; })
@@ -824,6 +855,7 @@ function migrateState(parsed){
       dd.tasks.forEach(function(t){
         if(typeof t.notes !== 'string') t.notes = "";
         if(typeof t.category === 'undefined') t.category = null;
+        if(typeof t.subject !== 'string') t.subject = "";
       });
     }
     if(dd && !Array.isArray(dd.scoring)){
@@ -933,29 +965,6 @@ function makeItemRow(listKind, idx, item, checkable){
     row.appendChild(b);
   }
 
-  if(checkable){
-    var catKey = item.category || null;
-    var catMeta = catKey ? TASK_CATEGORIES[catKey] : null;
-    if(catMeta || EDIT_MODE){
-      var catTag = document.createElement('button');
-      catTag.className = 'cat-tag' + (catMeta ? '' : ' empty');
-      catTag.textContent = catMeta ? catMeta.label : '+';
-      catTag.setAttribute('aria-label', 'Task category');
-      if(catMeta) catTag.style.color = catMeta.color;
-      if(catMeta) catTag.style.borderColor = catMeta.color;
-      if(!EDIT_MODE) catTag.disabled = true;
-      catTag.addEventListener('click', function(){
-        if(!EDIT_MODE) return;
-        var curIdx = TASK_CATEGORY_CYCLE.indexOf(item.category || null);
-        var nextIdx = (curIdx + 1) % TASK_CATEGORY_CYCLE.length;
-        item.category = TASK_CATEGORY_CYCLE[nextIdx];
-        saveState();
-        renderPanel();
-      });
-      row.appendChild(catTag);
-    }
-  }
-
   var ta = document.createElement('textarea');
   ta.className = 'item-text';
   ta.value = item.text;
@@ -1027,6 +1036,51 @@ function makeItemRow(listKind, idx, item, checkable){
   wrapper.className = 'item-wrapper';
   wrapper.appendChild(row);
 
+  var hasSubject = item.subject && item.subject.trim();
+  var hasCategory = item.category && TASK_CATEGORIES[item.category];
+  if(EDIT_MODE || hasSubject || hasCategory){
+    var metaRow = document.createElement('div');
+    metaRow.className = 'task-meta-row';
+
+    var subjInput = document.createElement('input');
+    subjInput.type = 'text';
+    subjInput.className = 'task-subject';
+    subjInput.value = item.subject || '';
+    subjInput.placeholder = 'Subject line (optional)';
+    subjInput.readOnly = !EDIT_MODE;
+    subjInput.addEventListener('blur', function(){
+      if(!EDIT_MODE) return;
+      item.subject = subjInput.value;
+      saveState();
+    });
+    metaRow.appendChild(subjInput);
+
+    var catSelect = document.createElement('select');
+    catSelect.className = 'task-cat-select';
+    var noneOpt = document.createElement('option');
+    noneOpt.value = '';
+    noneOpt.textContent = 'No category';
+    catSelect.appendChild(noneOpt);
+    Object.keys(TASK_CATEGORIES).forEach(function(key){
+      var opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = TASK_CATEGORIES[key].label;
+      if(item.category === key) opt.selected = true;
+      catSelect.appendChild(opt);
+    });
+    if(hasCategory) catSelect.style.color = TASK_CATEGORIES[item.category].color;
+    catSelect.disabled = !EDIT_MODE;
+    catSelect.addEventListener('change', function(){
+      item.category = catSelect.value || null;
+      catSelect.style.color = item.category ? TASK_CATEGORIES[item.category].color : '';
+      saveState();
+    });
+    metaRow.appendChild(catSelect);
+
+    if(!EDIT_MODE && !hasSubject) subjInput.style.display = 'none';
+    wrapper.insertBefore(metaRow, row);
+  }
+
   var toggle = document.createElement('button');
   toggle.className = 'expand-btn' + ((item.notes && item.notes.trim()) ? ' has-notes' : '');
   toggle.textContent = 'Content';
@@ -1086,6 +1140,7 @@ function renderPanel(){
   renderList('ministersList', 'ministers', false);
   renderScoringFilters();
   renderScoring();
+  renderTomorrowTasks();
   renderMsPanel();
 }
 
@@ -1154,21 +1209,6 @@ function renderScoring(){
     ta.addEventListener('blur', function(){ if(!EDIT_MODE) return; item.text = ta.value; saveState(); });
     row.appendChild(ta);
 
-    var pts = document.createElement('input');
-    pts.className = 'score-points';
-    pts.type = 'text';
-    pts.inputMode = 'numeric';
-    pts.readOnly = !EDIT_MODE;
-    pts.value = Number(item.points).toLocaleString();
-    pts.addEventListener('blur', function(){
-      if(!EDIT_MODE) return;
-      var n = parseInt(pts.value.replace(/[^0-9-]/g,''), 10);
-      item.points = isNaN(n) ? 0 : n;
-      pts.value = item.points.toLocaleString();
-      saveState();
-    });
-    row.appendChild(pts);
-
     if(EDIT_MODE){
       var ratingGroup = document.createElement('div');
       ratingGroup.className = 'rating-group';
@@ -1204,6 +1244,47 @@ function renderScoring(){
   });
 }
 
+function renderTomorrowTasks(){
+  var titleEl = document.getElementById('tomorrowTitle');
+  var container = document.getElementById('tomorrowList');
+  if(!titleEl || !container) return;
+
+  var nextIdx = selectedIdx + 1;
+  container.innerHTML = "";
+
+  if(nextIdx >= DAYS.length){
+    titleEl.textContent = "Tomorrow's tasks";
+    container.innerHTML = '<div class="tomorrow-empty">This is the last day — nothing to preview.</div>';
+    return;
+  }
+
+  var nextDay = DAYS[nextIdx];
+  titleEl.textContent = "Tomorrow \u2014 " + nextDay.phase;
+
+  var nextDayData = state.days[nextDay.date];
+  if(!nextDayData || !nextDayData.scoring.length){
+    container.innerHTML = '<div class="tomorrow-empty">No scoring tasks for tomorrow.</div>';
+    return;
+  }
+
+  nextDayData.scoring.forEach(function(item){
+    var row = document.createElement('div');
+    row.className = 'tomorrow-row';
+
+    var indicator = document.createElement('div');
+    indicator.className = 'rating-indicator' + (item.rating ? ' ' + item.rating : '');
+    row.appendChild(indicator);
+
+    var text = document.createElement('div');
+    text.className = 'tomorrow-text';
+    text.textContent = item.text;
+    text.title = item.text;
+    row.appendChild(text);
+
+    container.appendChild(row);
+  });
+}
+
 function addItem(listKind){
   var dayData = state.days[DAYS[selectedIdx].date];
   if(listKind === 'scoring'){
@@ -1212,7 +1293,7 @@ function addItem(listKind){
     renderScoring();
     return;
   }
-  var newItem = listKind==='tasks' ? {text:'New task', done:false, notes:''} : {text: listKind==='buffs' ? 'New buff' : 'New appointment'};
+  var newItem = listKind==='tasks' ? {text:'New task', done:false, notes:'', category:null, subject:''} : {text: listKind==='buffs' ? 'New buff' : 'New appointment'};
   dayData[listKind].push(newItem);
   saveState();
   renderPanel();
@@ -1335,22 +1416,12 @@ function renderSummary(){
         var row = document.createElement('div');
         row.className = 'summary-item' + (item.done ? ' done' : '');
 
-        var cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.checked = !!item.done;
-        cb.disabled = !EDIT_MODE;
-        cb.addEventListener('click', function(e){ e.stopPropagation(); });
-        cb.addEventListener('change', function(){
-          item.done = cb.checked;
-          row.className = 'summary-item' + (item.done ? ' done' : '');
-          saveState();
-        });
-        row.appendChild(cb);
+        var displayText = (item.subject && item.subject.trim()) ? item.subject : item.text;
 
         var btn = document.createElement('button');
         btn.className = 'summary-task-btn';
-        btn.textContent = item.text;
-        btn.title = item.text;
+        btn.textContent = displayText;
+        btn.title = displayText;
         btn.addEventListener('click', function(){
           goToTask(dayIdx, taskIdx);
         });
