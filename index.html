@@ -522,15 +522,16 @@
     .summary-day{ scroll-snap-align:start; }
     .summary-note{ font-size:11px; }
 
-    /* Minister scheduler: fixed pixel columns need to shrink hard */
+    /* Minister scheduler: columns now generated narrower by JS (msColsFor),
+       so just tighten spacing/fonts rather than allowing horizontal scroll */
     .ms-csv-cols{ font-size:9px; }
     .ms-csv-zone{ padding:12px; }
     .ms-tab{ font-size:10.5px; padding:5px 10px; }
     .ms-stat-v{ font-size:14px; }
     .ms-stat-l{ font-size:8px; }
-    .ms-list{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .ms-row, .ms-head-row{ font-size:11px; padding:6px 8px; gap:6px; min-width:400px; }
-    .ms-time{ font-size:10px; }
+    .ms-row, .ms-head-row{ font-size:9.5px; padding:5px 4px; gap:3px; }
+    .ms-time{ font-size:9px; }
+    .ms-val, .ms-pts{ font-size:9.5px; }
     .ms-actions{ flex-wrap:wrap; }
     .ms-btn{ font-size:10.5px; padding:6px 10px; flex:1 1 auto; }
   }
@@ -1419,6 +1420,7 @@ var MS_CSV_COLS = {
 
 function msMinToTime(m){ var h = Math.floor(m/60)%24, mm = m%60; return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0'); }
 function msSlotLabel(i){ return msMinToTime(i*30) + '\u2013' + (i<47 ? msMinToTime((i+1)*30) : '00:00'); }
+function msSlotLabelShort(i){ return msMinToTime(i*30); }
 function msCsvTM(v){
   if(!v || !v.trim()) return null;
   var p = v.trim().split(':');
@@ -1511,20 +1513,30 @@ function msFieldsFor(key){
   return ['t9','t10','t11','sp'];
 }
 
+function msIsNarrow(){ return window.innerWidth <= 640; }
+
 function msColsFor(key){
-  if(key === 'd1') return [
+  var narrow = msIsNarrow();
+  if(key === 'd1') return narrow ? [
+    {h:'Time', w:'48px'}, {h:'Player', w:'1fr'}, {h:'TG', w:'34px'}, {h:'Sp', w:'34px'}, {h:'Pts', w:'42px'}
+  ] : [
     {h:'Time', w:'70px'}, {h:'Player', w:'1fr'}, {h:'TG', w:'54px'}, {h:'Speedups', w:'64px'}, {h:'Points', w:'64px'}
   ];
-  if(key === 'd2') return [
+  if(key === 'd2') return narrow ? [
+    {h:'Time', w:'48px'}, {h:'Player', w:'1fr'}, {h:'Sp', w:'34px'}, {h:'Dust', w:'34px'}, {h:'Pts', w:'42px'}
+  ] : [
     {h:'Time', w:'70px'}, {h:'Player', w:'1fr'}, {h:'Speedups', w:'64px'}, {h:'TG Dust', w:'56px'}, {h:'Points', w:'64px'}
   ];
-  return [
+  return narrow ? [
+    {h:'Time', w:'44px'}, {h:'Player', w:'1fr'}, {h:'T9', w:'24px'}, {h:'T10', w:'24px'}, {h:'T11', w:'20px'}, {h:'Sp', w:'30px'}, {h:'Pts', w:'40px'}
+  ] : [
     {h:'Time', w:'70px'}, {h:'Player', w:'1fr'}, {h:'T9', w:'40px'}, {h:'T10', w:'40px'}, {h:'T11', w:'32px'}, {h:'Speedups', w:'58px'}, {h:'Points', w:'64px'}
   ];
 }
 
 function msGridStyle(key){
-  return msColsFor(key).map(function(c){ return c.w; }).join(' ') + (EDIT_MODE ? ' 22px' : '');
+  var delCol = EDIT_MODE ? (msIsNarrow() ? ' 18px' : ' 22px') : '';
+  return msColsFor(key).map(function(c){ return c.w; }).join(' ') + delCol;
 }
 
 function msRowValues(key, p){
@@ -1616,11 +1628,11 @@ function msRenderBody(key){
 
   var rows = '';
   for(var i=0; i<MS_SLOTS; i++){
-    var p = sc[i], t = msSlotLabel(i);
+    var p = sc[i], t = msIsNarrow() ? msSlotLabelShort(i) : msSlotLabel(i);
     if(p){
       if(f==='open' || f==='ns') continue;
       rows += msRowHtml(key, gridStyle, t, p, false);
-    } else if(f==='open'){
+    } else if(f==='all' || f==='open'){
       rows += '<div class="ms-row em" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
         cols.slice(2).map(function(){ return '<span></span>'; }).join('') +
@@ -1849,6 +1861,14 @@ function init(){
 }
 
 init();
+
+var msResizeTimer = null;
+window.addEventListener('resize', function(){
+  clearTimeout(msResizeTimer);
+  msResizeTimer = setTimeout(function(){
+    if(document.getElementById('dayView').style.display !== 'none') renderMsPanel();
+  }, 200);
+});
 
 })();
 </script>
