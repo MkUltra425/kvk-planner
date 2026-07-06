@@ -269,11 +269,11 @@
   .ms-stat-l{font-size:8.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);margin-top:1px;}
 
   .ms-head-row{
-    display:grid;gap:6px;padding:5px 8px;font-size:9px;font-weight:600;letter-spacing:0.05em;
+    display:grid;gap:10px;padding:5px 8px;font-size:9px;font-weight:600;letter-spacing:0.05em;
     text-transform:uppercase;color:var(--text-dim);border-bottom:1px solid var(--line);
   }
   .ms-row{
-    display:grid;gap:6px;align-items:center;padding:4px 8px;border-bottom:1px solid var(--line);font-size:11px;
+    display:grid;gap:10px;align-items:center;padding:4px 8px;border-bottom:1px solid var(--line);font-size:11px;
   }
   .ms-row:last-child{border-bottom:none;}
   .ms-row.em{opacity:0.45;}
@@ -529,7 +529,7 @@
     .ms-tab{ font-size:10.5px; padding:5px 10px; }
     .ms-stat-v{ font-size:14px; }
     .ms-stat-l{ font-size:8px; }
-    .ms-row, .ms-head-row{ font-size:9.5px; padding:5px 4px; gap:3px; }
+    .ms-row, .ms-head-row{ font-size:9.5px; padding:5px 4px; gap:4px; }
     .ms-time{ font-size:9px; }
     .ms-val, .ms-pts{ font-size:9.5px; }
     .ms-actions{ flex-wrap:wrap; }
@@ -1517,20 +1517,21 @@ function msIsNarrow(){ return window.innerWidth <= 640; }
 
 function msColsFor(key){
   var narrow = msIsNarrow();
+  var playerW = narrow ? '72px' : '150px';
   if(key === 'd1') return narrow ? [
-    {h:'Time', w:'48px'}, {h:'Player', w:'1fr'}, {h:'TG', w:'34px'}, {h:'Sp', w:'34px'}, {h:'Pts', w:'42px'}
+    {h:'Time', w:'40px'}, {h:'Player', w:playerW}, {h:'TG', w:'32px'}, {h:'Sp', w:'32px'}, {h:'Pts', w:'40px'}, {h:'', w:'1fr'}
   ] : [
-    {h:'Time', w:'70px'}, {h:'Player', w:'1fr'}, {h:'TG', w:'54px'}, {h:'Speedups', w:'64px'}, {h:'Points', w:'64px'}
+    {h:'Time', w:'70px'}, {h:'Player', w:playerW}, {h:'TG', w:'56px'}, {h:'Speedups', w:'68px'}, {h:'Points', w:'68px'}, {h:'', w:'1fr'}
   ];
   if(key === 'd2') return narrow ? [
-    {h:'Time', w:'48px'}, {h:'Player', w:'1fr'}, {h:'Sp', w:'34px'}, {h:'Dust', w:'34px'}, {h:'Pts', w:'42px'}
+    {h:'Time', w:'40px'}, {h:'Player', w:playerW}, {h:'Sp', w:'32px'}, {h:'Dust', w:'32px'}, {h:'Pts', w:'40px'}, {h:'', w:'1fr'}
   ] : [
-    {h:'Time', w:'70px'}, {h:'Player', w:'1fr'}, {h:'Speedups', w:'64px'}, {h:'TG Dust', w:'56px'}, {h:'Points', w:'64px'}
+    {h:'Time', w:'70px'}, {h:'Player', w:playerW}, {h:'Speedups', w:'68px'}, {h:'TG Dust', w:'60px'}, {h:'Points', w:'68px'}, {h:'', w:'1fr'}
   ];
   return narrow ? [
-    {h:'Time', w:'44px'}, {h:'Player', w:'1fr'}, {h:'T9', w:'24px'}, {h:'T10', w:'24px'}, {h:'T11', w:'20px'}, {h:'Sp', w:'30px'}, {h:'Pts', w:'40px'}
+    {h:'Time', w:'38px'}, {h:'Player', w:playerW}, {h:'T9', w:'22px'}, {h:'T10', w:'22px'}, {h:'T11', w:'18px'}, {h:'Sp', w:'28px'}, {h:'Pts', w:'38px'}, {h:'', w:'1fr'}
   ] : [
-    {h:'Time', w:'70px'}, {h:'Player', w:'1fr'}, {h:'T9', w:'40px'}, {h:'T10', w:'40px'}, {h:'T11', w:'32px'}, {h:'Speedups', w:'58px'}, {h:'Points', w:'64px'}
+    {h:'Time', w:'70px'}, {h:'Player', w:playerW}, {h:'T9', w:'42px'}, {h:'T10', w:'42px'}, {h:'T11', w:'34px'}, {h:'Speedups', w:'62px'}, {h:'Points', w:'68px'}, {h:'', w:'1fr'}
   ];
 }
 
@@ -1724,6 +1725,7 @@ function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot){
     '<span class="ms-name">' + msEsc(p.name) + (p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '') + '</span>';
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
   cellsHtml += '<span class="ms-pts">' + msFmtPts(p.pts) + '</span>';
+  cellsHtml += '<span></span>';
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '" data-carried="' + (p.carried ? '1' : '0') + '">\u00d7</button>';
   }
