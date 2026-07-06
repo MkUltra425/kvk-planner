@@ -95,6 +95,7 @@
 
   .header-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:6px;}
   .header-row h1{margin:0;flex:1;min-width:0;}
+  .lock-btn-group{display:flex;gap:8px;flex:0 0 auto;}
   .lock-btn{
     flex:0 0 auto;display:flex;align-items:center;gap:7px;
     background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
@@ -141,8 +142,8 @@
 
   .strip{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(84px, 1fr));
-    gap:8px;
+    grid-template-columns:repeat(8, minmax(0, 1fr));
+    gap:10px;
     margin-bottom:22px;
   }
   .day-chip{
@@ -324,6 +325,8 @@
   .panel-icn{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex:0 0 auto;}
   .panel-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;letter-spacing:0.01em;}
   .panel.tasks .panel-icn{background:var(--teal-dim);color:var(--teal);}
+  .panel.tasks.r5-hidden{display:none;}
+  .cols.r5-hidden{grid-template-columns:1fr 1fr;}
   .panel.buffs .panel-icn{background:var(--amber-dim);color:var(--amber);}
   .panel.ministers .panel-icn{background:var(--violet-dim);color:var(--violet);}
 
@@ -431,7 +434,16 @@
 
   .summary-note{font-size:12.5px;color:var(--text-dim);margin-bottom:16px;line-height:1.5;}
   .summary-scroll{overflow:visible;}
-  .summary-grid{display:grid;grid-template-columns:repeat(8, minmax(0, 1fr));gap:10px;}
+  .summary-grid{display:flex;flex-direction:column;gap:16px;}
+  .summary-group{display:flex;flex-direction:column;gap:8px;}
+  .summary-group-label{
+    font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.1em;
+    text-transform:uppercase;color:var(--text-dim);padding-left:2px;
+  }
+  .summary-group.group-preprep .summary-group-label{color:var(--violet);}
+  .summary-group.group-prep .summary-group-label{color:var(--teal);}
+  .summary-group.group-battle .summary-group-label{color:var(--crimson);}
+  .summary-group-row{display:flex;flex-direction:column;gap:10px;}
   .summary-day{
     background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;
     padding:14px;
@@ -540,19 +552,6 @@
     .scoring-filters{ gap:5px; }
     .filter-chip{ font-size:10px; padding:5px 8px; }
 
-    /* Summary: force-fit 8 columns becomes unreadable on a phone —
-       switch to a horizontally scrollable strip of comfortably-sized
-       cards instead, so text stays legible. Swipe to see other days. */
-    .summary-grid{
-      grid-template-columns:none;
-      grid-auto-flow:column;
-      grid-auto-columns:150px;
-      overflow-x:auto;
-      -webkit-overflow-scrolling:touch;
-      scroll-snap-type:x proximity;
-      padding-bottom:6px;
-    }
-    .summary-day{ scroll-snap-align:start; }
     .summary-note{ font-size:11px; }
 
     /* Minister scheduler: columns now generated narrower by JS (msColsFor),
@@ -576,7 +575,10 @@
   <div class="eyebrow"><span class="dot"></span>Alliance ops — kvk preparation</div>
   <div class="header-row">
     <h1><input class="kingdom-input" id="kingdomName" value="KvK War Room" spellcheck="false" readonly></h1>
-    <button class="lock-btn" id="lockBtn"><i class="lock-icn"></i>View only</button>
+    <div class="lock-btn-group">
+      <button class="lock-btn" id="r5Btn"><i class="lock-icn"></i>R5 access</button>
+      <button class="lock-btn" id="lockBtn"><i class="lock-icn"></i>View only</button>
+    </div>
   </div>
   <p class="sub">Daily R5 tasks, King's buffs, minister appointments and area of focus — Jul 11 – Jul 18, UTC</p>
 
@@ -601,8 +603,8 @@
   <div id="dayView">
     <div class="strip" id="dayStrip"></div>
 
-    <div class="cols">
-      <div class="panel tasks">
+    <div class="cols r5-hidden" id="colsRow">
+      <div class="panel tasks r5-hidden" id="tasksPanel">
         <div class="panel-head"><div class="panel-icn">R5</div><div class="panel-title">R5 tasks</div></div>
         <div id="tasksList"></div>
         <div class="add-row" data-add="tasks"><span class="plus">+</span>Add task</div>
@@ -821,8 +823,11 @@ function computeDefaultIdx(){
   }
   return 0;
 }
-var EDIT_MODE = false;
+var R5_VIEW_PASSPHRASE = "r5-view-2026";
 var EDIT_PASSPHRASE = "hammad";
+var R5_UNLOCKED = false;
+var EDIT_MODE = false;
+var CAN_VIEW_R5 = false;
 var dbRef = null;
 try{
   if(typeof firebase !== 'undefined') dbRef = firebase.database().ref(storageKey);
@@ -1329,26 +1334,58 @@ kingdomInput.addEventListener('blur', function(){
   saveState();
 });
 
+function applyAccess(){
+  CAN_VIEW_R5 = (R5_UNLOCKED || EDIT_MODE);
+
+  var tasksPanel = document.getElementById('tasksPanel');
+  if(tasksPanel) tasksPanel.classList.toggle('r5-hidden', !CAN_VIEW_R5);
+  var colsRow = document.getElementById('colsRow');
+  if(colsRow) colsRow.classList.toggle('r5-hidden', !CAN_VIEW_R5);
+
+  r5Btn.classList.toggle('unlocked', CAN_VIEW_R5);
+  r5Btn.innerHTML = '<span class="lock-icn"></span>' + (CAN_VIEW_R5 ? 'R5 view' : 'R5 access');
+
+  lockBtn.classList.toggle('unlocked', EDIT_MODE);
+  lockBtn.innerHTML = '<span class="lock-icn"></span>' + (EDIT_MODE ? 'Editing' : 'View only');
+  if(EDIT_MODE){ kingdomInput.removeAttribute('readonly'); } else { kingdomInput.setAttribute('readonly','readonly'); }
+
+  applyEditModeUI();
+  renderCurrentView();
+}
+
+var r5Btn = document.getElementById('r5Btn');
+r5Btn.addEventListener('click', function(){
+  if(EDIT_MODE){
+    window.alert('R5 tasks are already visible — you\'re in editing mode.');
+    return;
+  }
+  if(R5_UNLOCKED){
+    R5_UNLOCKED = false;
+    applyAccess();
+    return;
+  }
+  var entered = window.prompt('Enter the R5 view passphrase:');
+  if(entered === null) return;
+  if(entered === R5_VIEW_PASSPHRASE){
+    R5_UNLOCKED = true;
+    applyAccess();
+  } else {
+    window.alert('Incorrect passphrase.');
+  }
+});
+
 var lockBtn = document.getElementById('lockBtn');
 lockBtn.addEventListener('click', function(){
   if(EDIT_MODE){
     EDIT_MODE = false;
-    lockBtn.classList.remove('unlocked');
-    lockBtn.innerHTML = '<span class="lock-icn"></span>View only';
-    kingdomInput.setAttribute('readonly', 'readonly');
-    applyEditModeUI();
-    renderCurrentView();
+    applyAccess();
     return;
   }
-  var entered = window.prompt('Enter the R5 edit passphrase:');
+  var entered = window.prompt('Enter the edit passphrase:');
   if(entered === null) return;
   if(entered === EDIT_PASSPHRASE){
     EDIT_MODE = true;
-    lockBtn.classList.add('unlocked');
-    lockBtn.innerHTML = '<span class="lock-icn"></span>Editing';
-    kingdomInput.removeAttribute('readonly');
-    applyEditModeUI();
-    renderCurrentView();
+    applyAccess();
   } else {
     window.alert('Incorrect passphrase.');
   }
@@ -1385,12 +1422,32 @@ function goToTask(dateIdx, taskIdx){
   });
 }
 
+var SUMMARY_GROUP_LABELS = { preprep: 'Pre-prep', prep: 'KvK Preparation', battle: 'Battle phase' };
+var SUMMARY_GROUP_ORDER = ['preprep', 'prep', 'battle'];
+
 function renderSummary(){
   var container = document.getElementById('summaryDays');
   container.innerHTML = "";
   var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  DAYS.forEach(function(d, dayIdx){
+  SUMMARY_GROUP_ORDER.forEach(function(groupKey){
+    var idxsInGroup = [];
+    DAYS.forEach(function(d, i){ if(d.group === groupKey) idxsInGroup.push(i); });
+    if(!idxsInGroup.length) return;
+
+    var groupWrap = document.createElement('div');
+    groupWrap.className = 'summary-group group-' + groupKey;
+
+    var label = document.createElement('div');
+    label.className = 'summary-group-label';
+    label.textContent = SUMMARY_GROUP_LABELS[groupKey];
+    groupWrap.appendChild(label);
+
+    var row = document.createElement('div');
+    row.className = 'summary-group-row';
+
+  idxsInGroup.forEach(function(dayIdx){
+    var d = DAYS[dayIdx];
     var dayData = state.days[d.date];
     var dt = new Date(d.date + 'T00:00:00Z');
     var dateStr = d.dow + ' ' + monthNames[dt.getUTCMonth()] + ' ' + dt.getUTCDate();
@@ -1496,7 +1553,11 @@ function renderSummary(){
     }
     card.appendChild(missionsSec);
 
-    container.appendChild(card);
+    row.appendChild(card);
+  });
+
+    groupWrap.appendChild(row);
+    container.appendChild(groupWrap);
   });
 }
 
@@ -1978,6 +2039,7 @@ var msResizeTimer = null;
 window.addEventListener('resize', function(){
   clearTimeout(msResizeTimer);
   msResizeTimer = setTimeout(function(){
+    renderStrip();
     if(document.getElementById('dayView').style.display !== 'none') renderMsPanel();
   }, 200);
 });
