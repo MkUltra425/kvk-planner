@@ -28,6 +28,8 @@ const DAY_META = {
 const RATING_ICON = { best: "\uD83D\uDFE2", okay: "\uD83D\uDFE1", bad: "\uD83D\uDD34" };
 
 function todayUTC(){
+  const override = process.env.TEST_DATE;
+  if(override && override.trim()) return override.trim();
   const d = new Date();
   return d.getUTCFullYear() + "-" + String(d.getUTCMonth()+1).padStart(2,"0") + "-" + String(d.getUTCDate()).padStart(2,"0");
 }
