@@ -5,9 +5,12 @@ on:
     # Runs at 00:05 UTC every day. Change the two numbers below to adjust
     # the time: "MINUTE HOUR * * *" (24-hour, UTC).
     - cron: '5 0 * * *'
-  workflow_dispatch: {}
-  # ^ lets you trigger this manually from the Actions tab to test it,
-  # without waiting for the scheduled time.
+  workflow_dispatch:
+    inputs:
+      test_date:
+        description: 'Override date for testing (YYYY-MM-DD). Leave blank to use today.'
+        required: false
+        default: ''
 
 jobs:
   post:
@@ -24,4 +27,5 @@ jobs:
       - name: Post today's tasks to Discord
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TEST_DATE: ${{ github.event.inputs.test_date }}
         run: node scripts/post-daily-discord.js
