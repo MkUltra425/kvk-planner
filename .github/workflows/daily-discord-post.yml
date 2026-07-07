@@ -1,0 +1,27 @@
+name: Daily Discord Task Post
+
+on:
+  schedule:
+    # Runs at 00:05 UTC every day. Change the two numbers below to adjust
+    # the time: "MINUTE HOUR * * *" (24-hour, UTC).
+    - cron: '5 0 * * *'
+  workflow_dispatch: {}
+  # ^ lets you trigger this manually from the Actions tab to test it,
+  # without waiting for the scheduled time.
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Post today's tasks to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: node scripts/post-daily-discord.js
