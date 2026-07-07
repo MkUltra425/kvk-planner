@@ -143,14 +143,14 @@
   .strip{
     display:grid;
     grid-template-columns:repeat(8, minmax(0, 1fr));
-    gap:10px;
-    margin-bottom:22px;
+    gap:6px;
+    margin-bottom:16px;
   }
   .day-chip{
     background:var(--glass);
     border:1px solid var(--glass-border);
-    border-radius:10px;
-    padding:12px 14px 10px;
+    border-radius:8px;
+    padding:7px 6px 6px;
     cursor:pointer;
     text-align:center;
     transition:background 0.15s, border-color 0.15s;
@@ -166,16 +166,27 @@
   .day-chip.group-battle::before{background:var(--crimson);}
   .day-chip:hover{background:rgba(255,255,255,0.07);}
   .day-chip.active{border-color:var(--teal);background:rgba(79,209,197,0.10);}
-  .day-chip .dow{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;}
-  .day-chip .dnum{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:20px;margin:2px 0;color:var(--text-hi);}
-  .day-chip .phase{font-size:9.5px;color:var(--text-mid);}
+  .day-chip .dow{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;}
+  .day-chip .dnum{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;margin:1px 0;color:var(--text-hi);}
+  .day-chip .phase{font-size:8.5px;color:var(--text-mid);}
   .day-chip.today .dnum{color:var(--teal);}
   .day-chip.today::after{content:'today';font-size:8.5px;color:var(--teal);letter-spacing:0.06em;text-transform:uppercase;}
+
+  .day-summary-panel{margin-bottom:14px;}
+  .day-summary-panel .panel-icn{background:rgba(232,163,61,0.14);color:var(--amber);}
+  .day-summary-text{
+    width:100%;min-height:70px;background:transparent;border:none;outline:none;resize:none;
+    color:var(--text-hi);font-family:'Inter',sans-serif;font-size:13.5px;line-height:1.6;
+    padding:0;overflow:hidden;
+  }
+  .day-summary-text::placeholder{color:var(--text-dim);}
+  .day-summary-text[readonly]{cursor:default;}
+  .day-summary-panel.empty-readonly{display:none;}
 
   .cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
   @media (max-width:760px){.cols{grid-template-columns:1fr;}}
 
-  .scoring-panel{margin-top:14px;}
+  .scoring-panel{}
   .scoring-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
   @media (max-width:900px){.scoring-cols{grid-template-columns:1fr;}}
   .tomorrow-panel{}
@@ -534,7 +545,7 @@
     .clock-sub{ font-size:10px; margin-top:5px; }
 
     .strip{ grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; }
-    .day-chip{ padding:8px 6px 7px; }
+    .day-chip{ padding:6px 4px 5px; }
     .day-chip .dow{ font-size:9px; }
     .day-chip .dnum{ font-size:16px; }
     .day-chip .phase{ font-size:8.5px; }
@@ -603,6 +614,11 @@
 
   <div id="dayView">
     <div class="strip" id="dayStrip"></div>
+
+    <div class="panel day-summary-panel" id="daySummaryPanel">
+      <div class="panel-head"><div class="panel-icn">DS</div><div class="panel-title">Day summary</div></div>
+      <textarea class="day-summary-text" id="daySummaryText" placeholder="What to focus on today, tips to maximize your points, and what to prep for tomorrow..."></textarea>
+    </div>
 
     <div class="cols r5-hidden" id="colsRow">
       <div class="panel tasks r5-hidden" id="tasksPanel">
@@ -674,18 +690,51 @@ var TASK_CATEGORY_CYCLE = ['comms','roster','scheduling','tracking','battle', nu
 var DAYS = [
   { date:"2026-07-11", dow:"Sat", phase:"Pre-prep", group:"preprep",
     focus:"Roster lockdown",
+    summary: `FOCUS TODAY
+Lock the roster and trap-type groupings, confirm rally squad leads and alt lineups, and get the comms channel pinned with the full prep schedule.
+
+BUFFS TO ACTIVATE
+None yet. Don't activate Construction/Research/Training speed buffs early — you'll burn their duration before Day 1 (Monday) even starts.
+
+TIPS
+This is an organizing day, not a scoring day. Don't spend Truegold, speedups, or shards yet — everything you hold today is worth more tomorrow and Tuesday.
+
+PREP FOR TOMORROW / MONDAY
+Start holding your 08:00 and 16:00 UTC Watchtower Intel Missions today without claiming them. Completed missions stay on the map until you collect them, so every cycle you hold from today stacks toward Monday's 6,000-points-each payout.`,
     tasks:["Finalize alliance roster and trap-type groupings","Confirm rally squad leads and alt lineups","Publish pinned comms message with the prep schedule"],
     buffs:["None scheduled — hold buffs for prep start"],
     ministers:["Not yet open"],
     scoring:[] },
   { date:"2026-07-12", dow:"Sun", phase:"Pre-prep", group:"preprep",
     focus:"Final briefing and systems check",
+    summary: `FOCUS TODAY
+Final officer briefing, confirm the 5-alliance castle rotation order, and test rally coordination tooling end to end so there are no surprises Monday.
+
+BUFFS TO ACTIVATE
+Still hold everything. Wolf Pet skill, Double Time Decree, and Chief Minister buffs should NOT be activated yet — save their duration for the moment Construction Day actually starts.
+
+TIPS
+Last full day to stockpile before scoring begins. If you're sitting on Governor Charm materials or spare Truegold, hold them one more day.
+
+PREP FOR TOMORROW (Construction Day)
+Hold your 16:00 UTC Watchtower Intel Missions today without claiming — collect them right after the Monday 00:00 UTC reset for the points. Queue any Truegold building upgrades now so they're ready to complete the instant Day 1 opens.`,
     tasks:["Confirm 5-alliance castle rotation order with NAP5","Brief officers on the battle phase plan","Test rally coordination tooling end to end"],
     buffs:["Stage a construction speed buff for last-minute builds"],
     ministers:["Not yet open"],
     scoring:[] },
   { date:"2026-07-13", dow:"Mon", phase:"Construction", group:"prep",
     focus:"Construction push",
+    summary: `FOCUS TODAY
+Truegold building upgrades, Truegold Dust for tech research, construction/research/training speedups, and claiming every intel mission you've been holding.
+
+BUFFS TO ACTIVATE (do this FIRST, before spending anything)
+Wolf Pet skill ("Double Time" — Construction Speed boost), Double Time Decree, and the Chief Minister buff. Activating buffs before you spend means every subsequent Truegold/speedup counts for more — spending first wastes efficiency permanently.
+
+TIPS
+Watchtower Intel Missions are your best per-action value today at 6,000 points each — claim everything held from the weekend first. Truegold on a building upgrade is next-best. Batch big upgrades together rather than small ones so your time-limited buffs cover more value.
+
+PREP FOR TOMORROW (Research Day)
+Start holding 08:00/16:00 UTC intel missions again today. If you have spare Research speedups, hold them for tomorrow instead of using them now.`,
     tasks:["Post the kickoff announcement kingdom-wide","Open trap and rally sign-ups","Track the daily point leaderboard"],
     buffs:["Construction speed buff — schedule for peak online hours"],
     ministers:["Chancellor — construction focus"],
@@ -702,6 +751,17 @@ var DAYS = [
     ] },
   { date:"2026-07-14", dow:"Tue", phase:"Research", group:"prep",
     focus:"Research push",
+    summary: `FOCUS TODAY
+Research speedups, Truegold Dust, Hero Roulette spins, hero shard ascension, gathering (bread/wood/stone/iron), and Master Emblems/Manuscripts.
+
+BUFFS TO ACTIVATE
+Any Research Speed buff your kingdom has scheduled. Keep Chief Minister active if the appointment carries over from yesterday.
+
+TIPS
+Hero Roulette and shard ascension both score again today — if you've been saving shards for a specific day, this is one of the good ones. Gathering runs are solid filler for accounts with spare time chasing the 200,000-point daily chest.
+
+PREP FOR THURSDAY (Troop Training)
+If you're doing the Training Capacity Enhance "triple batch" trick, TODAY is your last safe window to activate it — see Wednesday's note for the exact deadline. Also start banking Advanced/Common Taming Marks for tomorrow's Pet Training day.`,
     tasks:["Monitor gathering and trap participation","Follow up with members who haven't logged points","Post a mid-prep progress update"],
     buffs:["Research speed buff — schedule for peak online hours"],
     ministers:["Duke — research focus"],
@@ -726,6 +786,17 @@ var DAYS = [
     ] },
   { date:"2026-07-15", dow:"Wed", phase:"Pet training", group:"prep",
     focus:"Training push",
+    summary: `FOCUS TODAY
+Pet Advancement score, Advanced/Common Taming Marks, Governor Gear Charms, Hero Roulette, hero shard ascension, and intel missions.
+
+BUFFS TO ACTIVATE
+No pet-specific buff exists, but keep any Chief Minister or kingdom-wide buff window running if your alliance has one scheduled.
+
+TIPS
+Advanced Taming Marks are worth 15,000 points each — one of the best conversion rates in the whole event for anyone who's been saving marks. This is the day that rewards patient F2P saving over whale spending.
+
+PREP FOR TOMORROW (Troop Training Day) — DEADLINE TODAY
+Activate "Training Capacity Enhance" (+200% Training Capacity, but training takes 200% longer) by no later than 12:00 UTC TODAY — that's 36+ hours before Thursday's 00:00 UTC reset. A +200% capacity boost gives you 300% of a normal batch, so queue a triple-sized training batch now across every training building. It'll complete right as Thursday begins — roughly 3x a normal batch with zero extra speedups spent.`,
     tasks:["Run the mid-week point check against targets","Assign rally squads for battle day","Confirm trap layout with castle map lead"],
     buffs:["Troop training speed buff — schedule for peak online hours"],
     ministers:["General — training focus"],
@@ -744,6 +815,17 @@ var DAYS = [
     ] },
   { date:"2026-07-16", dow:"Thu", phase:"Troop training", group:"prep",
     focus:"Combat readiness",
+    summary: `FOCUS TODAY
+Training/promoting T9–T11 troops, Hero Gear Forgehammers, Hero Exclusive Gear Widgets, Mithril if you have it, and gathering.
+
+BUFFS TO ACTIVATE
+Any Training Speed buff, plus today's Chief Minister/Noble Advisor appointment.
+
+TIPS
+If you set up Training Capacity Enhance yesterday, your triple batch should land right around the 00:00 UTC reset — collect immediately for a big score jump. Check promotions vs. fresh training before committing speedups; promoting one tier below your cap is usually more point-efficient than training from scratch.
+
+PREP FOR TOMORROW (Power Boost Day)
+Start holding intel missions again from tonight's cycles. If you're saving Mithril, today or tomorrow are the two days it's worth using — at 40,000 points per use, nothing else in the event comes close.`,
     tasks:["Finalize battle roster and trap layout","Run the battle-day briefing with officers","Confirm castle rotation slot and timing with NAP5"],
     buffs:["Attack buff — stage ahead of battle day"],
     ministers:["Marshal — attack focus"],
@@ -770,6 +852,17 @@ var DAYS = [
     ] },
   { date:"2026-07-17", dow:"Fri", phase:"Power boost", group:"prep",
     focus:"Final lockdown",
+    summary: `FOCUS TODAY
+Pet Advancement, Taming Marks, Mithril, Governor Gear, Truegold, every speedup type, intel missions, and gathering — everything is live today.
+
+BUFFS TO ACTIVATE
+Any Construction/Research/Training speed buffs you've been saving — this is the last prep day to use them before they go to waste.
+
+TIPS
+This is the finish line — spend what you've been holding back. If you paced yourself across the week instead of dumping everything Monday, today is where that discipline pays off. Hit 200,000 points if you can; it's your last prep-phase State Medal before the battle medal.
+
+PREP FOR TOMORROW (Battle Phase)
+Lock rally squad assignments and trap layout tonight. Confirm infirmaries are upgraded and alliance healing is ready — overflow during battle means permanently lost troops. Confirm your castle rotation slot/timing with the other 4 NAP alliances.`,
     tasks:["Last call for point gathering","Lock rally timers and countdowns","Distribute the battle-day schedule and callout doc"],
     buffs:["Defense buff — stage for battle morning"],
     ministers:["Governor — defense focus"],
@@ -796,6 +889,17 @@ var DAYS = [
     ] },
   { date:"2026-07-18", dow:"Sat", phase:"Battle phase", group:"battle",
     focus:"Castle assault — live coverage",
+    summary: `FOCUS TODAY
+Occupying the King's Castle and its turrets, killing enemy troops, holding turret control, and continuous healing.
+
+BUFFS TO ACTIVATE
+If your kingdom won prep, the State Bonus (+15% healing speed, +200% enlistment capacity) applies automatically — no manual activation needed, just use it aggressively all fight.
+
+TIPS
+Control turrets before pushing the castle — turret control stops enemy fire on your garrison and stacks a lethality bonus; all 4 turrets held = a "silent battlefield." Don't solo-march — join rallies and garrisons. Only fight enemies within ±3 TC levels of you, or the trade scores zero. Heal continuously 10:00–22:00 UTC rather than letting the infirmary overflow — overflow losses are permanent, even Field Triage can't bring them back.
+
+AFTER BATTLE
+Field Triage opens right after battle ends (~22:00 UTC) — request Alliance Rescue Orders immediately, the pool fills fast. Even from zero, you can recover up to 90% of losses within the 2-day recovery window.`,
     tasks:["Run live castle battle coordination and callouts","Host play-by-play commentary and prop bets","Run the post-battle debrief and MVP shoutouts"],
     buffs:["Rally attack and defense buffs — active through battle window"],
     ministers:["Appointments locked for battle phase"],
@@ -840,6 +944,7 @@ function defaultState(){
   DAYS.forEach(function(d){
     s.days[d.date] = {
       focus: d.focus,
+      summary: d.summary || "",
       tasks: d.tasks.map(function(t){ return {text:t, done:false, notes:"", category:null, subject:""}; }),
       buffs: d.buffs.map(function(t){ return {text:t}; }),
       ministers: d.ministers.map(function(t){ return {text:t}; }),
@@ -857,6 +962,7 @@ function migrateState(parsed){
   });
   Object.keys(parsed.days).forEach(function(dateKey){
     var dd = parsed.days[dateKey];
+    if(dd && typeof dd.summary !== 'string') dd.summary = "";
     if(dd && Array.isArray(dd.tasks)){
       dd.tasks.forEach(function(t){
         if(typeof t.notes !== 'string') t.notes = "";
@@ -1141,6 +1247,7 @@ function renderPanel(){
   var d = DAYS[selectedIdx];
   var dayData = state.days[d.date];
 
+  renderDaySummary();
   renderList('tasksList', 'tasks', true);
   renderList('buffsList', 'buffs', false);
   renderList('ministersList', 'ministers', false);
@@ -1148,6 +1255,26 @@ function renderPanel(){
   renderScoring();
   renderTomorrowTasks();
   renderMsPanel();
+}
+
+function renderDaySummary(){
+  var panel = document.getElementById('daySummaryPanel');
+  var textarea = document.getElementById('daySummaryText');
+  if(!panel || !textarea) return;
+
+  var dayData = state.days[DAYS[selectedIdx].date];
+  var summary = dayData.summary || "";
+
+  textarea.value = summary;
+  textarea.readOnly = !EDIT_MODE;
+
+  if(!EDIT_MODE && !summary.trim()){
+    panel.classList.add('empty-readonly');
+  } else {
+    panel.classList.remove('empty-readonly');
+  }
+
+  requestAnimationFrame(function(){ autosize(textarea); });
 }
 
 var scoringFilter = 'all';
@@ -1332,6 +1459,15 @@ var kingdomInput = document.getElementById('kingdomName');
 kingdomInput.addEventListener('blur', function(){
   if(!EDIT_MODE) return;
   state.kingdomName = kingdomInput.value;
+  saveState();
+});
+
+var daySummaryText = document.getElementById('daySummaryText');
+daySummaryText.addEventListener('input', function(){ autosize(daySummaryText); });
+daySummaryText.addEventListener('blur', function(){
+  if(!EDIT_MODE) return;
+  var dayData = state.days[DAYS[selectedIdx].date];
+  dayData.summary = daySummaryText.value;
   saveState();
 });
 
