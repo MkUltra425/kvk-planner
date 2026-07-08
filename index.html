@@ -95,7 +95,7 @@
 
   .header-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:6px;}
   .header-row h1{margin:0;flex:1;min-width:0;}
-  .lock-btn-group{display:flex;gap:8px;flex:0 0 auto;}
+  .lock-btn-group{display:flex;gap:8px;flex:0 0 auto;align-items:center;}
   .lock-btn{
     flex:0 0 auto;display:flex;align-items:center;gap:7px;
     background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
@@ -181,6 +181,10 @@
   }
   .day-summary-text::placeholder{color:var(--text-dim);}
   .day-summary-text[readonly]{cursor:default;}
+  .day-summary-static{
+    width:100%;color:var(--text-hi);font-family:'Inter',sans-serif;font-size:13.5px;
+    line-height:1.6;white-space:pre-wrap;word-break:break-word;
+  }
   .day-summary-panel.empty-readonly{display:none;}
 
   .cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
@@ -249,6 +253,7 @@
     flex:1;font-size:12.5px;line-height:1.4;color:var(--text-hi);
     background:transparent;border:none;outline:none;font-family:inherit;resize:none;padding:0;overflow:hidden;
   }
+  .score-text-static{white-space:pre-wrap;word-break:break-word;}
   .score-points{
     flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;
     color:var(--amber);background:transparent;border:none;outline:none;text-align:right;
@@ -364,6 +369,7 @@
     background:transparent;border:none;outline:none;font-family:inherit;
     resize:none;padding:0;overflow:hidden;display:block;
   }
+  .item-text-static{white-space:pre-wrap;word-break:break-word;}
   .item-row.done .item-text{color:var(--text-dim);text-decoration:line-through;}
   .bullet{width:16px;height:16px;border-radius:5px;flex:0 0 auto;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:9px;}
   .panel.buffs .bullet{background:var(--amber-dim);color:var(--amber);}
@@ -579,7 +585,32 @@
     .ms-actions{ flex-wrap:wrap; }
     .ms-btn{ font-size:10.5px; padding:6px 10px; flex:1 1 auto; }
   }
+  .translate-hint-btn{
+    flex:0 0 auto;display:flex;align-items:center;gap:6px;
+    background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:7px 12px;
+    border-radius:9px;cursor:pointer;
+  }
+  .translate-hint-btn:hover{border-color:var(--glass-hi);color:var(--text-hi);}
+  .translate-modal-backdrop{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;
+    align-items:center;justify-content:center;padding:20px;
+  }
+  .translate-modal-backdrop.open{display:flex;}
+  .translate-modal{
+    background:var(--bg-1);border:1px solid var(--glass-border);border-radius:14px;
+    padding:22px 24px;max-width:420px;width:100%;
+  }
+  .translate-modal h3{font-family:'Rajdhani',sans-serif;font-size:18px;margin:0 0 12px;color:var(--text-hi);}
+  .translate-modal p{font-size:13px;line-height:1.6;color:var(--text-mid);margin:0 0 10px;}
+  .translate-modal strong{color:var(--text-hi);}
+  .translate-modal-close{
+    margin-top:10px;background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
+    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:500;padding:7px 16px;
+    border-radius:9px;cursor:pointer;
+  }
 </style>
+
 </head>
 <body>
 <div class="board" id="board">
@@ -588,11 +619,22 @@
   <div class="header-row">
     <h1><input class="kingdom-input" id="kingdomName" value="KvK War Room" spellcheck="false" readonly></h1>
     <div class="lock-btn-group">
+      <button class="translate-hint-btn" id="translateHintBtn">&#127760; Translate</button>
       <button class="lock-btn" id="r5Btn"><i class="lock-icn"></i>R5 access</button>
       <button class="lock-btn" id="lockBtn"><i class="lock-icn"></i>View only</button>
     </div>
   </div>
   <p class="sub">Daily R5 tasks, King's buffs, minister appointments and area of focus — Jul 11 – Jul 18, UTC</p>
+
+  <div class="translate-modal-backdrop" id="translateModalBackdrop">
+    <div class="translate-modal">
+      <h3>Reading in your language</h3>
+      <p>This board doesn't have its own translator built in — instead, use your browser's built-in translation, which works better and won't get blocked by ad blockers:</p>
+      <p><strong>Chrome / Edge (phone or computer):</strong> tap or click the translate icon in the address bar, or right-click the page and choose "Translate to [your language]."</p>
+      <p><strong>Safari (iPhone / Mac):</strong> tap the "aA" icon in the address bar, then choose Translate.</p>
+      <button class="translate-modal-close" id="translateModalClose">Got it</button>
+    </div>
+  </div>
 
   <div class="clocks">
     <div class="clock" id="clockPrep">
@@ -618,6 +660,7 @@
     <div class="panel day-summary-panel" id="daySummaryPanel">
       <div class="panel-head"><div class="panel-icn">DS</div><div class="panel-title">Day summary</div></div>
       <textarea class="day-summary-text" id="daySummaryText" placeholder="What to focus on today, tips to maximize your points, and what to prep for tomorrow..."></textarea>
+      <div class="day-summary-static" id="daySummaryStatic" style="display:none;"></div>
     </div>
 
     <div class="cols r5-hidden" id="colsRow">
@@ -1077,21 +1120,27 @@ function makeItemRow(listKind, idx, item, checkable){
     row.appendChild(b);
   }
 
-  var ta = document.createElement('textarea');
-  ta.className = 'item-text';
-  ta.value = item.text;
-  ta.rows = 1;
-  ta.spellcheck = false;
-  ta.readOnly = !EDIT_MODE;
-  ta.addEventListener('input', function(){
-    autosize(ta);
-  });
-  ta.addEventListener('blur', function(){
-    if(!EDIT_MODE) return;
-    item.text = ta.value;
-    saveState();
-  });
-  row.appendChild(ta);
+  var ta;
+  if(EDIT_MODE){
+    ta = document.createElement('textarea');
+    ta.className = 'item-text';
+    ta.value = item.text;
+    ta.rows = 1;
+    ta.spellcheck = false;
+    ta.addEventListener('input', function(){
+      autosize(ta);
+    });
+    ta.addEventListener('blur', function(){
+      item.text = ta.value;
+      saveState();
+    });
+    row.appendChild(ta);
+  } else {
+    ta = document.createElement('div');
+    ta.className = 'item-text item-text-static';
+    ta.textContent = item.text;
+    row.appendChild(ta);
+  }
 
   var details = null;
 
@@ -1260,13 +1309,11 @@ function renderPanel(){
 function renderDaySummary(){
   var panel = document.getElementById('daySummaryPanel');
   var textarea = document.getElementById('daySummaryText');
-  if(!panel || !textarea) return;
+  var staticEl = document.getElementById('daySummaryStatic');
+  if(!panel || !textarea || !staticEl) return;
 
   var dayData = state.days[DAYS[selectedIdx].date];
   var summary = dayData.summary || "";
-
-  textarea.value = summary;
-  textarea.readOnly = !EDIT_MODE;
 
   if(!EDIT_MODE && !summary.trim()){
     panel.classList.add('empty-readonly');
@@ -1274,7 +1321,16 @@ function renderDaySummary(){
     panel.classList.remove('empty-readonly');
   }
 
-  requestAnimationFrame(function(){ autosize(textarea); });
+  if(EDIT_MODE){
+    textarea.style.display = 'block';
+    staticEl.style.display = 'none';
+    textarea.value = summary;
+    requestAnimationFrame(function(){ autosize(textarea); });
+  } else {
+    textarea.style.display = 'none';
+    staticEl.style.display = 'block';
+    staticEl.textContent = summary;
+  }
 }
 
 var scoringFilter = 'all';
@@ -1332,14 +1388,20 @@ function renderScoring(){
     indicator.className = 'rating-indicator' + (item.rating ? ' ' + item.rating : '');
     row.appendChild(indicator);
 
-    var ta = document.createElement('textarea');
-    ta.className = 'score-text';
-    ta.value = item.text;
-    ta.rows = 1;
-    ta.spellcheck = false;
-    ta.readOnly = !EDIT_MODE;
-    ta.addEventListener('input', function(){ autosize(ta); });
-    ta.addEventListener('blur', function(){ if(!EDIT_MODE) return; item.text = ta.value; saveState(); });
+    var ta;
+    if(EDIT_MODE){
+      ta = document.createElement('textarea');
+      ta.className = 'score-text';
+      ta.value = item.text;
+      ta.rows = 1;
+      ta.spellcheck = false;
+      ta.addEventListener('input', function(){ autosize(ta); });
+      ta.addEventListener('blur', function(){ item.text = ta.value; saveState(); });
+    } else {
+      ta = document.createElement('div');
+      ta.className = 'score-text score-text-static';
+      ta.textContent = item.text;
+    }
     row.appendChild(ta);
 
     if(EDIT_MODE){
@@ -2181,6 +2243,24 @@ window.addEventListener('resize', function(){
   }, 200);
 });
 
+})();
+</script>
+<script>
+(function(){
+  var btn = document.getElementById('translateHintBtn');
+  var backdrop = document.getElementById('translateModalBackdrop');
+  var closeBtn = document.getElementById('translateModalClose');
+  if(btn && backdrop){
+    btn.addEventListener('click', function(){ backdrop.classList.add('open'); });
+  }
+  if(closeBtn && backdrop){
+    closeBtn.addEventListener('click', function(){ backdrop.classList.remove('open'); });
+  }
+  if(backdrop){
+    backdrop.addEventListener('click', function(e){
+      if(e.target === backdrop) backdrop.classList.remove('open');
+    });
+  }
 })();
 </script>
 </body>
