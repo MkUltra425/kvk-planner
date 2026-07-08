@@ -639,12 +639,12 @@
   <div class="clocks">
     <div class="clock" id="clockPrep">
       <div class="clock-label"><span>Preparation phase</span><span class="tag">Mon Jul 13, 00:00 UTC</span></div>
-      <div class="clock-time" id="prepTime">--</div>
+      <div class="clock-time notranslate" translate="no" id="prepTime">--</div>
       <div class="clock-sub" id="prepSub"></div>
     </div>
     <div class="clock battle" id="clockBattle">
       <div class="clock-label"><span>Battle phase</span><span class="tag">Sat Jul 18, 12:00 UTC</span></div>
-      <div class="clock-time" id="battleTime">--</div>
+      <div class="clock-time notranslate" translate="no" id="battleTime">--</div>
       <div class="clock-sub" id="battleSub"></div>
     </div>
   </div>
@@ -1054,7 +1054,7 @@ function renderClock(targetMs, timeEl, subEl, clockEl){
   var diff = targetMs - now;
   if(diff <= 0){
     timeEl.innerHTML = '<span class="clock-live">LIVE</span>';
-    subEl.textContent = "underway";
+    if(subEl.textContent !== "underway") subEl.textContent = "underway";
     return;
   }
   var totalSec = Math.floor(diff/1000);
@@ -1067,7 +1067,7 @@ function renderClock(targetMs, timeEl, subEl, clockEl){
     '<div class="seg"><span class="num">'+pad(h)+'</span><span class="unit">hrs</span></div>'+
     '<div class="seg"><span class="num">'+pad(m)+'</span><span class="unit">min</span></div>'+
     '<div class="seg"><span class="num">'+pad(s)+'</span><span class="unit">sec</span></div>';
-  subEl.textContent = "counting down";
+  if(subEl.textContent !== "counting down") subEl.textContent = "counting down";
 }
 
 function tickClocks(){
@@ -2093,7 +2093,7 @@ function msRenderBody(key){
 function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot){
   var vals = msRowValues(key, p);
   var cellsHtml = '<span class="ms-time">' + (isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : timeLabel) + '</span>' +
-    '<span class="ms-name">' + msEsc(p.name) + (p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '') + '</span>';
+    '<span class="ms-name notranslate" translate="no">' + msEsc(p.name) + (p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '') + '</span>';
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
   cellsHtml += '<span class="ms-pts">' + msFmtPts(p.pts) + '</span>';
   if(EDIT_MODE){
