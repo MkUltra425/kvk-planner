@@ -12,6 +12,7 @@ const https = require('https');
 
 const FIREBASE_URL = "https://kvk-planner-1884-default-rtdb.firebaseio.com/kvk-jul2026.json";
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
+const DASHBOARD_URL = "https://mkultra425.github.io/kvk-planner/";
 
 // Mirrors the dashboard's day list. Update this if the KvK dates ever change.
 const DAY_META = {
@@ -26,6 +27,18 @@ const DAY_META = {
 };
 
 const RATING_ICON = { best: "\uD83D\uDFE2", okay: "\uD83D\uDFE1", bad: "\uD83D\uDD34" };
+
+// Mirrors the dashboard's task category colors, mapped to emoji for Discord.
+const CATEGORY_EMOJI = {
+  comms: "\uD83D\uDCE3",       // 📣 megaphone
+  dataentry: "\uD83D\uDCDD",   // 📝 memo
+  scheduling: "\uD83D\uDDD3\uFE0F", // 🗓️ calendar
+  roster: "\uD83D\uDCCB",      // 📋 clipboard
+  tracking: "\uD83D\uDCCA",    // 📊 bar chart
+  battleday: "\u2694\uFE0F",   // ⚔️ crossed swords
+  battle: "\u2694\uFE0F"       // old category key, same emoji as battleday
+};
+const NO_CATEGORY_EMOJI = "\u25AB\uFE0F"; // ▫️ small white square, neutral fallback
 
 function todayUTC(){
   const override = process.env.TEST_DATE;
@@ -110,12 +123,18 @@ async function main(){
   lines.push("**\u2694\uFE0F KvK War Room \u2014 " + meta.dow + ", " + today + " (" + meta.phase + ")**");
   lines.push("");
 
+  if(dayData.summary && dayData.summary.trim()){
+    lines.push("__**Day Summary**__");
+    lines.push(dayData.summary.trim());
+    lines.push("");
+  }
+
   lines.push("__**R5 Tasks**__");
   if(dayData.tasks && dayData.tasks.length){
     dayData.tasks.forEach(t => {
-      const box = t.done ? "\u2611\uFE0F" : "\u2b1c";
+      const icon = t.category ? (CATEGORY_EMOJI[t.category] || NO_CATEGORY_EMOJI) : NO_CATEGORY_EMOJI;
       const subj = (t.subject && t.subject.trim()) ? ("**" + t.subject.trim() + "** \u2014 ") : "";
-      lines.push(box + " " + subj + t.text);
+      lines.push(icon + " " + subj + t.text);
     });
   } else {
     lines.push("_No tasks._");
@@ -148,6 +167,8 @@ async function main(){
   } else {
     lines.push("_No scoring tasks._");
   }
+  lines.push("");
+  lines.push("\uD83D\uDD17 Full board: <" + DASHBOARD_URL + ">");
 
   const chunks = chunkLines(lines, 1900);
   for(const c of chunks){
