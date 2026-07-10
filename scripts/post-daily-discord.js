@@ -13,6 +13,11 @@ const https = require('https');
 const FIREBASE_URL = "https://kvk-planner-1884-default-rtdb.firebaseio.com/kvk-jul2026.json";
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 const DASHBOARD_URL = "https://mkultra425.github.io/kvk-planner/";
+// Must match R5_VIEW_PASSPHRASE in the dashboard's own code. This channel is
+// R5-only, so auto-granting R5 view access via the link is safe here —
+// change this if the dashboard's R5 passphrase ever changes.
+const R5_VIEW_PASSPHRASE = "hammad";
+const DASHBOARD_AUTO_UNLOCK_URL = DASHBOARD_URL + "?key=" + encodeURIComponent(R5_VIEW_PASSPHRASE);
 
 // Mirrors the dashboard's day list. Update this if the KvK dates ever change.
 const DAY_META = {
@@ -59,10 +64,12 @@ function fetchJSON(url){
   });
 }
 
-function postToDiscord(content){
+function postToDiscord(content, embeds){
   return new Promise((resolve, reject) => {
     const url = new URL(WEBHOOK_URL);
-    const body = JSON.stringify({ content: content });
+    const payload = { content: content || "" };
+    if(embeds) payload.embeds = embeds;
+    const body = JSON.stringify(payload);
     const req = https.request({
       hostname: url.hostname,
       path: url.pathname + url.search,
@@ -167,8 +174,6 @@ async function main(){
   } else {
     lines.push("_No scoring tasks._");
   }
-  lines.push("");
-  lines.push("\uD83D\uDD17 Full board: <" + DASHBOARD_URL + ">");
 
   const chunks = chunkLines(lines, 1900);
   for(const c of chunks){
@@ -178,7 +183,17 @@ async function main(){
       process.exit(1);
     }
   }
-  console.log("Posted " + chunks.length + " message(s) for " + today + ".");
+
+  const linkResult = await postToDiscord("", [{
+    description: "[\uD83D\uDD17 KvK Dashboard](" + DASHBOARD_AUTO_UNLOCK_URL + ")",
+    color: 0x4fd1c5
+  }]);
+  if(linkResult.status >= 300){
+    console.error("Discord link post failed:", linkResult.status, linkResult.data);
+    process.exit(1);
+  }
+
+  console.log("Posted " + (chunks.length + 1) + " message(s) for " + today + ".");
 }
 
 main().catch(err => {
