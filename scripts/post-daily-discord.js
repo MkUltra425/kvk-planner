@@ -106,6 +106,40 @@ function chunkLines(lines, max){
   return chunks;
 }
 
+// The Day Summary is free-typed text and often includes indented sub-bullets
+// (e.g. "    - like this") for readability in the dashboard's textarea.
+// Discord's markdown treats leading spaces before "-" as a NESTED list level,
+// and any blank lines between bullets as extra vertical gaps — neither of
+// which is intended. This flattens all bullets to one level and collapses
+// blank lines so it reads as a clean, single-level list in Discord.
+function formatSummaryForDiscord(text){
+  const rawLines = text.split(/\r?\n/);
+  const out = [];
+  let lastWasBlank = false;
+
+  for(let line of rawLines){
+    const trimmed = line.trim();
+
+    if(!trimmed){
+      if(!lastWasBlank && out.length){ out.push(""); lastWasBlank = true; }
+      continue;
+    }
+    lastWasBlank = false;
+
+    // Normalize any bullet marker (-, *, •, or leading circle bullets) to "- "
+    const bulletMatch = trimmed.match(/^[-*•]\s*(.*)$/);
+    if(bulletMatch){
+      out.push("- " + bulletMatch[1]);
+    } else {
+      out.push(trimmed);
+    }
+  }
+
+  // Trim a trailing blank line if present
+  while(out.length && out[out.length - 1] === "") out.pop();
+  return out.join("\n");
+}
+
 async function main(){
   if(!WEBHOOK_URL){
     console.error("Missing DISCORD_WEBHOOK_URL environment variable/secret.");
@@ -132,7 +166,7 @@ async function main(){
 
   if(dayData.summary && dayData.summary.trim()){
     lines.push("__**Day Summary**__");
-    lines.push(dayData.summary.trim());
+    lines.push(formatSummaryForDiscord(dayData.summary));
     lines.push("");
   }
 
