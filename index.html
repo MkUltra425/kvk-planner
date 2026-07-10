@@ -723,12 +723,13 @@ var BATTLE_START = Date.UTC(2026,6,18,12,0,0);
 
 var TASK_CATEGORIES = {
   comms:      { label:'Comms',      color:'var(--violet)' },
-  roster:     { label:'Roster',     color:'var(--teal)' },
+  dataentry:  { label:'Data Entry', color:'var(--yellow)' },
   scheduling: { label:'Scheduling', color:'var(--amber)' },
+  roster:     { label:'Roster',     color:'var(--teal)' },
   tracking:   { label:'Tracking',   color:'var(--green)' },
-  battle:     { label:'Battle',     color:'var(--crimson)' }
+  battleday:  { label:'Battle Day', color:'var(--crimson)' }
 };
-var TASK_CATEGORY_CYCLE = ['comms','roster','scheduling','tracking','battle', null];
+var TASK_CATEGORY_CYCLE = ['comms','dataentry','scheduling','roster','tracking','battleday', null];
 
 var DAYS = [
   { date:"2026-07-11", dow:"Sat", phase:"Pre-prep", group:"preprep",
@@ -1010,6 +1011,7 @@ function migrateState(parsed){
       dd.tasks.forEach(function(t){
         if(typeof t.notes !== 'string') t.notes = "";
         if(typeof t.category === 'undefined') t.category = null;
+        if(t.category === 'battle') t.category = 'battleday';
         if(typeof t.subject !== 'string') t.subject = "";
       });
     }
@@ -2202,8 +2204,26 @@ function renderCurrentView(){
   if(summaryVisible){ renderSummary(); } else { renderPanel(); }
 }
 
+function checkUrlAutoUnlock(){
+  try{
+    var params = new URLSearchParams(window.location.search);
+    var key = params.get('key');
+    if(!key) return;
+    if(key === EDIT_PASSPHRASE){
+      EDIT_MODE = true;
+    } else if(key === R5_VIEW_PASSPHRASE){
+      R5_UNLOCKED = true;
+    }
+    // Clean the key out of the visible URL so it doesn't linger in browser
+    // history/screenshots once it's been used.
+    var cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }catch(e){}
+}
+
 function init(){
   selectedIdx = computeDefaultIdx();
+  checkUrlAutoUnlock();
   applyEditModeUI();
   tickClocks();
   setInterval(tickClocks, 1000);
@@ -2212,7 +2232,7 @@ function init(){
     state = defaultState();
     kingdomInput.value = state.kingdomName || "KvK War Room";
     msLoadFromState();
-    renderCurrentView();
+    applyAccess();
     flag("no database connected — edits won't save");
     return;
   }
@@ -2222,12 +2242,12 @@ function init(){
     state = val ? migrateState(val) : defaultState();
     kingdomInput.value = state.kingdomName || "KvK War Room";
     msLoadFromState();
-    renderCurrentView();
+    applyAccess();
   }, function(){
     state = defaultState();
     kingdomInput.value = state.kingdomName || "KvK War Room";
     msLoadFromState();
-    renderCurrentView();
+    applyAccess();
     flag("connection error — showing local defaults");
   });
 }
