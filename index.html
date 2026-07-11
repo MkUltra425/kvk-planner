@@ -1789,7 +1789,7 @@ var MS_LABELS = {
   d4cm: "Chief Minister — Troop Training (overflow)"
 };
 var MS_CSV_COLS = {
-  d1: "Name, Alliance, Start1, End1, Start2, End2, Speedups(Days), Truegold, TC Level, KvK Potential",
+  d1: "Time Slot, Name, KvK Potential",
   d2: "Name, Start1, End1, Start2, End2, Speedups, TGDust",
   d4: "Name, Start1, End1, Start2, End2, Speedups, T9, T10, T11",
   d4cm: "Name, Start1, End1, Start2, End2, Speedups, T9, T10, T11"
@@ -1846,6 +1846,20 @@ function msAssign(q){
   return sc;
 }
 
+function msDirectPlaceD1(players){
+  // Day 1 is now a fully precomputed schedule from the kingdom's own sheet —
+  // each row already states its exact time slot, so we just place it there.
+  // First row imported into a given slot wins; anything after that for the
+  // same slot falls through to "No Slot" via the normal diffing logic.
+  var sc = new Array(MS_SLOTS).fill(null);
+  players.forEach(function(p){
+    if(p.slotIndex !== null && p.slotIndex !== undefined && p.slotIndex >= 0 && p.slotIndex < MS_SLOTS && !sc[p.slotIndex]){
+      sc[p.slotIndex] = p;
+    }
+  });
+  return sc;
+}
+
 function msBuildD4cmQ(){
   var d4Ids = new Set(msSchedule.d4.filter(Boolean).map(function(p){ return p.id; }));
   var carried = msPlayers.d4.filter(function(p){ return !d4Ids.has(p.id); }).map(function(p){
@@ -1858,7 +1872,7 @@ function msBuildD4cmQ(){
 }
 
 function msRecalcAll(){
-  msSchedule.d1 = msAssign(msPlayers.d1);
+  msSchedule.d1 = msDirectPlaceD1(msPlayers.d1);
   msSchedule.d2 = msAssign(msPlayers.d2);
   msSchedule.d4 = msAssign(msPlayers.d4);
   msSchedule.d4cm = msAssign(msBuildD4cmQ());
@@ -1896,7 +1910,7 @@ function msColsFor(key){
   var narrow = msIsNarrow();
   var timeW = narrow ? '38px' : '62px';
   if(key === 'd1') return [
-    {h:'Time', w:timeW}, {h:'Player', w:'2fr'}, {h:'Alliance', w:'1fr'}, {h:'TC Lvl', w:'1fr'}, {h:'TG', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:'2fr'}, {h:'Points', w:'1fr'}
   ];
   if(key === 'd2') return [
     {h:'Time', w:timeW}, {h:'Player', w:'2fr'}, {h:'Speedups', w:'1fr'}, {h:'TG Dust', w:'1fr'}, {h:'Points', w:'1fr'}
@@ -1914,7 +1928,7 @@ function msGridStyle(key){
 }
 
 function msRowValues(key, p){
-  if(key === 'd1') return [msEsc(p.alliance||'\u2014'), String(p.tcLevel||0), String(p.tg||0), msEsc(p.sp||'\u2014')];
+  if(key === 'd1') return [];
   if(key === 'd2') return [msEsc(p.sp||'\u2014'), msFmtNum(p.tgd||0)];
   return [msFmtNum(p.t9||0), msFmtNum(p.t10||0), p.t11 ? 'Y' : 'N', msEsc(p.sp||'\u2014')];
 }
@@ -1979,7 +1993,7 @@ function msRenderBody(key){
         '<input type="file" id="ms-file-' + key + '" accept=".csv" style="display:none">' +
         '<div class="ms-csv-icn">&#8679;</div>' +
         '<div class="ms-csv-label">Drop CSV or click to browse</div>' +
-        '<div class="ms-csv-sub" id="ms-status-' + key + '">Appends to existing players</div>' +
+        '<div class="ms-csv-sub" id="ms-status-' + key + '">Replaces the current list</div>' +
         '</div>';
     }
   }
@@ -2109,45 +2123,96 @@ function msSetStatus(key, msg, isErr){
   if(!el) return;
   el.textContent = msg;
   el.className = 'ms-csv-sub' + (isErr ? ' err' : ' ok');
-  setTimeout(function(){ if(el.textContent === msg){ el.textContent = 'Appends to existing players'; el.className = 'ms-csv-sub'; } }, 4000);
+  setTimeout(function(){ if(el.textContent === msg){ el.textContent = 'Replaces the current list'; el.className = 'ms-csv-sub'; } }, 4000);
+}
+
+// Splits one CSV line into fields, respecting double-quoted fields so that
+// commas INSIDE quotes (e.g. a points value like "7,202,720") don't get
+// treated as column separators. Handles "" as an escaped quote too.
+function msSplitCsvLine(line){
+  var fields = [];
+  var cur = '';
+  var inQuotes = false;
+  for(var i=0; i<line.length; i++){
+    var ch = line[i];
+    if(inQuotes){
+      if(ch === '"'){
+        if(line[i+1] === '"'){ cur += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        cur += ch;
+      }
+    } else {
+      if(ch === '"'){ inQuotes = true; }
+      else if(ch === ','){ fields.push(cur); cur = ''; }
+      else { cur += ch; }
+    }
+  }
+  fields.push(cur);
+  return fields.map(function(f){ return f.trim(); });
+}
+
+// Strips thousands-separator commas from a numeric string before parsing
+// (e.g. "7,202,720" -> "7202720"), since a properly-quoted numeric field
+// still contains literal commas that parseFloat/parseInt can't read through.
+function msParseNum(str){
+  if(str === null || str === undefined) return NaN;
+  return parseFloat(String(str).replace(/,/g, ''));
 }
 
 function msParseCSV(text, key){
   var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
   if(!lines.length) return { players: [], errors: [] };
-  var fc = lines[0].split(',').map(function(c){ return c.trim().toLowerCase(); });
+  var fc = msSplitCsvLine(lines[0]).map(function(c){ return c.trim().toLowerCase(); });
+  var parsed = [], errors = [];
+
+  if(key === 'd1'){
+    // New Day 1 format: Time Slot, Name, KvK Potential — a fully precomputed
+    // schedule from the kingdom's own spreadsheet (columns M:O). Each row
+    // already states its exact slot, so we just place it there directly —
+    // no availability windows, no points recalculation, no assignment pass.
+    var hasH1 = ['time slot','time','slot'].indexOf(fc[0]) !== -1;
+    var data1 = hasH1 ? lines.slice(1) : lines;
+    data1.forEach(function(line, idx){
+      if(!line.trim()) return;
+      var clean = msSplitCsvLine(line);
+      var timeStr = clean[0] || '';
+      var name = clean[1] || '';
+      if(!name){ errors.push('Row ' + (idx+2) + ': missing name'); return; }
+      var mins = msCsvTM(timeStr);
+      if(mins === null){ errors.push('Row ' + (idx+2) + ': invalid time slot "' + timeStr + '"'); return; }
+      var slotIndex = Math.floor(mins / 30);
+      if(slotIndex < 0 || slotIndex >= MS_SLOTS){ errors.push('Row ' + (idx+2) + ': time slot out of range'); return; }
+      parsed.push({
+        id: 'p' + Date.now() + (msEntryCounter++),
+        name: name,
+        pts: msParseNum(clean[2]) || 0,
+        entryOrder: msEntryCounter,
+        slotIndex: slotIndex,
+        carried: false
+      });
+    });
+    return { players: parsed, errors: errors };
+  }
+
   var hasH = ['name','player','player name'].indexOf(fc[0]) !== -1;
   var data = hasH ? lines.slice(1) : lines;
-  var parsed = [], errors = [];
-  var isD1 = key === 'd1';
   var isD2 = key === 'd2';
   var isTroop = key === 'd4' || key === 'd4cm';
 
   data.forEach(function(line, idx){
     if(!line.trim()) return;
-    var clean = line.split(',').map(function(c){ return c.replace(/^"|"$/g,'').trim(); });
+    var clean = msSplitCsvLine(line);
     var name = clean[0] || '';
     if(!name){ errors.push('Row ' + (idx+2) + ': missing name'); return; }
 
-    var s1, e1, s2, e2;
-    if(isD1){
-      // Day 1 column order: Name, Alliance, Start1, End1, Start2, End2, Speedups(Days), Truegold, TC Level, KvK Potential
-      s1 = msCsvTM(clean[2]); e1 = msCsvTM(clean[3]); s2 = msCsvTM(clean[4]); e2 = msCsvTM(clean[5]);
-    } else {
-      s1 = msCsvTM(clean[1]); e1 = msCsvTM(clean[2]); s2 = msCsvTM(clean[3]); e2 = msCsvTM(clean[4]);
-    }
+    var s1 = msCsvTM(clean[1]), e1 = msCsvTM(clean[2]), s2 = msCsvTM(clean[3]), e2 = msCsvTM(clean[4]);
 
     var p = { id: 'p' + Date.now() + (msEntryCounter++), name: name, entryOrder: msEntryCounter, carried: false,
       s1: (s1!==null && e1!==null) ? s1 : null, e1: (s1!==null && e1!==null) ? e1 : null,
       s2: (s2!==null && e2!==null) ? s2 : null, e2: (s2!==null && e2!==null) ? e2 : null };
 
-    if(isD1){
-      p.alliance = clean[1] || '';
-      p.sp = clean[6] || '';
-      p.tg = parseInt(clean[7]) || 0;
-      p.tcLevel = parseInt(clean[8]) || 0;
-      p.pts = parseFloat(clean[9]) || 0;
-    } else if(isD2){
+    if(isD2){
       var spDays = parseFloat(clean[5]) || 0;
       var tgdVal = parseInt(clean[6]) || 0;
       p.sp = spDays + 'd'; p.tgd = tgdVal; p.pts = msCalcD2Pts(spDays, tgdVal);
@@ -2174,12 +2239,12 @@ function msImportCSV(key, text){
     return;
   }
   var target = key === 'd4cm' ? 'd4cm' : key;
-  msPlayers[target] = msPlayers[target].concat(result.players);
+  msPlayers[target] = result.players;
   msRecalcAll();
   msSyncAndSave();
   msCsvOpen[key] = false;
-  var msg = result.players.length + ' player' + (result.players.length!==1 ? 's' : '') + ' imported';
-  if(result.errors.length) msg += ' (' + result.errors.length + ' skipped)';
+  var msg = result.players.length + ' player' + (result.players.length!==1 ? 's' : '') + ' imported (replaced previous list)';
+  if(result.errors.length) msg += ' \u2014 ' + result.errors.length + ' skipped';
   msRenderBody(key);
   flag(msg);
 }
@@ -2192,7 +2257,6 @@ function msCopySchedule(key){
     var p = sc[i];
     if(p){
       var extra = '';
-      if(key==='d1') extra = ' [' + (p.alliance||'\u2014') + '] TC:' + (p.tcLevel||0) + ' TG:' + (p.tg||0);
       if(key==='d2') extra = ' TGDust:' + msFmtNum(p.tgd||0);
       if(key==='d4' || key==='d4cm') extra = ' T9:' + msFmtNum(p.t9||0) + ' T10:' + msFmtNum(p.t10||0) + ' T11:' + (p.t11?'Y':'N');
       text += msSlotLabel(i) + '  ' + p.name + extra + ' (' + msFmtPts(p.pts) + ')\n';
