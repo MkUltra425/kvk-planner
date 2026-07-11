@@ -2,9 +2,13 @@ name: Daily Discord Task Post
 
 on:
   schedule:
-    # Runs at 00:05 UTC every day. Change the two numbers below to adjust
-    # the time: "MINUTE HOUR * * *" (24-hour, UTC).
-    - cron: '5 0 * * *'
+    # Runs at 00:13 UTC every day. Deliberately NOT :00 or :05 — those are
+    # the most popular minutes for scheduled GitHub Actions worldwide, so
+    # jobs queued there get delayed the most under load. An odd minute like
+    # :13 sees far less contention and tends to fire closer to on-time.
+    # Change the two numbers below to adjust the time: "MINUTE HOUR * * *"
+    # (24-hour, UTC).
+    - cron: '13 0 * * *'
   workflow_dispatch:
     inputs:
       test_date:
