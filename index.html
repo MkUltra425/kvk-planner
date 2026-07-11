@@ -1789,7 +1789,7 @@ var MS_LABELS = {
   d4cm: "Chief Minister — Troop Training (overflow)"
 };
 var MS_CSV_COLS = {
-  d1: "Name, Start1, End1, Start2, End2, Speedups, Truegold",
+  d1: "Name, Alliance, Start1, End1, Start2, End2, Speedups(Days), Truegold, TC Level, KvK Potential",
   d2: "Name, Start1, End1, Start2, End2, Speedups, TGDust",
   d4: "Name, Start1, End1, Start2, End2, Speedups, T9, T10, T11",
   d4cm: "Name, Start1, End1, Start2, End2, Speedups, T9, T10, T11"
@@ -1896,7 +1896,7 @@ function msColsFor(key){
   var narrow = msIsNarrow();
   var timeW = narrow ? '38px' : '62px';
   if(key === 'd1') return [
-    {h:'Time', w:timeW}, {h:'Player', w:'2fr'}, {h:'TG', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:'2fr'}, {h:'Alliance', w:'1fr'}, {h:'TC Lvl', w:'1fr'}, {h:'TG', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
   ];
   if(key === 'd2') return [
     {h:'Time', w:timeW}, {h:'Player', w:'2fr'}, {h:'Speedups', w:'1fr'}, {h:'TG Dust', w:'1fr'}, {h:'Points', w:'1fr'}
@@ -1914,7 +1914,7 @@ function msGridStyle(key){
 }
 
 function msRowValues(key, p){
-  if(key === 'd1') return [String(p.tg||0), msEsc(p.sp||'\u2014')];
+  if(key === 'd1') return [msEsc(p.alliance||'\u2014'), String(p.tcLevel||0), String(p.tg||0), msEsc(p.sp||'\u2014')];
   if(key === 'd2') return [msEsc(p.sp||'\u2014'), msFmtNum(p.tgd||0)];
   return [msFmtNum(p.t9||0), msFmtNum(p.t10||0), p.t11 ? 'Y' : 'N', msEsc(p.sp||'\u2014')];
 }
@@ -2119,6 +2119,7 @@ function msParseCSV(text, key){
   var hasH = ['name','player','player name'].indexOf(fc[0]) !== -1;
   var data = hasH ? lines.slice(1) : lines;
   var parsed = [], errors = [];
+  var isD1 = key === 'd1';
   var isD2 = key === 'd2';
   var isTroop = key === 'd4' || key === 'd4cm';
 
@@ -2127,12 +2128,26 @@ function msParseCSV(text, key){
     var clean = line.split(',').map(function(c){ return c.replace(/^"|"$/g,'').trim(); });
     var name = clean[0] || '';
     if(!name){ errors.push('Row ' + (idx+2) + ': missing name'); return; }
-    var s1 = msCsvTM(clean[1]), e1 = msCsvTM(clean[2]), s2 = msCsvTM(clean[3]), e2 = msCsvTM(clean[4]);
+
+    var s1, e1, s2, e2;
+    if(isD1){
+      // Day 1 column order: Name, Alliance, Start1, End1, Start2, End2, Speedups(Days), Truegold, TC Level, KvK Potential
+      s1 = msCsvTM(clean[2]); e1 = msCsvTM(clean[3]); s2 = msCsvTM(clean[4]); e2 = msCsvTM(clean[5]);
+    } else {
+      s1 = msCsvTM(clean[1]); e1 = msCsvTM(clean[2]); s2 = msCsvTM(clean[3]); e2 = msCsvTM(clean[4]);
+    }
+
     var p = { id: 'p' + Date.now() + (msEntryCounter++), name: name, entryOrder: msEntryCounter, carried: false,
       s1: (s1!==null && e1!==null) ? s1 : null, e1: (s1!==null && e1!==null) ? e1 : null,
       s2: (s2!==null && e2!==null) ? s2 : null, e2: (s2!==null && e2!==null) ? e2 : null };
 
-    if(isD2){
+    if(isD1){
+      p.alliance = clean[1] || '';
+      p.sp = clean[6] || '';
+      p.tg = parseInt(clean[7]) || 0;
+      p.tcLevel = parseInt(clean[8]) || 0;
+      p.pts = parseFloat(clean[9]) || 0;
+    } else if(isD2){
       var spDays = parseFloat(clean[5]) || 0;
       var tgdVal = parseInt(clean[6]) || 0;
       p.sp = spDays + 'd'; p.tgd = tgdVal; p.pts = msCalcD2Pts(spDays, tgdVal);
@@ -2143,8 +2158,6 @@ function msParseCSV(text, key){
       var t11v = (clean[8] || '').toLowerCase();
       var t11 = t11v==='true' || t11v==='yes' || t11v==='1';
       p.sp = sp2 + 'd'; p.t9 = t9; p.t10 = t10; p.t11 = t11; p.pts = msCalcD4Pts(sp2, t9, t10, t11);
-    } else {
-      p.sp = clean[5] || ''; p.tg = parseInt(clean[6]) || 0; p.pts = msCalcPts(p.tg);
     }
 
     if(p.s1===null && p.s2===null){ p.s1 = 0; p.e1 = 1440; }
@@ -2179,7 +2192,7 @@ function msCopySchedule(key){
     var p = sc[i];
     if(p){
       var extra = '';
-      if(key==='d1') extra = ' TG:' + (p.tg||0);
+      if(key==='d1') extra = ' [' + (p.alliance||'\u2014') + '] TC:' + (p.tcLevel||0) + ' TG:' + (p.tg||0);
       if(key==='d2') extra = ' TGDust:' + msFmtNum(p.tgd||0);
       if(key==='d4' || key==='d4cm') extra = ' T9:' + msFmtNum(p.t9||0) + ' T10:' + msFmtNum(p.t10||0) + ' T11:' + (p.t11?'Y':'N');
       text += msSlotLabel(i) + '  ' + p.name + extra + ' (' + msFmtPts(p.pts) + ')\n';
