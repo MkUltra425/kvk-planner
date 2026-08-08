@@ -585,10 +585,7 @@
     .ms-actions{ flex-wrap:wrap; }
     .ms-btn{ font-size:10.5px; padding:6px 10px; flex:1 1 auto; }
   }
-  #google_translate_element{
-    position:absolute; width:1px; height:1px; overflow:hidden;
-    opacity:0; pointer-events:none; clip:rect(0,0,0,0);
-  }
+  #google_translate_element{ display:none; }
   .lang-select{
     flex:0 0 auto;background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
     font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:7px 10px;
@@ -2395,7 +2392,7 @@ window.addEventListener('resize', function(){
 function googleTranslateElementInit(){
   new google.translate.TranslateElement(
     { pageLanguage: 'en', autoDisplay: false,
-      layout: google.translate.TranslateElement.InlineLayout.SIMPLE },
+      includedLanguages: 'en,ko,zh-CN,tr,id,ar,hi,de,es' },
     'google_translate_element'
   );
 }
@@ -2403,6 +2400,17 @@ function googleTranslateElementInit(){
 function getGoogTransCookie(){
   var m = document.cookie.match(/googtrans=\/en\/([a-zA-Z-]+)/);
   return m ? m[1] : '';
+}
+
+function setTranslationCookie(code){
+  var hostname = location.hostname;
+  var isEn = !code;
+  var expires = isEn ? 'Thu, 01 Jan 1970 00:00:00 GMT' : 'Fri, 31 Dec 9999 23:59:59 GMT';
+  var value = isEn ? '' : ('/en/' + code);
+  document.cookie = 'googtrans=' + value + '; path=/; expires=' + expires + '; SameSite=Lax';
+  if(hostname && hostname !== 'localhost'){
+    document.cookie = 'googtrans=' + value + '; path=/; domain=.' + hostname + '; expires=' + expires + '; SameSite=Lax';
+  }
 }
 
 (function initLangSelect(){
@@ -2416,28 +2424,12 @@ function getGoogTransCookie(){
     }
   }
 
+  // Matches the proven-working pattern: just set the cookie and reload —
+  // Google's widget reads googtrans on its own init and translates from
+  // there. No need to find/drive the hidden widget's internal combo box.
   select.addEventListener('change', function(){
-    var target = select.value;
-
-    if(!target){
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + location.hostname + ';';
-      location.reload();
-      return;
-    }
-
-    var tries = 0;
-    var poll = setInterval(function(){
-      var combo = document.querySelector('#google_translate_element select.goog-te-combo');
-      tries++;
-      if(combo){
-        clearInterval(poll);
-        combo.value = target;
-        combo.dispatchEvent(new Event('change'));
-      } else if(tries > 40){
-        clearInterval(poll);
-      }
-    }, 150);
+    setTranslationCookie(select.value);
+    location.reload();
   });
 })();
 </script>
