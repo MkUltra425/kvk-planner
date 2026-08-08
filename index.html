@@ -585,30 +585,20 @@
     .ms-actions{ flex-wrap:wrap; }
     .ms-btn{ font-size:10.5px; padding:6px 10px; flex:1 1 auto; }
   }
-  .translate-hint-btn{
-    flex:0 0 auto;display:flex;align-items:center;gap:6px;
-    background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
-    font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:7px 12px;
-    border-radius:9px;cursor:pointer;
+  #google_translate_element{
+    position:absolute; width:1px; height:1px; overflow:hidden;
+    opacity:0; pointer-events:none; clip:rect(0,0,0,0);
   }
-  .translate-hint-btn:hover{border-color:var(--glass-hi);color:var(--text-hi);}
-  .translate-modal-backdrop{
-    display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;
-    align-items:center;justify-content:center;padding:20px;
+  .lang-select{
+    flex:0 0 auto;background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:7px 10px;
+    border-radius:9px;cursor:pointer;outline:none;
   }
-  .translate-modal-backdrop.open{display:flex;}
-  .translate-modal{
-    background:var(--bg-1);border:1px solid var(--glass-border);border-radius:14px;
-    padding:22px 24px;max-width:420px;width:100%;
-  }
-  .translate-modal h3{font-family:'Rajdhani',sans-serif;font-size:18px;margin:0 0 12px;color:var(--text-hi);}
-  .translate-modal p{font-size:13px;line-height:1.6;color:var(--text-mid);margin:0 0 10px;}
-  .translate-modal strong{color:var(--text-hi);}
-  .translate-modal-close{
-    margin-top:10px;background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
-    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:500;padding:7px 16px;
-    border-radius:9px;cursor:pointer;
-  }
+  .lang-select option{background:var(--bg-1);color:var(--text-hi);}
+  .goog-te-banner-frame{ display:none !important; }
+  .goog-te-gadget-icon{ display:none !important; }
+  .goog-text-highlight{ background:none !important; box-shadow:none !important; }
+  body{ top:0 !important; }
 </style>
 
 </head>
@@ -619,22 +609,23 @@
   <div class="header-row">
     <h1><input class="kingdom-input" id="kingdomName" value="KvK War Room" spellcheck="false" readonly></h1>
     <div class="lock-btn-group">
-      <button class="translate-hint-btn" id="translateHintBtn">&#127760; Translate</button>
+      <div id="google_translate_element"></div>
+      <select class="lang-select" id="langSelect">
+        <option value="">English</option>
+        <option value="ko">한국어</option>
+        <option value="zh-CN">中文</option>
+        <option value="tr">Türkçe</option>
+        <option value="id">Bahasa Indonesia</option>
+        <option value="ar">العربية</option>
+        <option value="hi">हिन्दी</option>
+        <option value="de">Deutsch</option>
+        <option value="es">Español</option>
+      </select>
       <button class="lock-btn" id="r5Btn"><i class="lock-icn"></i>R5 access</button>
       <button class="lock-btn" id="lockBtn"><i class="lock-icn"></i>View only</button>
     </div>
   </div>
   <p class="sub">Daily R5 tasks, King's buffs, minister appointments and area of focus — Aug 8 – Aug 15, UTC</p>
-
-  <div class="translate-modal-backdrop" id="translateModalBackdrop">
-    <div class="translate-modal">
-      <h3>Reading in your language</h3>
-      <p>This board doesn't have its own translator built in — instead, use your browser's built-in translation, which works better and won't get blocked by ad blockers:</p>
-      <p><strong>Chrome / Edge (phone or computer):</strong> tap or click the translate icon in the address bar, or right-click the page and choose "Translate to [your language]."</p>
-      <p><strong>Safari (iPhone / Mac):</strong> tap the "aA" icon in the address bar, then choose Translate.</p>
-      <button class="translate-modal-close" id="translateModalClose">Got it</button>
-    </div>
-  </div>
 
   <div class="clocks">
     <div class="clock" id="clockPrep">
@@ -2401,22 +2392,55 @@ window.addEventListener('resize', function(){
 })();
 </script>
 <script>
-(function(){
-  var btn = document.getElementById('translateHintBtn');
-  var backdrop = document.getElementById('translateModalBackdrop');
-  var closeBtn = document.getElementById('translateModalClose');
-  if(btn && backdrop){
-    btn.addEventListener('click', function(){ backdrop.classList.add('open'); });
+function googleTranslateElementInit(){
+  new google.translate.TranslateElement(
+    { pageLanguage: 'en', autoDisplay: false,
+      layout: google.translate.TranslateElement.InlineLayout.SIMPLE },
+    'google_translate_element'
+  );
+}
+
+function getGoogTransCookie(){
+  var m = document.cookie.match(/googtrans=\/en\/([a-zA-Z-]+)/);
+  return m ? m[1] : '';
+}
+
+(function initLangSelect(){
+  var select = document.getElementById('langSelect');
+  if(!select) return;
+
+  var current = getGoogTransCookie();
+  if(current){
+    for(var i=0;i<select.options.length;i++){
+      if(select.options[i].value === current){ select.value = current; break; }
+    }
   }
-  if(closeBtn && backdrop){
-    closeBtn.addEventListener('click', function(){ backdrop.classList.remove('open'); });
-  }
-  if(backdrop){
-    backdrop.addEventListener('click', function(e){
-      if(e.target === backdrop) backdrop.classList.remove('open');
-    });
-  }
+
+  select.addEventListener('change', function(){
+    var target = select.value;
+
+    if(!target){
+      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + location.hostname + ';';
+      location.reload();
+      return;
+    }
+
+    var tries = 0;
+    var poll = setInterval(function(){
+      var combo = document.querySelector('#google_translate_element select.goog-te-combo');
+      tries++;
+      if(combo){
+        clearInterval(poll);
+        combo.value = target;
+        combo.dispatchEvent(new Event('change'));
+      } else if(tries > 40){
+        clearInterval(poll);
+      }
+    }, 150);
+  });
 })();
 </script>
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
