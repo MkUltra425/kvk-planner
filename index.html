@@ -624,7 +624,7 @@
       <button class="lock-btn" id="lockBtn"><i class="lock-icn"></i>View only</button>
     </div>
   </div>
-  <p class="sub">Daily R5 tasks, King's buffs, minister appointments and area of focus — Jul 11 – Jul 18, UTC</p>
+  <p class="sub">Daily R5 tasks, King's buffs, minister appointments and area of focus — Aug 8 – Aug 15, UTC</p>
 
   <div class="translate-modal-backdrop" id="translateModalBackdrop">
     <div class="translate-modal">
@@ -638,12 +638,12 @@
 
   <div class="clocks">
     <div class="clock" id="clockPrep">
-      <div class="clock-label"><span>Preparation phase</span><span class="tag">Mon Jul 13, 00:00 UTC</span></div>
+      <div class="clock-label"><span>Preparation phase</span><span class="tag">Mon Aug 10, 00:00 UTC</span></div>
       <div class="clock-time notranslate" translate="no" id="prepTime">--</div>
       <div class="clock-sub" id="prepSub"></div>
     </div>
     <div class="clock battle" id="clockBattle">
-      <div class="clock-label"><span>Battle phase</span><span class="tag">Sat Jul 18, 12:00 UTC</span></div>
+      <div class="clock-label"><span>Battle phase</span><span class="tag">Sat Aug 15, 12:00 UTC</span></div>
       <div class="clock-time notranslate" translate="no" id="battleTime">--</div>
       <div class="clock-sub" id="battleSub"></div>
     </div>
@@ -718,8 +718,8 @@
 <script>
 (function(){
 
-var PREP_START = Date.UTC(2026,6,13,0,0,0);
-var BATTLE_START = Date.UTC(2026,6,18,12,0,0);
+var PREP_START = Date.UTC(2026,7,10,0,0,0);
+var BATTLE_START = Date.UTC(2026,7,15,12,0,0);
 
 var TASK_CATEGORIES = {
   comms:      { label:'Comms',      color:'var(--violet)' },
@@ -732,7 +732,7 @@ var TASK_CATEGORIES = {
 var TASK_CATEGORY_CYCLE = ['comms','dataentry','scheduling','roster','tracking','battleday', null];
 
 var DAYS = [
-  { date:"2026-07-11", dow:"Sat", phase:"Pre-prep", group:"preprep",
+  { date:"2026-08-08", dow:"Sat", phase:"Pre-prep", group:"preprep",
     focus:"Roster lockdown",
     summary: `FOCUS TODAY
 Lock the roster and trap-type groupings, confirm rally squad leads and alt lineups, and get the comms channel pinned with the full prep schedule.
@@ -749,7 +749,7 @@ Start holding your 08:00 and 16:00 UTC Watchtower Intel Missions today without c
     buffs:["None scheduled — hold buffs for prep start"],
     ministers:["Not yet open"],
     scoring:[] },
-  { date:"2026-07-12", dow:"Sun", phase:"Pre-prep", group:"preprep",
+  { date:"2026-08-09", dow:"Sun", phase:"Pre-prep", group:"preprep",
     focus:"Final briefing and systems check",
     summary: `FOCUS TODAY
 Final officer briefing, confirm the 5-alliance castle rotation order, and test rally coordination tooling end to end so there are no surprises Monday.
@@ -766,7 +766,7 @@ Hold your 16:00 UTC Watchtower Intel Missions today without claiming — collect
     buffs:["Stage a construction speed buff for last-minute builds"],
     ministers:["Not yet open"],
     scoring:[] },
-  { date:"2026-07-13", dow:"Mon", phase:"Construction", group:"prep",
+  { date:"2026-08-10", dow:"Mon", phase:"Construction", group:"prep",
     focus:"Construction push",
     summary: `FOCUS TODAY
 Truegold building upgrades, Truegold Dust for tech research, construction/research/training speedups, and claiming every intel mission you've been holding.
@@ -793,7 +793,7 @@ Start holding 08:00/16:00 UTC intel missions again today. If you have spare Rese
       ["Use 1m of speedups to learn master skills", 30],
       ["Finish 1 intel mission", 6000]
     ] },
-  { date:"2026-07-14", dow:"Tue", phase:"Research", group:"prep",
+  { date:"2026-08-11", dow:"Tue", phase:"Research", group:"prep",
     focus:"Research push",
     summary: `FOCUS TODAY
 Research speedups, Truegold Dust, Hero Roulette spins, hero shard ascension, gathering (bread/wood/stone/iron), and Master Emblems/Manuscripts.
@@ -828,7 +828,7 @@ If you're doing the Training Capacity Enhance "triple batch" trick, TODAY is you
       ["Use any 1 master emblem", 6000],
       ["Use 1 master's manuscript", 60]
     ] },
-  { date:"2026-07-15", dow:"Wed", phase:"Pet training", group:"prep",
+  { date:"2026-08-12", dow:"Wed", phase:"Pet training", group:"prep",
     focus:"Training push",
     summary: `FOCUS TODAY
 Pet Advancement score, Advanced/Common Taming Marks, Governor Gear Charms, Hero Roulette, hero shard ascension, and intel missions.
@@ -857,7 +857,7 @@ Activate "Training Capacity Enhance" (+200% Training Capacity, but training take
       ["Use any 1 master emblem", 6000],
       ["Use 1 master's manuscript", 60]
     ] },
-  { date:"2026-07-16", dow:"Thu", phase:"Troop training", group:"prep",
+  { date:"2026-08-13", dow:"Thu", phase:"Troop training", group:"prep",
     focus:"Combat readiness",
     summary: `FOCUS TODAY
 Training/promoting T9–T11 troops, Hero Gear Forgehammers, Hero Exclusive Gear Widgets, Mithril if you have it, and gathering.
@@ -894,7 +894,7 @@ Start holding intel missions again from tonight's cycles. If you're saving Mithr
       ["Gather 200 stone in the wilderness", 2],
       ["Gather 50 iron in the wilderness", 2]
     ] },
-  { date:"2026-07-17", dow:"Fri", phase:"Power boost", group:"prep",
+  { date:"2026-08-14", dow:"Fri", phase:"Power boost", group:"prep",
     focus:"Final lockdown",
     summary: `FOCUS TODAY
 Pet Advancement, Taming Marks, Mithril, Governor Gear, Truegold, every speedup type, intel missions, and gathering — everything is live today.
@@ -931,7 +931,7 @@ Lock rally squad assignments and trap layout tonight. Confirm infirmaries are up
       ["Gather 200 stone in the wilderness", 2],
       ["Gather 50 iron in the wilderness", 2]
     ] },
-  { date:"2026-07-18", dow:"Sat", phase:"Battle phase", group:"battle",
+  { date:"2026-08-15", dow:"Sat", phase:"Battle phase", group:"battle",
     focus:"Castle assault — live coverage",
     summary: `FOCUS TODAY
 Occupying the King's Castle and its turrets, killing enemy troops, holding turret control, and continuous healing.
@@ -961,7 +961,18 @@ Field Triage opens right after battle ends (~22:00 UTC) — request Alliance Res
     ] }
 ];
 
-var storageKey = "kvk-jul2026";
+var storageKey = "kvk-aug2026";
+var OLD_storageKey = "kvk-jul2026";
+var DATE_MIGRATION_MAP = {
+  "2026-07-11": "2026-08-08",
+  "2026-07-12": "2026-08-09",
+  "2026-07-13": "2026-08-10",
+  "2026-07-14": "2026-08-11",
+  "2026-07-15": "2026-08-12",
+  "2026-07-16": "2026-08-13",
+  "2026-07-17": "2026-08-14",
+  "2026-07-18": "2026-08-15"
+};
 var state = null;
 var selectedIdx = 0;
 
@@ -978,9 +989,32 @@ var R5_UNLOCKED = false;
 var EDIT_MODE = false;
 var CAN_VIEW_R5 = false;
 var dbRef = null;
+var dbRefOld = null;
 try{
-  if(typeof firebase !== 'undefined') dbRef = firebase.database().ref(storageKey);
+  if(typeof firebase !== 'undefined'){
+    dbRef = firebase.database().ref(storageKey);
+    dbRefOld = firebase.database().ref(OLD_storageKey);
+  }
 }catch(e){ console.warn("Firebase database not reachable:", e); }
+
+// One-time migration: if the new (August) storage location is empty but the
+// old (July) one has real data, remap each day's content onto its new date
+// and save it under the new key. Runs automatically on first load after the
+// date shift — nothing for the user to trigger manually.
+function migrateJulyDataToAugust(oldState){
+  var migrated = defaultState();
+  if(oldState.kingdomName) migrated.kingdomName = oldState.kingdomName;
+  if(oldState.scheduler) migrated.scheduler = oldState.scheduler;
+  if(oldState.days){
+    Object.keys(DATE_MIGRATION_MAP).forEach(function(oldDate){
+      var newDate = DATE_MIGRATION_MAP[oldDate];
+      if(oldState.days[oldDate]){
+        migrated.days[newDate] = oldState.days[oldDate];
+      }
+    });
+  }
+  return migrateState(migrated);
+}
 
 function defaultState(){
   var s = { kingdomName:"KvK War Room", days:{},
@@ -1775,12 +1809,12 @@ var msSchedule = { d1:new Array(MS_SLOTS).fill(null), d2:new Array(MS_SLOTS).fil
 var msEntryCounter = 0;
 var msFilters = { d1:'all', d2:'all', d4:'all', d4cm:'all' };
 var msCsvOpen = {};
-var msActiveSubTab = { "2026-07-16": "d4" };
+var msActiveSubTab = { "2026-08-13": "d4" };
 
 var MS_DAY_MAP = {
-  "2026-07-13": ["d1"],
-  "2026-07-14": ["d2"],
-  "2026-07-16": ["d4","d4cm"]
+  "2026-08-10": ["d1"],
+  "2026-08-11": ["d2"],
+  "2026-08-13": ["d4","d4cm"]
 };
 var MS_LABELS = {
   d1: "Chief Minister — Construction",
@@ -2314,17 +2348,41 @@ function init(){
     return;
   }
 
+  function applyLoadedState(s){
+    state = s;
+    kingdomInput.value = state.kingdomName || "KvK War Room";
+    msLoadFromState();
+    applyAccess();
+  }
+
   dbRef.on('value', function(snap){
     var val = snap.val();
-    state = val ? migrateState(val) : defaultState();
-    kingdomInput.value = state.kingdomName || "KvK War Room";
-    msLoadFromState();
-    applyAccess();
+    if(val){
+      applyLoadedState(migrateState(val));
+      return;
+    }
+
+    // New (August) location is empty — check whether old July data exists
+    // and migrate it automatically, once, onto the new dates.
+    if(dbRefOld){
+      dbRefOld.once('value').then(function(oldSnap){
+        var oldVal = oldSnap.val();
+        if(oldVal && oldVal.days){
+          var migrated = migrateJulyDataToAugust(oldVal);
+          applyLoadedState(migrated);
+          flag("migrated July data to August dates");
+          dbRef.set(migrated).catch(function(){});
+        } else {
+          applyLoadedState(defaultState());
+        }
+      }).catch(function(){
+        applyLoadedState(defaultState());
+      });
+    } else {
+      applyLoadedState(defaultState());
+    }
   }, function(){
-    state = defaultState();
-    kingdomInput.value = state.kingdomName || "KvK War Room";
-    msLoadFromState();
-    applyAccess();
+    applyLoadedState(defaultState());
     flag("connection error — showing local defaults");
   });
 }
