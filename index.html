@@ -2110,7 +2110,7 @@ function msRenderBody(key){
       rows += msRowHtml(key, gridStyle, t, p, false, i, isCurrent);
     } else if(f==='all' || f==='open'){
       rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" style="grid-template-columns:' + gridStyle + '">' +
-        '<span class="ms-time">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
+        '<span class="ms-time notranslate" translate="no">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
         cols.slice(2).map(function(){ return '<span></span>'; }).join('') +
         (EDIT_MODE ? '<span></span>' : '') + '</div>';
     }
@@ -2306,7 +2306,8 @@ function msCurrentAppointedHtml(key){
 
 function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var vals = msRowValues(key, p);
-  var cellsHtml = '<span class="ms-time">' + (isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : timeLabel) + '</span>' +
+  var timeInner = isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : ('<span class="notranslate" translate="no">' + timeLabel + '</span>');
+  var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' +
     '<span class="ms-name notranslate" translate="no">' + msEsc(p.name) + (p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '') + '</span>';
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
   cellsHtml += '<span></span>';
