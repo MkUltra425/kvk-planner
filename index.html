@@ -315,6 +315,38 @@
   .ms-name{color:var(--text-hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ms-val{text-align:right;color:var(--text-mid);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ms-pts{text-align:right;font-weight:600;color:var(--amber);}
+  .ms-fact{color:var(--text-dim);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:6px;}
+
+  .ms-current-card{
+    position:relative;overflow:hidden;border-radius:14px;padding:18px 20px;margin-bottom:16px;
+    background:linear-gradient(135deg, rgba(95,191,122,0.10), rgba(255,255,255,0.03));
+    border:1px solid rgba(95,191,122,0.35);
+  }
+  .ms-current-card.empty{
+    background:var(--glass);border:1px solid var(--glass-border);
+  }
+  .ms-current-badge{
+    display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;
+    font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--green);margin-bottom:10px;
+  }
+  .ms-current-card.empty .ms-current-badge{color:var(--text-dim);}
+  .ms-current-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);flex:0 0 auto;}
+  .ms-current-card.empty .ms-current-dot{background:var(--text-dim);box-shadow:none;}
+  .ms-current-name{
+    font-family:'Rajdhani',sans-serif;font-weight:700;font-size:28px;color:var(--text-hi);
+    line-height:1;letter-spacing:0.01em;
+  }
+  .ms-current-sub{font-size:12px;color:var(--text-mid);margin-top:4px;}
+  .ms-current-fact-box{
+    margin-top:14px;background:rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.08);
+    border-radius:10px;padding:12px 14px;
+  }
+  .ms-current-fact-label{
+    font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.1em;
+    text-transform:uppercase;color:var(--amber);margin-bottom:5px;
+  }
+  .ms-current-fact-text{font-size:13px;color:var(--text-hi);line-height:1.5;font-style:italic;}
   .ms-noslot-tag{color:var(--crimson);font-size:9.5px;font-family:'JetBrains Mono',monospace;}
   .ms-del{
     opacity:0;background:transparent;border:none;color:var(--text-dim);cursor:pointer;font-size:13px;
@@ -1960,13 +1992,13 @@ function msColsFor(key){
   var timeW = narrow ? '38px' : '62px';
   var playerW = narrow ? '90px' : '170px';
   if(key === 'd1') return [
-    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Points', w:'110px'}, {h:'', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Fun Fact', w:'1fr'}
   ];
   if(key === 'd2') return [
-    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Speedups', w:'1fr'}, {h:'TG Dust', w:'1fr'}, {h:'Points', w:'110px'}, {h:'', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Speedups', w:'1fr'}, {h:'TG Dust', w:'1fr'}, {h:'Fun Fact', w:'1fr'}
   ];
   return [
-    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'T9', w:'1fr'}, {h:'T10', w:'1fr'}, {h:'T11', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'110px'}, {h:'', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'T9', w:'1fr'}, {h:'T10', w:'1fr'}, {h:'T11', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Fun Fact', w:'1fr'}
   ];
 }
 
@@ -2034,6 +2066,7 @@ function msRenderBody(key){
   var gridStyle = msGridStyle(key);
 
   var html = '';
+  html += '<div id="msCurrentCardSlot">' + msCurrentAppointedHtml(key) + '</div>';
 
   if(EDIT_MODE){
     if(!msCsvOpen.hasOwnProperty(key)) msCsvOpen[key] = (q.length === 0);
@@ -2063,18 +2096,19 @@ function msRenderBody(key){
 
   html += '<div class="ms-list">';
   html += '<div class="ms-head-row" style="grid-template-columns:' + gridStyle + '">';
-  cols.forEach(function(c, i){ html += '<span' + (i>1?' style="text-align:right"':'') + '>' + c.h + '</span>'; });
+  cols.forEach(function(c, i){ html += '<span' + (i>1 && i<cols.length-1 ? ' style="text-align:right"':'') + '>' + c.h + '</span>'; });
   if(EDIT_MODE) html += '<span></span>';
   html += '</div>';
 
   var rows = '';
   var curIdx = msCurrentSlotIndexFor(key);
+  var factMap = msFunFactsForList(q.map(function(p){ return p.name; }));
   for(var i=0; i<MS_SLOTS; i++){
     var p = sc[i], t = msSlotLabelShort(i);
     var isCurrent = (i === curIdx);
     if(p){
       if(f==='open' || f==='ns') continue;
-      rows += msRowHtml(key, gridStyle, t, p, false, i, isCurrent);
+      rows += msRowHtml(key, gridStyle, t, p, false, i, isCurrent, factMap);
     } else if(f==='all' || f==='open'){
       rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
@@ -2084,7 +2118,7 @@ function msRenderBody(key){
   }
   if(f==='all' || f==='ns'){
     noSlotPlayers.forEach(function(p){
-      rows += msRowHtml(key, gridStyle, null, p, true);
+      rows += msRowHtml(key, gridStyle, null, p, true, null, false, factMap);
     });
   }
   if(!rows) rows = '<div class="score-empty">No players imported yet.</div>';
@@ -2161,13 +2195,122 @@ function msRenderBody(key){
   }
 }
 
-function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
+var MS_FUN_FACTS = [
+  "Voted most likely to fall asleep mid-conversation.",
+  "Voted most likely to become a professional chef.",
+  "Voted most likely to win a staring contest.",
+  "Voted most likely to forget their own username.",
+  "Voted most likely to adopt seventeen cats.",
+  "Voted most likely to become a stand-up comedian.",
+  "Voted most likely to win the lottery and keep playing anyway.",
+  "Voted most likely to survive a zombie apocalypse.",
+  "Voted most likely to talk to plants.",
+  "Voted most likely to become a weather forecaster.",
+  "Can solve a Rubik's Cube in under a minute.",
+  "Once won a hot dog eating contest.",
+  "Has a black belt in something unexpected.",
+  "Can name all the planets in order, backwards.",
+  "Once met a celebrity and played it completely cool.",
+  "Has a secret talent for whistling entire songs.",
+  "Collects something unusual and won't say what.",
+  "Can recite the alphabet backwards faster than forwards.",
+  "Once got lost in their own neighborhood.",
+  "Has strong feelings about pineapple on pizza.",
+  "Believes cereal is a soup.",
+  "Can do a perfect impression of a dial-up modem.",
+  "Once tried to pet every dog on their street in one day.",
+  "Has never seen a single Star Wars movie.",
+  "Owns way too many pairs of socks.",
+  "Can juggle, but only badly.",
+  "Once accidentally joined a conference call while asleep.",
+  "Has a favorite spoon.",
+  "Believes the moon landing conspiracy is hilarious, not true.",
+  "Once tried to learn the ukulele in a weekend.",
+  "Can't whistle but insists they almost can.",
+  "Has memorized more pizza orders than phone numbers.",
+  "Once won an arm-wrestling match against someone twice their size.",
+  "Refuses to eat anything green on principle.",
+  "Has strong opinions about the correct way to load a dishwasher.",
+  "Once got the high score on an arcade machine and never told anyone.",
+  "Can parallel park perfectly on the first try, every time.",
+  "Believes their houseplant is judging them.",
+  "Has read the same book more than five times.",
+  "Once tried to start a podcast about nothing in particular.",
+  "Can't function without their morning coffee, or tea, or both.",
+  "Has a playlist for literally every mood.",
+  "Once got a haircut on a dare and regretted it immediately.",
+  "Believes socks with sandals should be socially acceptable.",
+  "Can do an impression of one specific animal, and it's flawless.",
+  "Once tried to bake bread and it became a science experiment.",
+  "Has a lucky number and takes it very seriously.",
+  "Can recite an entire movie from memory, word for word.",
+  "Once got into an argument about the correct pronunciation of \"GIF.\"",
+  "Believes Mondays are unfairly slandered.",
+  "Has strong opinions about the best sandwich.",
+  "Once tried yoga and immediately fell over.",
+  "Can name every US state capital, allegedly.",
+  "Has a go-to karaoke song locked and loaded.",
+  "Once won a coin flip seventeen times in a row.",
+  "Believes their handwriting is either terrible or a secret code.",
+  "Has tried at least one questionable diet trend.",
+  "Can do a cartwheel, but only under duress.",
+  "Once fell asleep during a movie they swore was their favorite.",
+  "Has strong opinions about the correct temperature for iced coffee."
+];
+
+// Assigns each player in a list a unique fact (hash-based, with linear-probe
+// collision resolution) so no two people in the same day's roster ever get
+// the same fact — stable across reloads since it's derived from their name.
+function msFunFactsForList(names){
+  var used = new Array(MS_FUN_FACTS.length).fill(false);
+  var result = {};
+  names.forEach(function(name){
+    var s = String(name || '');
+    var hash = 0;
+    for(var i=0; i<s.length; i++){ hash = (hash*31 + s.charCodeAt(i)) >>> 0; }
+    var idx = hash % MS_FUN_FACTS.length;
+    var tries = 0;
+    while(used[idx] && tries < MS_FUN_FACTS.length){ idx = (idx+1) % MS_FUN_FACTS.length; tries++; }
+    used[idx] = true;
+    result[name] = MS_FUN_FACTS[idx];
+  });
+  return result;
+}
+
+function msCurrentAppointedEmptyHtml(reasonText){
+  return '<div class="ms-current-card empty" id="msCurrentCardInner">' +
+    '<div class="ms-current-badge"><span class="ms-current-dot"></span>Currently Appointed</div>' +
+    '<div class="ms-current-name">\u2014</div>' +
+    '<div class="ms-current-sub">' + msEsc(reasonText) + '</div>' +
+    '</div>';
+}
+
+function msCurrentAppointedHtml(key){
+  var idx = msCurrentSlotIndexFor(key);
+  if(idx < 0) return msCurrentAppointedEmptyHtml('Not currently active');
+
+  var sc = msSchedule[key];
+  var p = sc[idx];
+  if(!p) return msCurrentAppointedEmptyHtml('Slot ' + msSlotLabelShort(idx) + ' UTC is open \u2014 no one assigned right now');
+
+  var q = key === 'd4cm' ? msBuildD4cmQ() : msPlayers[key];
+  var factMap = msFunFactsForList(q.map(function(pp){ return pp.name; }));
+  var fact = factMap[p.name] || '';
+
+  return '<div class="ms-current-card" id="msCurrentCardInner">' +
+    '<div class="ms-current-badge"><span class="ms-current-dot"></span>Currently Appointed \u00b7 ' + msSlotLabelShort(idx) + ' UTC</div>' +
+    '<div class="ms-current-name notranslate" translate="no">' + msEsc(p.name) + '</div>' +
+    '<div class="ms-current-sub">' + msEsc(MS_LABELS[key]) + '</div>' +
+    '<div class="ms-current-fact-box"><div class="ms-current-fact-label">Fun Fact</div><div class="ms-current-fact-text">' + msEsc(fact) + '</div></div>' +
+    '</div>';
+}
+
+function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent, factMap){
   var vals = msRowValues(key, p);
   var cellsHtml = '<span class="ms-time">' + (isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : timeLabel) + '</span>' +
     '<span class="ms-name notranslate" translate="no">' + msEsc(p.name) + (p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '') + '</span>';
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
-  cellsHtml += '<span class="ms-pts">' + msFmtPts(p.pts) + '</span>';
-  cellsHtml += '<span></span>';
+  cellsHtml += '<span class="ms-fact">' + msEsc((factMap && factMap[p.name]) || '') + '</span>';
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '" data-carried="' + (p.carried ? '1' : '0') + '">\u00d7</button>';
   }
@@ -2362,6 +2505,8 @@ function msRefreshCurrentSlotHighlight(){
     var slot = parseInt(row.getAttribute('data-slot'), 10);
     row.classList.toggle('current', slot === idx);
   });
+  var cardSlot = document.getElementById('msCurrentCardSlot');
+  if(cardSlot) cardSlot.innerHTML = msCurrentAppointedHtml(msCurrentRenderedKey);
 }
 
 function init(){
