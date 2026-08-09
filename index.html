@@ -643,14 +643,15 @@
       <div id="google_translate_element"></div>
       <select class="lang-select" id="langSelect">
         <option value="">English</option>
-        <option value="ko">한국어</option>
-        <option value="zh-CN">中文</option>
-        <option value="tr">Türkçe</option>
-        <option value="id">Bahasa Indonesia</option>
         <option value="ar">العربية</option>
-        <option value="hi">हिन्दी</option>
+        <option value="zh-CN">中文</option>
         <option value="de">Deutsch</option>
+        <option value="hi">हिन्दी</option>
+        <option value="id">Bahasa Indonesia</option>
+        <option value="ko">한국어</option>
         <option value="es">Español</option>
+        <option value="tl">Tagalog</option>
+        <option value="tr">Türkçe</option>
       </select>
       <button class="lock-btn" id="r5Btn"><i class="lock-icn"></i>R5 access</button>
       <button class="lock-btn" id="lockBtn"><i class="lock-icn"></i>View only</button>
@@ -2582,7 +2583,7 @@ window.addEventListener('resize', function(){
 function googleTranslateElementInit(){
   new google.translate.TranslateElement(
     { pageLanguage: 'en', autoDisplay: false,
-      includedLanguages: 'en,ko,zh-CN,tr,id,ar,hi,de,es' },
+      includedLanguages: 'en,ko,zh-CN,tr,id,ar,hi,tl,de,es' },
     'google_translate_element'
   );
 }
