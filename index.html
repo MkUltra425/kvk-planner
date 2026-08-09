@@ -304,12 +304,14 @@
     text-transform:uppercase;color:var(--text-dim);border-bottom:1px solid var(--line);
   }
   .ms-row{
-    display:grid;gap:10px;align-items:center;padding:4px 8px;border-bottom:1px solid var(--line);font-size:11px;
+    display:grid;gap:10px;align-items:center;padding:7px 8px;border-bottom:1px solid var(--line);font-size:11px;
   }
   .ms-row:last-child{border-bottom:none;}
   .ms-row.em{opacity:0.45;}
   .ms-row.noslot{background:rgba(227,91,86,0.06);border-left:2px solid rgba(227,91,86,0.4);}
-  .ms-time{font-family:'JetBrains Mono',monospace;color:var(--text-mid);white-space:nowrap;}
+  .ms-row.current{background:rgba(95,191,122,0.14);border-left:2px solid var(--green);}
+  .ms-row.current .ms-time{color:var(--green);font-weight:700;}
+  .ms-time{font-family:'JetBrains Mono',monospace;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:clip;}
   .ms-name{color:var(--text-hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ms-val{text-align:right;color:var(--text-mid);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ms-pts{text-align:right;font-weight:600;color:var(--amber);}
@@ -1804,6 +1806,31 @@ var MS_DAY_MAP = {
   "2026-08-11": ["d2"],
   "2026-08-13": ["d4","d4cm"]
 };
+var MS_KEY_TO_DATE = {};
+Object.keys(MS_DAY_MAP).forEach(function(date){
+  MS_DAY_MAP[date].forEach(function(k){ MS_KEY_TO_DATE[k] = date; });
+});
+function msTestDateOverride(){
+  try{
+    var params = new URLSearchParams(window.location.search);
+    return params.get('msTestDate') || null;
+  }catch(e){ return null; }
+}
+
+function msCurrentSlotIndexFor(key){
+  // Only highlight a "current" slot when the scheduler being viewed actually
+  // belongs to today — otherwise it would misleadingly mark a slot as
+  // "now" on a day that isn't actually happening yet or already passed.
+  // ?msTestDate=YYYY-MM-DD in the URL overrides "today" for previewing this
+  // before the real event dates arrive — doesn't affect anything else.
+  var mappedDate = MS_KEY_TO_DATE[key];
+  if(!mappedDate) return -1;
+  var effectiveToday = msTestDateOverride() || todayStr();
+  if(mappedDate !== effectiveToday) return -1;
+  var now = new Date();
+  var mins = now.getUTCHours()*60 + now.getUTCMinutes();
+  return Math.floor(mins/30);
+}
 var MS_LABELS = {
   d1: "Chief Minister — Construction",
   d2: "Chief Minister — Research",
@@ -1931,14 +1958,15 @@ function msIsNarrow(){ return window.innerWidth <= 640; }
 function msColsFor(key){
   var narrow = msIsNarrow();
   var timeW = narrow ? '38px' : '62px';
+  var playerW = narrow ? '90px' : '170px';
   if(key === 'd1') return [
-    {h:'Time', w:timeW}, {h:'Player', w:'2fr'}, {h:'Points', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Points', w:'110px'}, {h:'', w:'1fr'}
   ];
   if(key === 'd2') return [
-    {h:'Time', w:timeW}, {h:'Player', w:'2fr'}, {h:'Speedups', w:'1fr'}, {h:'TG Dust', w:'1fr'}, {h:'Points', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Speedups', w:'1fr'}, {h:'TG Dust', w:'1fr'}, {h:'Points', w:'110px'}, {h:'', w:'1fr'}
   ];
   return [
-    {h:'Time', w:timeW}, {h:'Player', w:'2fr'}, {h:'T9', w:'1fr'}, {h:'T10', w:'1fr'}, {h:'T11', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'T9', w:'1fr'}, {h:'T10', w:'1fr'}, {h:'T11', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'110px'}, {h:'', w:'1fr'}
   ];
 }
 
@@ -1990,7 +2018,10 @@ function msRenderMsPanel(){
   msRenderBody(activeKey);
 }
 
+var msCurrentRenderedKey = null;
+
 function msRenderBody(key){
+  msCurrentRenderedKey = key;
   var body = document.getElementById('msBody');
   if(!body) return;
 
@@ -2037,13 +2068,15 @@ function msRenderBody(key){
   html += '</div>';
 
   var rows = '';
+  var curIdx = msCurrentSlotIndexFor(key);
   for(var i=0; i<MS_SLOTS; i++){
-    var p = sc[i], t = msIsNarrow() ? msSlotLabelShort(i) : msSlotLabel(i);
+    var p = sc[i], t = msSlotLabelShort(i);
+    var isCurrent = (i === curIdx);
     if(p){
       if(f==='open' || f==='ns') continue;
-      rows += msRowHtml(key, gridStyle, t, p, false);
+      rows += msRowHtml(key, gridStyle, t, p, false, i, isCurrent);
     } else if(f==='all' || f==='open'){
-      rows += '<div class="ms-row em" style="grid-template-columns:' + gridStyle + '">' +
+      rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
         cols.slice(2).map(function(){ return '<span></span>'; }).join('') +
         (EDIT_MODE ? '<span></span>' : '') + '</div>';
@@ -2128,16 +2161,18 @@ function msRenderBody(key){
   }
 }
 
-function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot){
+function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var vals = msRowValues(key, p);
   var cellsHtml = '<span class="ms-time">' + (isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : timeLabel) + '</span>' +
     '<span class="ms-name notranslate" translate="no">' + msEsc(p.name) + (p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '') + '</span>';
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
   cellsHtml += '<span class="ms-pts">' + msFmtPts(p.pts) + '</span>';
+  cellsHtml += '<span></span>';
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '" data-carried="' + (p.carried ? '1' : '0') + '">\u00d7</button>';
   }
-  return '<div class="ms-row' + (isNoSlot ? ' noslot' : '') + '" style="grid-template-columns:' + gridStyle + '">' + cellsHtml + '</div>';
+  var slotAttr = (slotIdx !== undefined && slotIdx !== null) ? ' data-slot="' + slotIdx + '"' : '';
+  return '<div class="ms-row' + (isNoSlot ? ' noslot' : '') + (isCurrent ? ' current' : '') + '"' + slotAttr + ' style="grid-template-columns:' + gridStyle + '">' + cellsHtml + '</div>';
 }
 
 function msSetStatus(key, msg, isErr){
@@ -2320,12 +2355,22 @@ function checkUrlAutoUnlock(){
   }catch(e){}
 }
 
+function msRefreshCurrentSlotHighlight(){
+  if(!msCurrentRenderedKey) return;
+  var idx = msCurrentSlotIndexFor(msCurrentRenderedKey);
+  document.querySelectorAll('#msBody .ms-row[data-slot]').forEach(function(row){
+    var slot = parseInt(row.getAttribute('data-slot'), 10);
+    row.classList.toggle('current', slot === idx);
+  });
+}
+
 function init(){
   selectedIdx = computeDefaultIdx();
   checkUrlAutoUnlock();
   applyEditModeUI();
   tickClocks();
   setInterval(tickClocks, 1000);
+  setInterval(msRefreshCurrentSlotHighlight, 60000);
 
   if(!dbRef){
     state = defaultState();
