@@ -315,7 +315,6 @@
   .ms-name{color:var(--text-hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ms-val{text-align:right;color:var(--text-mid);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ms-pts{text-align:right;font-weight:600;color:var(--amber);}
-  .ms-fact{color:var(--text-dim);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:6px;}
 
   .ms-current-card{
     position:relative;overflow:hidden;border-radius:14px;padding:18px 20px;margin-bottom:16px;
@@ -1992,13 +1991,13 @@ function msColsFor(key){
   var timeW = narrow ? '38px' : '62px';
   var playerW = narrow ? '90px' : '170px';
   if(key === 'd1') return [
-    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Fun Fact', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'', w:'1fr'}
   ];
   if(key === 'd2') return [
-    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Speedups', w:'1fr'}, {h:'TG Dust', w:'1fr'}, {h:'Fun Fact', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Speedups', w:'1fr'}, {h:'TG Dust', w:'1fr'}, {h:'', w:'1fr'}
   ];
   return [
-    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'T9', w:'1fr'}, {h:'T10', w:'1fr'}, {h:'T11', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Fun Fact', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'T9', w:'1fr'}, {h:'T10', w:'1fr'}, {h:'T11', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'', w:'1fr'}
   ];
 }
 
@@ -2102,13 +2101,12 @@ function msRenderBody(key){
 
   var rows = '';
   var curIdx = msCurrentSlotIndexFor(key);
-  var factMap = msFunFactsForList(q.map(function(p){ return p.name; }));
   for(var i=0; i<MS_SLOTS; i++){
     var p = sc[i], t = msSlotLabelShort(i);
     var isCurrent = (i === curIdx);
     if(p){
       if(f==='open' || f==='ns') continue;
-      rows += msRowHtml(key, gridStyle, t, p, false, i, isCurrent, factMap);
+      rows += msRowHtml(key, gridStyle, t, p, false, i, isCurrent);
     } else if(f==='all' || f==='open'){
       rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
@@ -2118,7 +2116,7 @@ function msRenderBody(key){
   }
   if(f==='all' || f==='ns'){
     noSlotPlayers.forEach(function(p){
-      rows += msRowHtml(key, gridStyle, null, p, true, null, false, factMap);
+      rows += msRowHtml(key, gridStyle, null, p, true);
     });
   }
   if(!rows) rows = '<div class="score-empty">No players imported yet.</div>';
@@ -2305,12 +2303,12 @@ function msCurrentAppointedHtml(key){
     '</div>';
 }
 
-function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent, factMap){
+function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var vals = msRowValues(key, p);
   var cellsHtml = '<span class="ms-time">' + (isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : timeLabel) + '</span>' +
     '<span class="ms-name notranslate" translate="no">' + msEsc(p.name) + (p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '') + '</span>';
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
-  cellsHtml += '<span class="ms-fact">' + msEsc((factMap && factMap[p.name]) || '') + '</span>';
+  cellsHtml += '<span></span>';
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '" data-carried="' + (p.carried ? '1' : '0') + '">\u00d7</button>';
   }
