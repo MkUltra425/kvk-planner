@@ -10,7 +10,7 @@
 
 const https = require('https');
 
-const FIREBASE_URL = "https://kvk-planner-1884-default-rtdb.firebaseio.com/kvk-jul2026.json";
+const FIREBASE_URL = "https://kvk-planner-1884-default-rtdb.firebaseio.com/kvk-aug2026.json";
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 const DASHBOARD_URL = "https://mkultra425.github.io/kvk-planner/";
 // Must match R5_VIEW_PASSPHRASE in the dashboard's own code. This channel is
@@ -21,14 +21,14 @@ const DASHBOARD_AUTO_UNLOCK_URL = DASHBOARD_URL + "?key=" + encodeURIComponent(R
 
 // Mirrors the dashboard's day list. Update this if the KvK dates ever change.
 const DAY_META = {
-  "2026-07-11": { dow: "Saturday",  phase: "Pre-prep" },
-  "2026-07-12": { dow: "Sunday",    phase: "Pre-prep" },
-  "2026-07-13": { dow: "Monday",    phase: "Construction" },
-  "2026-07-14": { dow: "Tuesday",   phase: "Research" },
-  "2026-07-15": { dow: "Wednesday", phase: "Pet training" },
-  "2026-07-16": { dow: "Thursday",  phase: "Troop training" },
-  "2026-07-17": { dow: "Friday",    phase: "Power boost" },
-  "2026-07-18": { dow: "Saturday",  phase: "Battle phase" }
+  "2026-08-08": { dow: "Saturday",  phase: "Pre-prep" },
+  "2026-08-09": { dow: "Sunday",    phase: "Pre-prep" },
+  "2026-08-10": { dow: "Monday",    phase: "Construction" },
+  "2026-08-11": { dow: "Tuesday",   phase: "Research" },
+  "2026-08-12": { dow: "Wednesday", phase: "Pet training" },
+  "2026-08-13": { dow: "Thursday",  phase: "Troop training" },
+  "2026-08-14": { dow: "Friday",    phase: "Power boost" },
+  "2026-08-15": { dow: "Saturday",  phase: "Battle phase" }
 };
 
 const RATING_ICON = { best: "\uD83D\uDFE2", okay: "\uD83D\uDFE1", bad: "\uD83D\uDD34" };
