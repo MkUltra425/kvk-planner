@@ -1873,7 +1873,7 @@ var MS_LABELS = {
 var MS_CSV_COLS = {
   d1: "Time Slot, Name, KvK Potential",
   d2: "Name, Start1, End1, Start2, End2, Speedups, TGDust",
-  d4: "Name, Start1, End1, Start2, End2, Speedups, T9, T10, T11",
+  d4: "Time Slot, Name",
   d4cm: "Name, Start1, End1, Start2, End2, Speedups, T9, T10, T11"
 };
 
@@ -1928,11 +1928,12 @@ function msAssign(q){
   return sc;
 }
 
-function msDirectPlaceD1(players){
-  // Day 1 is now a fully precomputed schedule from the kingdom's own sheet —
-  // each row already states its exact time slot, so we just place it there.
-  // First row imported into a given slot wins; anything after that for the
-  // same slot falls through to "No Slot" via the normal diffing logic.
+function msDirectPlaceBySlot(players){
+  // Used for schedulers that are a fully precomputed list from the
+  // kingdom's own sheet (Day 1 Chief Minister, Noble Advisor) — each row
+  // already states its exact time slot, so we just place it there. First
+  // row imported into a given slot wins; anything after that for the same
+  // slot falls through to "No Slot" via the normal diffing logic.
   var sc = new Array(MS_SLOTS).fill(null);
   players.forEach(function(p){
     if(p.slotIndex !== null && p.slotIndex !== undefined && p.slotIndex >= 0 && p.slotIndex < MS_SLOTS && !sc[p.slotIndex]){
@@ -1949,14 +1950,14 @@ function msBuildD4cmQ(){
   });
   return carried.concat(msPlayers.d4cm).sort(function(a,b){
     if(a.carried !== b.carried) return a.carried ? -1 : 1;
-    return b.pts - a.pts || a.entryOrder - b.entryOrder;
+    return (b.pts||0) - (a.pts||0) || a.entryOrder - b.entryOrder;
   });
 }
 
 function msRecalcAll(){
-  msSchedule.d1 = msDirectPlaceD1(msPlayers.d1);
+  msSchedule.d1 = msDirectPlaceBySlot(msPlayers.d1);
   msSchedule.d2 = msAssign(msPlayers.d2);
-  msSchedule.d4 = msAssign(msPlayers.d4);
+  msSchedule.d4 = msDirectPlaceBySlot(msPlayers.d4);
   msSchedule.d4cm = msAssign(msBuildD4cmQ());
 }
 
@@ -1998,6 +1999,9 @@ function msColsFor(key){
   if(key === 'd2') return [
     {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Speedups', w:'1fr'}, {h:'TG Dust', w:'1fr'}, {h:'', w:'1fr'}
   ];
+  if(key === 'd4') return [
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'', w:'1fr'}
+  ];
   return [
     {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'T9', w:'1fr'}, {h:'T10', w:'1fr'}, {h:'T11', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'', w:'1fr'}
   ];
@@ -2011,7 +2015,7 @@ function msGridStyle(key){
 }
 
 function msRowValues(key, p){
-  if(key === 'd1') return [];
+  if(key === 'd1' || key === 'd4') return [];
   if(key === 'd2') return [msEsc(p.sp||'\u2014'), msFmtNum(p.tgd||0)];
   return [msFmtNum(p.t9||0), msFmtNum(p.t10||0), p.t11 ? 'Y' : 'N', msEsc(p.sp||'\u2014')];
 }
@@ -2367,11 +2371,13 @@ function msParseCSV(text, key){
   var fc = msSplitCsvLine(lines[0]).map(function(c){ return c.trim().toLowerCase(); });
   var parsed = [], errors = [];
 
-  if(key === 'd1'){
-    // New Day 1 format: Time Slot, Name, KvK Potential — a fully precomputed
-    // schedule from the kingdom's own spreadsheet (columns M:O). Each row
-    // already states its exact slot, so we just place it there directly —
-    // no availability windows, no points recalculation, no assignment pass.
+  if(key === 'd1' || key === 'd4'){
+    // Day 1 (Chief Minister) and Noble Advisor are fully precomputed
+    // schedules from the kingdom's own spreadsheet — each row already
+    // states its exact slot, so we just place it there directly. No
+    // availability windows, no points recalculation, no assignment pass.
+    // Day 1 optionally carries a third "KvK Potential" column; Noble
+    // Advisor is just Time + Player, so pts simply defaults to 0.
     var hasH1 = ['time slot','time','slot'].indexOf(fc[0]) !== -1;
     var data1 = hasH1 ? lines.slice(1) : lines;
     data1.forEach(function(line, idx){
@@ -2399,7 +2405,7 @@ function msParseCSV(text, key){
   var hasH = ['name','player','player name'].indexOf(fc[0]) !== -1;
   var data = hasH ? lines.slice(1) : lines;
   var isD2 = key === 'd2';
-  var isTroop = key === 'd4' || key === 'd4cm';
+  var isTroop = key === 'd4cm';
 
   data.forEach(function(line, idx){
     if(!line.trim()) return;
@@ -2459,7 +2465,7 @@ function msCopySchedule(key){
     if(p){
       var extra = '';
       if(key==='d2') extra = ' TGDust:' + msFmtNum(p.tgd||0);
-      if(key==='d4' || key==='d4cm') extra = ' T9:' + msFmtNum(p.t9||0) + ' T10:' + msFmtNum(p.t10||0) + ' T11:' + (p.t11?'Y':'N');
+      if(key==='d4cm') extra = ' T9:' + msFmtNum(p.t9||0) + ' T10:' + msFmtNum(p.t10||0) + ' T11:' + (p.t11?'Y':'N');
       text += msSlotLabel(i) + '  ' + p.name + extra + ' (' + msFmtPts(p.pts) + ')\n';
     } else {
       text += msSlotLabel(i) + '  \u2014 open \u2014\n';
