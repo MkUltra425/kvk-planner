@@ -355,6 +355,139 @@
   .ms-del:hover{color:var(--crimson);}
   .ms-list{border:1px solid var(--glass-border);border-radius:10px;}
   .ms-actions{display:flex;gap:8px;margin-top:10px;}
+
+  .ms-apply-btn{
+    display:block;width:100%;margin-bottom:14px;padding:10px 14px;border-radius:10px;
+    background:rgba(95,191,122,0.10);border:1px solid rgba(95,191,122,0.4);
+    color:var(--green);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+    cursor:pointer;transition:background 0.15s,border-color 0.15s;
+  }
+  .ms-apply-btn:hover{background:rgba(95,191,122,0.18);border-color:var(--green);}
+  .ms-apply-deadline{
+    font-size:11.5px;color:var(--text-dim);text-align:center;margin:-8px 0 14px;
+  }
+  .ms-apply-deadline span{color:var(--amber);font-weight:600;}
+  .ms-apply-closed{
+    padding:10px 14px;margin-bottom:14px;border-radius:10px;text-align:center;
+    background:rgba(227,91,86,0.08);border:1px solid rgba(227,91,86,0.3);
+    color:var(--text-mid);font-size:12.5px;line-height:1.5;
+  }
+
+  .ms-apply-modal-backdrop{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;
+    align-items:center;justify-content:center;padding:20px;overflow-y:auto;
+  }
+  .ms-apply-modal-backdrop.open{display:flex;}
+  .ms-apply-modal{
+    background:var(--bg-1);border:1px solid var(--glass-border);border-radius:14px;
+    padding:22px 24px;max-width:420px;width:100%;
+  }
+  .ms-apply-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .ms-apply-modal-head h3{font-family:'Rajdhani',sans-serif;font-size:19px;color:var(--text-hi);margin:0;}
+  .ms-apply-modal-close{
+    background:transparent;border:none;color:var(--text-dim);font-size:20px;line-height:1;
+    cursor:pointer;padding:2px 6px;
+  }
+  .ms-apply-modal-close:hover{color:var(--text-hi);}
+  .ms-apply-field{margin-bottom:14px;}
+  .ms-apply-field label{
+    display:block;font-size:11px;font-weight:600;color:var(--text-mid);margin-bottom:5px;
+    text-transform:uppercase;letter-spacing:0.04em;
+  }
+  .ms-apply-field input[type="text"]{
+    width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);
+    border-radius:8px;color:var(--text-hi);padding:9px 11px;font-size:13px;font-family:inherit;
+    outline:none;box-sizing:border-box;
+  }
+  .ms-apply-field input[type="text"]:focus{border-color:var(--teal);}
+  .ms-apply-idcheck{font-size:11.5px;margin-top:6px;min-height:14px;line-height:1.4;}
+  .ms-apply-idcheck.loading{color:var(--text-dim);}
+  .ms-apply-idcheck.found{color:var(--green);}
+  .ms-apply-idcheck.notfound{color:var(--crimson);}
+  .ms-apply-range{display:flex;align-items:center;gap:8px;}
+
+  .ms-avail-tz-note{font-size:11px;color:var(--text-dim);margin-bottom:8px;}
+  .ms-avail-tz-note strong{color:var(--amber);}
+  .ms-avail-timeline-wrap{
+    display:flex;gap:6px;border:1px solid var(--glass-border);border-radius:10px;
+    padding:8px 10px 8px 4px;background:rgba(255,255,255,0.03);user-select:none;
+  }
+  .ms-avail-labels{
+    position:relative;width:38px;flex:0 0 auto;height:480px;
+    font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim);
+  }
+  .ms-avail-labels span{position:absolute;right:4px;transform:translateY(-50%);}
+  .ms-avail-timeline{
+    position:relative;flex:1;height:480px;border-radius:6px;overflow:visible;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px,
+      transparent 1px, transparent 20px
+    );
+    background-color:rgba(255,255,255,0.02);
+    touch-action:none;cursor:pointer;
+  }
+  .ms-avail-hourline{position:absolute;left:0;right:0;height:1px;background:rgba(255,255,255,0.09);}
+  .ms-avail-range-block{
+    position:absolute;left:2px;right:2px;border-radius:5px;
+    background:rgba(95,191,122,0.35);border:1px solid rgba(95,191,122,0.7);
+    box-sizing:border-box;transition:background 0.1s,border-color 0.1s;
+  }
+  .ms-avail-range-block.editing{
+    background:rgba(232,163,61,0.35);border-color:rgba(232,163,61,0.85);
+  }
+  .ms-avail-handle{
+    position:absolute;left:0;right:0;height:22px;display:flex;
+    align-items:center;justify-content:center;cursor:ns-resize;touch-action:none;
+  }
+  .ms-avail-handle-top{top:-11px;}
+  .ms-avail-handle-bottom{bottom:-11px;}
+  .ms-avail-handle span{
+    width:34px;height:6px;border-radius:4px;background:var(--amber);
+    box-shadow:0 0 0 3px rgba(10,14,20,0.9);
+  }
+  .ms-avail-editbar{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    margin-top:8px;padding:8px 10px;border-radius:8px;flex-wrap:wrap;
+    background:rgba(232,163,61,0.08);border:1px solid rgba(232,163,61,0.3);
+  }
+  .ms-avail-editbar-label{font-size:11.5px;color:var(--text-hi);font-weight:600;flex:1 1 auto;}
+  .ms-avail-editbar-btns{display:flex;gap:5px;flex-wrap:wrap;}
+  .ms-avail-editbar-btns button{
+    background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);color:var(--text-mid);
+    font-family:'Inter',sans-serif;font-size:11px;font-weight:600;padding:5px 9px;
+    border-radius:7px;cursor:pointer;
+  }
+  .ms-avail-editbar-btns button:hover{border-color:var(--glass-hi);color:var(--text-hi);}
+  .ms-avail-editbar-btns button.ms-avail-remove{color:var(--crimson);border-color:rgba(227,91,86,0.4);}
+  .ms-avail-editbar-btns button.ms-avail-remove:hover{background:rgba(227,91,86,0.1);}
+  .ms-avail-summary{font-size:12px;color:var(--text-mid);line-height:1.7;margin-top:10px;}
+  .ms-avail-summary .ms-avail-summary-item{color:var(--text-hi);font-weight:600;display:block;}
+  .ms-apply-range input{flex:1;min-width:0;}
+  .ms-apply-range span{font-size:12px;color:var(--text-dim);flex:0 0 auto;}
+  .ms-apply-add-range{
+    background:transparent;border:none;color:var(--teal);font-size:12px;font-weight:600;
+    cursor:pointer;padding:2px 0;margin-bottom:12px;
+  }
+  .ms-apply-hint{
+    font-size:12px;color:var(--text-mid);line-height:1.5;background:rgba(232,163,61,0.08);
+    border:1px solid rgba(232,163,61,0.25);border-radius:8px;padding:9px 11px;margin-bottom:12px;
+  }
+  .ms-apply-error{
+    font-size:12px;color:var(--crimson);background:rgba(227,91,86,0.1);
+    border:1px solid rgba(227,91,86,0.35);border-radius:8px;padding:8px 11px;margin-bottom:12px;
+  }
+  .ms-apply-actions{display:flex;gap:10px;justify-content:flex-end;}
+  .ms-apply-cancel{
+    background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:500;padding:8px 16px;
+    border-radius:9px;cursor:pointer;
+  }
+  .ms-apply-submit{
+    background:var(--green);border:none;color:#0a0e14;font-family:'Inter',sans-serif;
+    font-size:13px;font-weight:700;padding:8px 18px;border-radius:9px;cursor:pointer;
+  }
+  .ms-apply-submit:hover{filter:brightness(1.08);}
   .ms-btn{
     background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
     font-family:'Inter',sans-serif;font-size:11.5px;font-weight:500;padding:7px 14px;
@@ -475,6 +608,73 @@
   .save-flag{font-size:10.5px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
 
   .view-toggle{display:flex;gap:6px;margin-bottom:16px;}
+
+  .reserve-appt-btn{
+    display:block;width:100%;margin-bottom:16px;padding:14px 18px;border-radius:12px;
+    background:linear-gradient(135deg, rgba(232,163,61,0.18), rgba(232,163,61,0.08));
+    border:1px solid rgba(232,163,61,0.5);color:var(--amber);
+    font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:0.02em;
+    cursor:pointer;transition:background 0.15s,border-color 0.15s;
+  }
+  .reserve-appt-btn:hover{background:rgba(232,163,61,0.24);border-color:var(--amber);}
+
+  .appt-chooser-backdrop{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9997;
+    align-items:center;justify-content:center;padding:20px;
+  }
+  .appt-chooser-backdrop.open{display:flex;}
+  .appt-chooser{
+    background:var(--bg-1);border:1px solid var(--glass-border);border-radius:14px;
+    padding:20px 22px;max-width:420px;width:100%;
+  }
+  .appt-chooser-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .appt-chooser-head h3{font-family:'Rajdhani',sans-serif;font-size:19px;color:var(--text-hi);margin:0;}
+  .appt-chooser-close{background:transparent;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;padding:2px 6px;}
+  .appt-chooser-item{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
+    background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:10px;
+    padding:12px 14px;margin-bottom:8px;cursor:pointer;text-align:left;
+    font-family:'Inter',sans-serif;color:var(--text-hi);transition:border-color 0.15s;
+  }
+  .appt-chooser-item:hover{border-color:var(--glass-hi);}
+  .appt-chooser-item.closed{opacity:0.5;cursor:not-allowed;}
+  .appt-chooser-item-label{font-size:13.5px;font-weight:600;}
+  .appt-chooser-item-status{font-size:11px;color:var(--text-dim);flex:0 0 auto;}
+
+  .today-hero{margin-bottom:16px;}
+  .today-hero-phase{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:26px;color:var(--text-hi);}
+  .today-hero-sub{font-size:13px;color:var(--text-mid);margin-top:2px;}
+  .today-card{
+    background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;
+    padding:16px 18px;margin-bottom:14px;
+  }
+  .today-card-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;color:var(--text-hi);margin-bottom:10px;}
+  .today-summary-text{font-size:13px;color:var(--text-mid);line-height:1.6;white-space:pre-wrap;}
+  .today-list-item{font-size:13px;color:var(--text-hi);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+  .today-list-item:last-child{border-bottom:none;}
+  .today-empty{font-size:12.5px;color:var(--text-dim);}
+  .today-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .today-daylink{
+    display:block;width:100%;background:transparent;border:1px solid var(--glass-border);
+    color:var(--teal);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+    padding:11px 14px;border-radius:10px;cursor:pointer;margin-top:4px;
+  }
+  .today-daylink:hover{border-color:var(--teal);}
+  .today-upcoming-list{display:flex;flex-direction:column;gap:2px;}
+  .today-upcoming-row{
+    display:flex;align-items:center;gap:16px;padding:12px 16px;
+    background:var(--glass);border:1px solid var(--glass-border);border-radius:10px;margin-bottom:6px;
+  }
+  .today-upcoming-date{
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);
+    text-align:center;flex:0 0 52px;line-height:1.4;
+  }
+  .today-upcoming-date span{color:var(--text-hi);font-weight:600;}
+  .today-upcoming-phase{font-size:13.5px;color:var(--text-hi);font-weight:600;}
+
+  @media (max-width:640px){
+    .today-cols{grid-template-columns:1fr;}
+  }
   .view-btn{
     background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
     font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:7px 16px;
@@ -657,27 +857,44 @@
       <button class="lock-btn" id="lockBtn"><i class="lock-icn"></i>View only</button>
     </div>
   </div>
-  <p class="sub">Daily R5 tasks, King's buffs, minister appointments and area of focus — Aug 8 – Aug 15, UTC</p>
+  <p class="sub" id="headerSub">Daily R5 tasks, King's buffs, minister appointments and area of focus</p>
 
   <div class="clocks">
     <div class="clock" id="clockPrep">
-      <div class="clock-label"><span>Preparation phase</span><span class="tag">Mon Aug 10, 00:00 UTC</span></div>
+      <div class="clock-label"><span>Preparation phase</span><span class="tag" id="prepDateTag"></span></div>
       <div class="clock-time notranslate" translate="no" id="prepTime">--</div>
       <div class="clock-sub" id="prepSub"></div>
     </div>
     <div class="clock battle" id="clockBattle">
-      <div class="clock-label"><span>Battle phase</span><span class="tag">Sat Aug 15, 12:00 UTC</span></div>
+      <div class="clock-label"><span>Battle phase</span><span class="tag" id="battleDateTag"></span></div>
       <div class="clock-time notranslate" translate="no" id="battleTime">--</div>
       <div class="clock-sub" id="battleSub"></div>
     </div>
   </div>
 
+  <button class="reserve-appt-btn" id="reserveApptBtn">&#128081; Reserve a King's Appointment</button>
+
+  <div class="appt-chooser-backdrop" id="apptChooserBackdrop">
+    <div class="appt-chooser">
+      <div class="appt-chooser-head">
+        <h3>Choose an Appointment</h3>
+        <button class="appt-chooser-close" id="apptChooserClose" type="button">&times;</button>
+      </div>
+      <div id="apptChooserList"></div>
+    </div>
+  </div>
+
   <div class="view-toggle" id="viewToggle">
-    <button class="view-btn active" data-view="day">Day view</button>
+    <button class="view-btn active" data-view="today">Today</button>
+    <button class="view-btn" data-view="day">Day view</button>
     <button class="view-btn" data-view="summary">Summary</button>
   </div>
 
-  <div id="dayView">
+  <div id="todayView">
+    <div id="todayViewBody"></div>
+  </div>
+
+  <div id="dayView" style="display:none;">
     <div class="strip" id="dayStrip"></div>
 
     <div class="panel day-summary-panel" id="daySummaryPanel">
@@ -720,6 +937,93 @@
 
     <div class="panel ms-panel" id="msPanel" style="display:none;"></div>
 
+    <div class="ms-apply-modal-backdrop" id="msApplyModalBackdrop">
+      <div class="ms-apply-modal">
+        <div class="ms-apply-modal-head">
+          <h3 id="msApplyModalTitle">Apply for Appointment</h3>
+          <button class="ms-apply-modal-close" id="msApplyModalClose" type="button">&times;</button>
+        </div>
+
+        <div class="ms-apply-field" id="msApplyLevelWrap" style="display:none;">
+          <label>Current Level</label>
+          <select id="msApplyLevel">
+            <option value="TC25">TC25</option>
+            <option value="TC26">TC26</option>
+            <option value="TC27">TC27</option>
+            <option value="TC28">TC28</option>
+            <option value="TC29">TC29</option>
+            <option value="TC30">TC30</option>
+            <option value="TG1">TG1</option>
+            <option value="TG2">TG2</option>
+            <option value="TG3">TG3</option>
+            <option value="TG4">TG4</option>
+            <option value="TG5">TG5</option>
+          </select>
+        </div>
+        <div class="ms-apply-hint" id="msApplyAutoCalcHint" style="display:none;">
+          Your KvK Potential is calculated automatically from your level and resources below \u2014 you don't need to figure it out yourself.
+        </div>
+
+        <div class="ms-apply-field">
+          <label>Kingshot ID</label>
+          <input type="text" id="msApplyName" placeholder="Enter your Kingshot ID" spellcheck="false">
+          <div class="ms-apply-idcheck" id="msApplyIdCheck"></div>
+        </div>
+
+        <div class="ms-apply-field">
+          <label>Speedups (Days)</label>
+          <input type="text" inputmode="decimal" id="msApplySpeedups" placeholder="e.g. 20">
+        </div>
+
+        <div class="ms-apply-field" id="msApplyTruegoldWrap">
+          <label>Truegold Quantity</label>
+          <input type="text" inputmode="decimal" id="msApplyTruegold" placeholder="e.g. 1500">
+        </div>
+
+        <div class="ms-apply-field" id="msApplyT9Wrap" style="display:none;">
+          <label>T9 Troop Count</label>
+          <input type="text" inputmode="numeric" id="msApplyT9" placeholder="e.g. 500000">
+        </div>
+
+        <div class="ms-apply-field" id="msApplySpeedWrap" style="display:none;">
+          <label>Base Training Speed % (optional)</label>
+          <input type="text" inputmode="decimal" id="msApplySpeed" placeholder="Leave blank to use default (178.7%)">
+          <div class="ms-apply-hint" style="margin-top:8px;margin-bottom:0;">Enter your <strong>base</strong> Training Speed only \u2014 not counting Noble Advisor, Mobilize, or KvK Bonus. Those buffs get added automatically.</div>
+        </div>
+
+        <div class="ms-apply-field">
+          <label>Availability</label>
+          <div class="ms-avail-tz-note">
+            All times shown in <strong>UTC</strong><span id="msAvailLocalTz"></span>
+          </div>
+          <div class="ms-avail-timeline-wrap">
+            <div class="ms-avail-labels" id="msAvailLabels"></div>
+            <div class="ms-avail-timeline" id="msAvailTimeline"></div>
+          </div>
+          <div class="ms-avail-editbar" id="msAvailEditbar" style="display:none;">
+            <span class="ms-avail-editbar-label" id="msAvailEditbarLabel"></span>
+            <div class="ms-avail-editbar-btns">
+              <button type="button" id="msAvailStartMinus" title="Earlier start">start &minus;</button>
+              <button type="button" id="msAvailStartPlus" title="Later start">start +</button>
+              <button type="button" id="msAvailEndMinus" title="Earlier end">end &minus;</button>
+              <button type="button" id="msAvailEndPlus" title="Later end">end +</button>
+              <button type="button" id="msAvailRemoveRange" class="ms-avail-remove">Remove</button>
+            </div>
+          </div>
+          <div class="ms-avail-summary" id="msAvailSummary">Tap and drag on the timeline above to mark when you're available.</div>
+          <div class="ms-apply-error" id="msAvailError" style="display:none;"></div>
+        </div>
+
+        <div class="ms-apply-hint">Tip: the wider your availability window, the better your chances of being assigned a slot.</div>
+        <div class="ms-apply-error" id="msApplyError" style="display:none;"></div>
+
+        <div class="ms-apply-actions">
+          <button class="ms-apply-cancel" id="msApplyCancel" type="button">Cancel</button>
+          <button class="ms-apply-submit" id="msApplySubmit" type="button">Submit Application</button>
+        </div>
+      </div>
+    </div>
+
     <div class="foot">
       <div class="foot-note">Tap any text to edit. Checkboxes and edits sync for everyone viewing this board.</div>
       <div style="display:flex;align-items:center;gap:10px;">
@@ -741,8 +1045,44 @@
 <script>
 (function(){
 
-var PREP_START = Date.UTC(2026,7,10,0,0,0);
-var BATTLE_START = Date.UTC(2026,7,15,12,0,0);
+// --- Automatic recurring KvK cycle ---------------------------------------
+// KvK repeats on a fixed 28-day cycle. Anchor is the Pre-prep Saturday of a
+// confirmed real cycle (Construction Monday 2026-08-10, minus 2 days).
+// Every future (and past) cycle is exactly N*28 days from this anchor —
+// confirmed against the kingdom's own schedule sheet through Dec 28, 2026.
+var CYCLE_ANCHOR_SAT_UTC = Date.UTC(2026,7,8,0,0,0); // Sat 2026-08-08
+var CYCLE_LENGTH_DAYS = 28;
+var CYCLE_LENGTH_MS = CYCLE_LENGTH_DAYS * 86400000;
+var DAY_MS = 86400000;
+
+function computeActiveCycleStartMs(nowMs){
+  nowMs = (nowMs === undefined) ? Date.now() : nowMs;
+  var diff = nowMs - CYCLE_ANCHOR_SAT_UTC;
+  var cyclesElapsed = Math.floor(diff / CYCLE_LENGTH_MS);
+  var candidateStart = CYCLE_ANCHOR_SAT_UTC + cyclesElapsed * CYCLE_LENGTH_MS;
+  var daysIntoCycle = (nowMs - candidateStart) / DAY_MS;
+  // The active 8-day window (2 pre-prep + 5 prep + battle) has passed —
+  // show the upcoming cycle instead of a stale finished one.
+  if(daysIntoCycle >= 8){
+    candidateStart += CYCLE_LENGTH_MS;
+  }
+  return candidateStart;
+}
+
+function fmtDateISO(ms){
+  var d = new Date(ms);
+  return d.getUTCFullYear() + "-" + String(d.getUTCMonth()+1).padStart(2,"0") + "-" + String(d.getUTCDate()).padStart(2,"0");
+}
+
+var MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fmtDateHuman(ms){
+  var d = new Date(ms);
+  return MONTH_ABBR[d.getUTCMonth()] + " " + d.getUTCDate();
+}
+
+var ACTIVE_CYCLE_START_MS = computeActiveCycleStartMs();
+var PREP_START = ACTIVE_CYCLE_START_MS + 2*DAY_MS;              // Monday 00:00 UTC
+var BATTLE_START = ACTIVE_CYCLE_START_MS + 7*DAY_MS + 12*3600000; // Saturday 12:00 UTC
 
 var TASK_CATEGORIES = {
   comms:      { label:'Comms',      color:'var(--violet)' },
@@ -754,8 +1094,8 @@ var TASK_CATEGORIES = {
 };
 var TASK_CATEGORY_CYCLE = ['comms','dataentry','scheduling','roster','tracking','battleday', null];
 
-var DAYS = [
-  { date:"2026-08-08", dow:"Sat", phase:"Pre-prep", group:"preprep",
+var DAY_TEMPLATES = [
+  { dayOffset:0, dow:"Sat", phase:"Pre-prep", group:"preprep",
     focus:"Roster lockdown",
     summary: `FOCUS TODAY
 Lock the roster and trap-type groupings, confirm rally squad leads and alt lineups, and get the comms channel pinned with the full prep schedule.
@@ -772,7 +1112,7 @@ Start holding your 08:00 and 16:00 UTC Watchtower Intel Missions today without c
     buffs:["None scheduled — hold buffs for prep start"],
     ministers:["Not yet open"],
     scoring:[] },
-  { date:"2026-08-09", dow:"Sun", phase:"Pre-prep", group:"preprep",
+  { dayOffset:1, dow:"Sun", phase:"Pre-prep", group:"preprep",
     focus:"Final briefing and systems check",
     summary: `FOCUS TODAY
 Final officer briefing, confirm the 5-alliance castle rotation order, and test rally coordination tooling end to end so there are no surprises Monday.
@@ -789,7 +1129,7 @@ Hold your 16:00 UTC Watchtower Intel Missions today without claiming — collect
     buffs:["Stage a construction speed buff for last-minute builds"],
     ministers:["Not yet open"],
     scoring:[] },
-  { date:"2026-08-10", dow:"Mon", phase:"Construction", group:"prep",
+  { dayOffset:2, dow:"Mon", phase:"Construction", group:"prep",
     focus:"Construction push",
     summary: `FOCUS TODAY
 Truegold building upgrades, Truegold Dust for tech research, construction/research/training speedups, and claiming every intel mission you've been holding.
@@ -816,7 +1156,7 @@ Start holding 08:00/16:00 UTC intel missions again today. If you have spare Rese
       ["Use 1m of speedups to learn master skills", 30],
       ["Finish 1 intel mission", 6000]
     ] },
-  { date:"2026-08-11", dow:"Tue", phase:"Research", group:"prep",
+  { dayOffset:3, dow:"Tue", phase:"Research", group:"prep",
     focus:"Research push",
     summary: `FOCUS TODAY
 Research speedups, Truegold Dust, Hero Roulette spins, hero shard ascension, gathering (bread/wood/stone/iron), and Master Emblems/Manuscripts.
@@ -851,7 +1191,7 @@ If you're doing the Training Capacity Enhance "triple batch" trick, TODAY is you
       ["Use any 1 master emblem", 6000],
       ["Use 1 master's manuscript", 60]
     ] },
-  { date:"2026-08-12", dow:"Wed", phase:"Pet training", group:"prep",
+  { dayOffset:4, dow:"Wed", phase:"Pet training", group:"prep",
     focus:"Training push",
     summary: `FOCUS TODAY
 Pet Advancement score, Advanced/Common Taming Marks, Governor Gear Charms, Hero Roulette, hero shard ascension, and intel missions.
@@ -880,7 +1220,7 @@ Activate "Training Capacity Enhance" (+200% Training Capacity, but training take
       ["Use any 1 master emblem", 6000],
       ["Use 1 master's manuscript", 60]
     ] },
-  { date:"2026-08-13", dow:"Thu", phase:"Troop training", group:"prep",
+  { dayOffset:5, dow:"Thu", phase:"Troop training", group:"prep",
     focus:"Combat readiness",
     summary: `FOCUS TODAY
 Training/promoting T9–T11 troops, Hero Gear Forgehammers, Hero Exclusive Gear Widgets, Mithril if you have it, and gathering.
@@ -917,7 +1257,7 @@ Start holding intel missions again from tonight's cycles. If you're saving Mithr
       ["Gather 200 stone in the wilderness", 2],
       ["Gather 50 iron in the wilderness", 2]
     ] },
-  { date:"2026-08-14", dow:"Fri", phase:"Power boost", group:"prep",
+  { dayOffset:6, dow:"Fri", phase:"Power boost", group:"prep",
     focus:"Final lockdown",
     summary: `FOCUS TODAY
 Pet Advancement, Taming Marks, Mithril, Governor Gear, Truegold, every speedup type, intel missions, and gathering — everything is live today.
@@ -954,7 +1294,7 @@ Lock rally squad assignments and trap layout tonight. Confirm infirmaries are up
       ["Gather 200 stone in the wilderness", 2],
       ["Gather 50 iron in the wilderness", 2]
     ] },
-  { date:"2026-08-15", dow:"Sat", phase:"Battle phase", group:"battle",
+  { dayOffset:7, dow:"Sat", phase:"Battle phase", group:"battle",
     focus:"Castle assault — live coverage",
     summary: `FOCUS TODAY
 Occupying the King's Castle and its turrets, killing enemy troops, holding turret control, and continuous healing.
@@ -984,18 +1324,21 @@ Field Triage opens right after battle ends (~22:00 UTC) — request Alliance Res
     ] }
 ];
 
-var storageKey = "kvk-aug2026";
-var OLD_storageKey = "kvk-jul2026";
-var DATE_MIGRATION_MAP = {
-  "2026-07-11": "2026-08-08",
-  "2026-07-12": "2026-08-09",
-  "2026-07-13": "2026-08-10",
-  "2026-07-14": "2026-08-11",
-  "2026-07-15": "2026-08-12",
-  "2026-07-16": "2026-08-13",
-  "2026-07-17": "2026-08-14",
-  "2026-07-18": "2026-08-15"
-};
+function buildDaysArray(cycleStartMs){
+  return DAY_TEMPLATES.map(function(t){
+    var d = Object.assign({}, t);
+    d.date = fmtDateISO(cycleStartMs + t.dayOffset * DAY_MS);
+    return d;
+  });
+}
+
+var DAYS = buildDaysArray(ACTIVE_CYCLE_START_MS);
+
+// Each cycle gets its own automatically-named Firebase location (keyed by
+// its Pre-prep start date) — so a brand new cycle always starts with fresh
+// default content with zero manual migration, while every past cycle's
+// data just sits untouched at its own key, archived forever.
+var storageKey = "kvk-cycle-" + fmtDateISO(ACTIVE_CYCLE_START_MS);
 var state = null;
 var selectedIdx = 0;
 
@@ -1012,36 +1355,15 @@ var R5_UNLOCKED = false;
 var EDIT_MODE = false;
 var CAN_VIEW_R5 = false;
 var dbRef = null;
-var dbRefOld = null;
 try{
   if(typeof firebase !== 'undefined'){
     dbRef = firebase.database().ref(storageKey);
-    dbRefOld = firebase.database().ref(OLD_storageKey);
   }
 }catch(e){ console.warn("Firebase database not reachable:", e); }
 
-// One-time migration: if the new (August) storage location is empty but the
-// old (July) one has real data, remap each day's content onto its new date
-// and save it under the new key. Runs automatically on first load after the
-// date shift — nothing for the user to trigger manually.
-function migrateJulyDataToAugust(oldState){
-  var migrated = defaultState();
-  if(oldState.kingdomName) migrated.kingdomName = oldState.kingdomName;
-  if(oldState.scheduler) migrated.scheduler = oldState.scheduler;
-  if(oldState.days){
-    Object.keys(DATE_MIGRATION_MAP).forEach(function(oldDate){
-      var newDate = DATE_MIGRATION_MAP[oldDate];
-      if(oldState.days[oldDate]){
-        migrated.days[newDate] = oldState.days[oldDate];
-      }
-    });
-  }
-  return migrateState(migrated);
-}
-
 function defaultState(){
   var s = { kingdomName:"KvK War Room", days:{},
-    scheduler:{ players:{d1:[],d2:[],d4:[],d4cm:[]}, entryCounter:0 } };
+    scheduler:{ players:{d1:[],d4:[],d4cm:[]}, entryCounter:0 } };
   DAYS.forEach(function(d){
     s.days[d.date] = {
       focus: d.focus,
@@ -1082,7 +1404,7 @@ function migrateState(parsed){
   if(!parsed.scheduler || !parsed.scheduler.players){
     parsed.scheduler = def.scheduler;
   } else {
-    ['d1','d2','d4','d4cm'].forEach(function(k){
+    ['d1','d4','d4cm'].forEach(function(k){
       if(!Array.isArray(parsed.scheduler.players[k])) parsed.scheduler.players[k] = [];
     });
     if(typeof parsed.scheduler.entryCounter !== 'number') parsed.scheduler.entryCounter = 0;
@@ -1653,8 +1975,10 @@ function switchView(view){
   document.querySelectorAll('.view-btn').forEach(function(b){
     b.classList.toggle('active', b.getAttribute('data-view') === view);
   });
+  document.getElementById('todayView').style.display = view === 'today' ? 'block' : 'none';
   document.getElementById('dayView').style.display = view === 'day' ? 'block' : 'none';
   document.getElementById('summaryView').style.display = view === 'summary' ? 'block' : 'none';
+  if(view === 'today') renderTodayView();
   if(view === 'summary') renderSummary();
 }
 
@@ -1682,6 +2006,82 @@ function goToTask(dateIdx, taskIdx){
 
 var SUMMARY_GROUP_LABELS = { preprep: 'Pre-prep', prep: 'KvK Preparation', battle: 'Battle phase' };
 var SUMMARY_GROUP_ORDER = ['preprep', 'prep', 'battle'];
+
+function isActiveWindowNow(){
+  var todayDate = todayStr();
+  return DAYS.some(function(d){ return d.date === todayDate; });
+}
+
+function renderTodayView(){
+  var body = document.getElementById('todayViewBody');
+  if(!body) return;
+  body.innerHTML = isActiveWindowNow() ? todayActiveHtml() : todayUpcomingHtml();
+  var goBtn = document.getElementById('todayGoToDayView');
+  if(goBtn) goBtn.addEventListener('click', function(){
+    switchView('day');
+    renderStrip();
+    renderPanel();
+  });
+}
+
+function todayActiveHtml(){
+  var todayDate = todayStr();
+  var idx = DAYS.findIndex(function(d){ return d.date === todayDate; });
+  var d = DAYS[idx];
+  var dayData = state.days[d.date];
+  var html = '<div class="today-hero">';
+  html += '<div class="today-hero-phase">' + msEsc(d.phase) + '</div>';
+  html += '<div class="today-hero-sub">Today \u00b7 ' + msEsc(d.dow) + '</div>';
+  html += '</div>';
+
+  if(dayData.summary && dayData.summary.trim()){
+    html += '<div class="today-card"><div class="today-card-title">What to focus on today</div>';
+    html += '<div class="today-summary-text">' + msEsc(dayData.summary.trim()) + '</div></div>';
+  }
+
+  html += '<div class="today-cols">';
+  html += '<div class="today-card"><div class="today-card-title">\u2b50 Kingdom Buffs</div>';
+  if(!dayData.buffs.length){
+    html += '<div class="today-empty">None scheduled.</div>';
+  } else {
+    dayData.buffs.forEach(function(b){ html += '<div class="today-list-item">' + msEsc(b.text) + '</div>'; });
+  }
+  html += '</div>';
+
+  html += '<div class="today-card"><div class="today-card-title">\u2696\uFE0F Minister Appointments</div>';
+  if(!dayData.ministers.length){
+    html += '<div class="today-empty">Not yet open.</div>';
+  } else {
+    dayData.ministers.forEach(function(m){ html += '<div class="today-list-item">' + msEsc(m.text) + '</div>'; });
+  }
+  html += '</div></div>';
+
+  var bestItems = dayData.scoring.filter(function(s){ return s.rating === 'best'; });
+  if(bestItems.length){
+    html += '<div class="today-card"><div class="today-card-title">\uD83D\uDFE2 Best Use of Points Today</div>';
+    bestItems.forEach(function(s){ html += '<div class="today-list-item">' + msEsc(s.text) + '</div>'; });
+    html += '</div>';
+  }
+
+  html += '<button class="today-daylink" id="todayGoToDayView">See full day details \u2192</button>';
+  return html;
+}
+
+function todayUpcomingHtml(){
+  var html = '<div class="today-hero"><div class="today-hero-phase">Coming Up</div>';
+  html += '<div class="today-hero-sub">The next KvK cycle hasn\u2019t started yet \u2014 here\u2019s what\u2019s ahead</div></div>';
+  html += '<div class="today-upcoming-list">';
+  DAYS.filter(function(d){ return d.group !== 'preprep'; }).forEach(function(d){
+    var dt = new Date(d.date + 'T00:00:00Z');
+    var dateStr = MONTH_ABBR[dt.getUTCMonth()] + ' ' + dt.getUTCDate();
+    html += '<div class="today-upcoming-row">';
+    html += '<div class="today-upcoming-date">' + d.dow + '<br><span>' + dateStr + '</span></div>';
+    html += '<div class="today-upcoming-phase">' + msEsc(d.phase) + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
 
 function renderSummary(){
   var container = document.getElementById('summaryDays');
@@ -1827,18 +2227,22 @@ function renderSummary(){
 ============================================================ */
 
 var MS_SLOTS = 48;
-var msPlayers = { d1:[], d2:[], d4:[], d4cm:[] };
-var msSchedule = { d1:new Array(MS_SLOTS).fill(null), d2:new Array(MS_SLOTS).fill(null), d4:new Array(MS_SLOTS).fill(null), d4cm:new Array(MS_SLOTS).fill(null) };
+var msPlayers = { d1:[], d4:[], d4cm:[] };
+var msSchedule = { d1:new Array(MS_SLOTS).fill(null), d4:new Array(MS_SLOTS).fill(null), d4cm:new Array(MS_SLOTS).fill(null) };
 var msEntryCounter = 0;
-var msFilters = { d1:'all', d2:'all', d4:'all', d4cm:'all' };
+var msFilters = { d1:'all', d4:'all', d4cm:'all' };
 var msCsvOpen = {};
-var msActiveSubTab = { "2026-08-13": "d4" };
+// Construction (d1) is always the Monday (offset 2); Troop Training
+// (d4/d4cm) is always the Thursday (offset 5) of whichever cycle is active.
+var CONSTRUCTION_DATE = DAYS[2].date;
+var TROOP_TRAINING_DATE = DAYS[5].date;
 
-var MS_DAY_MAP = {
-  "2026-08-10": ["d1"],
-  "2026-08-11": ["d2"],
-  "2026-08-13": ["d4","d4cm"]
-};
+var msActiveSubTab = {};
+msActiveSubTab[TROOP_TRAINING_DATE] = "d4";
+
+var MS_DAY_MAP = {};
+MS_DAY_MAP[CONSTRUCTION_DATE] = ["d1"];
+MS_DAY_MAP[TROOP_TRAINING_DATE] = ["d4","d4cm"];
 var MS_KEY_TO_DATE = {};
 Object.keys(MS_DAY_MAP).forEach(function(date){
   MS_DAY_MAP[date].forEach(function(k){ MS_KEY_TO_DATE[k] = date; });
@@ -1866,13 +2270,11 @@ function msCurrentSlotIndexFor(key){
 }
 var MS_LABELS = {
   d1: "Chief Minister — Construction",
-  d2: "Chief Minister — Research",
   d4: "Noble Advisor — Troop Training",
   d4cm: "Chief Minister — Troop Training (overflow)"
 };
 var MS_CSV_COLS = {
   d1: "Time Slot, Name, KvK Potential",
-  d2: "Name, Start1, End1, Start2, End2, Speedups, TGDust",
   d4: "Time Slot, Name",
   d4cm: "Name, Start1, End1, Start2, End2, Speedups, T9, T10, T11"
 };
@@ -1893,15 +2295,132 @@ function msFmtNum(n){ if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) retur
 function msEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function msCalcPts(tg){ return (parseInt(tg)||0) * 2000; }
-function msCalcD2Pts(sp, tgd){ return Math.round((parseFloat(sp)||0) * 24 * 60 * 30) + ((parseInt(tgd)||0) * 1000); }
-function msCalcD4Pts(sp, t9, t10, t11){
+// --- Chief Minister: Construction scoring -------------------------------
+// Simulates spending a player's on-hand Truegold + speedup-days optimally
+// down the fixed, ordered building-upgrade path, to compute their maximum
+// possible KvK Potential score. See conversation for full spec — the key
+// rule: Truegold registers points the instant a stage is STARTED (even if
+// it doesn't finish), while speedup-days register for whatever partial
+// amount is actually used. Tempered Truegold isn't wired in yet (nothing
+// before TG6 needs it) but the structure leaves room to add it.
+var BASELINE_ORDER = {
+  "TC25": 0, "TC26": 1, "TC27": 2, "TC28": 3, "TC29": 4, "TC30": 5,
+  "TG1": 10, "TG2": 15, "TG3": 26, "TG4": 31, "TG5": 36
+};
+
+var UPGRADE_QUEUE = [
+  {order:1,  building:"Town Center", level:"TC26", stageGold:0,   stageDays:7.80,  stagesInTier:1},
+  {order:2,  building:"Town Center", level:"TC27", stageGold:0,   stageDays:9.35,  stagesInTier:1},
+  {order:3,  building:"Town Center", level:"TC28", stageGold:0,   stageDays:10.76, stagesInTier:1},
+  {order:4,  building:"Town Center", level:"TC29", stageGold:0,   stageDays:12.37, stagesInTier:1},
+  {order:5,  building:"Town Center", level:"TC30", stageGold:0,   stageDays:14.85, stagesInTier:1},
+  {order:6,  building:"Town Center", level:"TG1",  stageGold:132, stageDays:2.59,  stagesInTier:5},
+  {order:7,  building:"Embassy",     level:"TG1",  stageGold:33,  stageDays:1.71,  stagesInTier:5},
+  {order:8,  building:"Stable",      level:"TG1",  stageGold:59,  stageDays:0.39,  stagesInTier:5},
+  {order:9,  building:"Barracks",    level:"TG1",  stageGold:59,  stageDays:0.39,  stagesInTier:5},
+  {order:10, building:"Range",       level:"TG1",  stageGold:59,  stageDays:0.39,  stagesInTier:5},
+  {order:11, building:"Town Center", level:"TG2",  stageGold:158, stageDays:3.32,  stagesInTier:5},
+  {order:12, building:"Embassy",     level:"TG2",  stageGold:39,  stageDays:2.19,  stagesInTier:5},
+  {order:13, building:"Barracks",    level:"TG2",  stageGold:71,  stageDays:0.50,  stagesInTier:5},
+  {order:14, building:"Stable",      level:"TG2",  stageGold:71,  stageDays:0.50,  stagesInTier:5},
+  {order:15, building:"Range",       level:"TG2",  stageGold:71,  stageDays:0.50,  stagesInTier:5},
+  {order:16, building:"Town Center", level:"TG3",  stageGold:238, stageDays:4.06,  stagesInTier:5},
+  {order:17, building:"Embassy",     level:"TG3",  stageGold:59,  stageDays:2.68,  stagesInTier:5},
+  {order:18, building:"Barracks",    level:"TG3",  stageGold:107, stageDays:0.61,  stagesInTier:5},
+  {order:19, building:"Stable",      level:"TG3",  stageGold:107, stageDays:0.61,  stagesInTier:5},
+  {order:20, building:"Range",       level:"TG3",  stageGold:107, stageDays:0.61,  stagesInTier:5},
+  {order:21, building:"Command Center", level:"TG1", stageGold:26, stageDays:0.31, stagesInTier:5},
+  {order:22, building:"Command Center", level:"TG2", stageGold:31, stageDays:0.40, stagesInTier:5},
+  {order:23, building:"Command Center", level:"TG3", stageGold:47, stageDays:0.49, stagesInTier:5},
+  {order:24, building:"Infirmary",   level:"TG1",  stageGold:26,  stageDays:0.31,  stagesInTier:5},
+  {order:25, building:"Infirmary",   level:"TG2",  stageGold:31,  stageDays:0.40,  stagesInTier:5},
+  {order:26, building:"Infirmary",   level:"TG3",  stageGold:47,  stageDays:0.49,  stagesInTier:5},
+  {order:27, building:"Town Center", level:"TG4",  stageGold:280, stageDays:4.43,  stagesInTier:5},
+  {order:28, building:"Embassy",     level:"TG4",  stageGold:70,  stageDays:2.93,  stagesInTier:5},
+  {order:29, building:"Range",       level:"TG4",  stageGold:126, stageDays:0.66,  stagesInTier:5},
+  {order:30, building:"Barracks",    level:"TG4",  stageGold:126, stageDays:0.66,  stagesInTier:5},
+  {order:31, building:"Stable",      level:"TG4",  stageGold:126, stageDays:0.66,  stagesInTier:5},
+  {order:32, building:"Town Center", level:"TG5",  stageGold:335, stageDays:5.17,  stagesInTier:5},
+  {order:33, building:"Embassy",     level:"TG5",  stageGold:83,  stageDays:3.41,  stagesInTier:5},
+  {order:34, building:"Barracks",    level:"TG5",  stageGold:150, stageDays:0.78,  stagesInTier:5},
+  {order:35, building:"Stable",      level:"TG5",  stageGold:150, stageDays:0.78,  stagesInTier:5},
+  {order:36, building:"Range",       level:"TG5",  stageGold:150, stageDays:0.78,  stagesInTier:5},
+  {order:37, building:"Command Center", level:"TG4", stageGold:56, stageDays:0.53, stagesInTier:5},
+  {order:38, building:"Command Center", level:"TG5", stageGold:67, stageDays:0.62, stagesInTier:5},
+  {order:39, building:"Infirmary",   level:"TG4",  stageGold:56,  stageDays:0.53,  stagesInTier:5},
+  {order:40, building:"Infirmary",   level:"TG5",  stageGold:67,  stageDays:0.62,  stagesInTier:5}
+];
+
+function msCalcConstructionPts(currentLevel, truegoldAvailable, speedupDaysAvailable){
+  var EPS = 1e-9;
+  var startOrder = BASELINE_ORDER.hasOwnProperty(currentLevel) ? BASELINE_ORDER[currentLevel] : 0;
+  var remainingGold = Math.max(0, parseFloat(truegoldAvailable) || 0);
+  var remainingDays = Math.max(0, parseFloat(speedupDaysAvailable) || 0);
+  var totalGoldSpent = 0, totalDaysSpent = 0;
+
+  for(var i=0; i<UPGRADE_QUEUE.length; i++){
+    var step = UPGRADE_QUEUE[i];
+    if(step.order <= startOrder) continue;
+
+    var stagesInTier = step.stagesInTier;
+    var stageGold = step.stageGold;
+    var stageDays = step.stageDays;
+
+    var maxByGold = (stageGold > 0) ? Math.floor((remainingGold + EPS) / stageGold) : stagesInTier;
+    var maxByDays = (stageDays > 0) ? Math.floor((remainingDays + EPS) / stageDays) : stagesInTier;
+    var wholeStages = Math.max(0, Math.min(maxByGold, maxByDays, stagesInTier));
+
+    var goldUsedWhole = wholeStages * stageGold;
+    var daysUsedWhole = wholeStages * stageDays;
+    remainingGold -= goldUsedWhole;
+    remainingDays -= daysUsedWhole;
+    totalGoldSpent += goldUsedWhole;
+    totalDaysSpent += daysUsedWhole;
+
+    if(wholeStages < stagesInTier){
+      if(remainingGold + EPS >= stageGold){
+        totalGoldSpent += stageGold;
+        remainingGold -= stageGold;
+        var partialDays = Math.min(remainingDays, stageDays);
+        totalDaysSpent += partialDays;
+        remainingDays -= partialDays;
+      }
+      break; // stop entirely at the first step that can't fully complete
+    }
+  }
+
+  return Math.round((totalGoldSpent * 2000) + (totalDaysSpent * 1440 * 30));
+}
+
+// Noble Advisor training-speed buffs that stack ON TOP of a player's base
+// Training Speed — applicants enter only their base %, these get added
+// automatically before scoring. D4_BASE_SPEED_DEFAULT (178.7%) is used
+// when an applicant leaves the field blank; the two together reproduce
+// the original 283.7% default effective speed.
+var D4_BASE_SPEED_DEFAULT = 178.7;
+var D4_BUFF_NOBLE_ADVISOR = 50;
+var D4_BUFF_MOBILIZE = 30;
+var D4_BUFF_KVK_BONUS = 25;
+var D4_ADDITIONAL_BUFFS_TOTAL = D4_BUFF_NOBLE_ADVISOR + D4_BUFF_MOBILIZE + D4_BUFF_KVK_BONUS;
+
+function msCalcD4Pts(sp, t9, t10, t11, speedPct){
+  var DEFAULT_SPEED = 283.7;
+  var effSpeed = (speedPct === undefined || speedPct === null || speedPct === '') ? DEFAULT_SPEED : parseFloat(speedPct);
+  if(isNaN(effSpeed)) effSpeed = DEFAULT_SPEED;
+  var speedMultiplier = 1 + (effSpeed / 100);
   var totalSec = (parseFloat(sp)||0) * 86400;
+  var promoSecPerTroop = 21 / speedMultiplier; // T9->T10 promotion — still unconfirmed against real data
+  var trainSecPerTroop = 152 / speedMultiplier; // confirmed: matches in-game Tier 10 training time (2m32s) exactly, independent of Barracks TG level
   if(t11){
+    // T11 not yet unlocked — left as a placeholder, not reworked for
+    // dynamic speed yet since it's unused.
     var rem1 = Math.max(0, totalSec - (t9*12) - (t10*6));
     return (t9*30) + (t10*15) + Math.floor(rem1/44)*75;
   } else {
-    var rem2 = Math.max(0, totalSec - (t9*5));
-    return (t9*15) + Math.floor(rem2/35)*60;
+    var promoTimeUsed = (parseInt(t9)||0) * promoSecPerTroop;
+    var remainingSec = Math.max(0, totalSec - promoTimeUsed);
+    var newTroopsTrained = Math.floor(remainingSec / trainSecPerTroop);
+    return ((parseInt(t9)||0) * 15) + (newTroopsTrained * 60);
   }
 }
 
@@ -1929,17 +2448,36 @@ function msAssign(q){
 }
 
 function msDirectPlaceBySlot(players){
-  // Used for schedulers that are a fully precomputed list from the
-  // kingdom's own sheet (Day 1 Chief Minister, Noble Advisor) — each row
-  // already states its exact time slot, so we just place it there. First
-  // row imported into a given slot wins; anything after that for the same
-  // slot falls through to "No Slot" via the normal diffing logic.
+  // Hybrid model: CSV-sourced rows are a fully precomputed schedule from
+  // the kingdom's own sheet — each row already states its exact time slot,
+  // so those get placed first and are authoritative. Any player-submitted
+  // applications (source: 'apply') don't have a fixed slot — they only
+  // have an availability window — so once every CSV row is placed, we
+  // assign applicants into whatever slots are still open, prioritized by
+  // points (from their submitted speedups), same idea as msAssign.
   var sc = new Array(MS_SLOTS).fill(null);
-  players.forEach(function(p){
+  var csvPlayers = players.filter(function(p){ return p.source !== 'apply'; });
+  var applyPlayers = players.filter(function(p){ return p.source === 'apply'; });
+
+  csvPlayers.forEach(function(p){
     if(p.slotIndex !== null && p.slotIndex !== undefined && p.slotIndex >= 0 && p.slotIndex < MS_SLOTS && !sc[p.slotIndex]){
       sc[p.slotIndex] = p;
     }
   });
+
+  var used = new Set(sc.filter(Boolean).map(function(p){ return p.id; }));
+  var restApply = applyPlayers.slice().sort(function(a,b){ return (b.pts||0)-(a.pts||0) || a.entryOrder-b.entryOrder; });
+  restApply.forEach(function(p){
+    for(var i=0; i<MS_SLOTS; i++){
+      if(!sc[i] && msAvail(p, i)){ sc[i] = p; used.add(p.id); break; }
+    }
+    p.noSlot = !used.has(p.id);
+  });
+
+  csvPlayers.forEach(function(p){
+    p.noSlot = !used.has(p.id);
+  });
+
   return sc;
 }
 
@@ -1956,7 +2494,6 @@ function msBuildD4cmQ(){
 
 function msRecalcAll(){
   msSchedule.d1 = msDirectPlaceBySlot(msPlayers.d1);
-  msSchedule.d2 = msAssign(msPlayers.d2);
   msSchedule.d4 = msDirectPlaceBySlot(msPlayers.d4);
   msSchedule.d4cm = msAssign(msBuildD4cmQ());
 }
@@ -1966,10 +2503,568 @@ function msSyncAndSave(){
   saveState();
 }
 
+// --- Jeabslist player lookup ---------------------------------------------
+// TESTING ONLY: the API token below is embedded directly in client-side JS,
+// visible to anyone who views page source. This is fine for testing, but
+// MUST move behind a small proxy (so the token isn't public) before this
+// dashboard is shared with the alliance. Flagging this loudly on purpose.
+var JEABSLIST_API_BASE = "https://jeabslist.com/api/v1";
+var JEABSLIST_API_TOKEN = "jp_f05159a41aae673e635088bb9531ce84db663a0e";
+
+var msApplyLookupResult = null; // { name, tcLevel, allianceName } once confirmed
+var msApplyLookupSeq = 0;       // guards against a stale response overwriting a newer one
+
+function msLookupKingshotId(id){
+  var check = document.getElementById('msApplyIdCheck');
+  var mySeq = ++msApplyLookupSeq;
+  msApplyLookupResult = null;
+
+  if(!id){
+    if(check){ check.textContent = ''; check.className = 'ms-apply-idcheck'; }
+    return;
+  }
+
+  if(check){ check.textContent = 'Looking up ID\u2026'; check.className = 'ms-apply-idcheck loading'; }
+
+  fetch(JEABSLIST_API_BASE + '/players/' + encodeURIComponent(id), {
+    headers: { 'Authorization': 'Bearer ' + JEABSLIST_API_TOKEN }
+  })
+    .then(function(res){
+      if(!res.ok) throw new Error('status ' + res.status);
+      return res.json();
+    })
+    .then(function(data){
+      if(mySeq !== msApplyLookupSeq) return; // a newer lookup superseded this one
+      var allianceName = (data.alliance && data.alliance.name) ? data.alliance.name : '';
+      msApplyLookupResult = {
+        forId: id,
+        name: data.name || id,
+        tcLevel: data.town_hall_level || null,
+        allianceName: allianceName
+      };
+      if(check){
+        var bits = [msApplyLookupResult.name];
+        if(msApplyLookupResult.tcLevel) bits.push('TC' + msApplyLookupResult.tcLevel);
+        if(allianceName) bits.push('[' + allianceName + ']');
+        check.textContent = '\u2713 ' + bits.join(' \u00b7 ');
+        check.className = 'ms-apply-idcheck found';
+      }
+    })
+    .catch(function(err){
+      if(mySeq !== msApplyLookupSeq) return;
+      if(check){
+        check.textContent = '\u2717 Could not verify this ID \u2014 you can still submit, but double-check it\u2019s correct.';
+        check.className = 'ms-apply-idcheck notfound';
+      }
+    });
+}
+
+var msApplyTargetKey = null;
+
+// --- Availability drag-select timeline -----------------------------------
+// Replaces manual Start/End text entry with a 24-hour vertical timeline the
+// applicant taps/drags across. Internally still resolves to the exact same
+// s1/e1/s2/e2 minute-range format the rest of the app already expects —
+// nothing downstream of submission changes.
+var MS_AVAIL_SLOTS = 48;
+var MS_AVAIL_PX = 480; // must match .ms-avail-timeline height in CSS
+var msAvailRanges = [];       // up to 2 {start,end} objects, minutes since midnight
+var msAvailEditingIndex = null;
+var msAvailDrag = null;       // {anchorSlot, currentSlot} while actively dragging
+
+function msRangesOverlapOrTouch(a, b){
+  return !(a.end < b.start || a.start > b.end);
+}
+
+function msAvailAddRange(existingRanges, newRange){
+  var overlapping = [], nonOverlapping = [];
+  existingRanges.forEach(function(r){
+    if(msRangesOverlapOrTouch(newRange, r)) overlapping.push(r); else nonOverlapping.push(r);
+  });
+  var mergedStart = newRange.start, mergedEnd = newRange.end;
+  overlapping.forEach(function(r){
+    mergedStart = Math.min(mergedStart, r.start);
+    mergedEnd = Math.max(mergedEnd, r.end);
+  });
+  var candidate = nonOverlapping.concat([{start:mergedStart, end:mergedEnd}]);
+  candidate.sort(function(a,b){ return a.start-b.start; });
+  if(candidate.length > 2) return { ok:false, ranges: existingRanges };
+  return { ok:true, ranges: candidate };
+}
+
+function msAvailClampEdge(ranges, idx, field, rawValue){
+  var r = ranges[idx];
+  var other = (ranges.length === 2) ? ranges[idx === 0 ? 1 : 0] : null;
+  if(field === 'start'){
+    var v = rawValue;
+    if(v < 0) v = 0;
+    if(v > r.end - 30) v = r.end - 30;
+    if(other && idx === 1 && v < other.end) v = other.end;
+    return v;
+  } else {
+    var v2 = rawValue;
+    if(v2 > 1440) v2 = 1440;
+    if(v2 < r.start + 30) v2 = r.start + 30;
+    if(other && idx === 0 && v2 > other.start) v2 = other.start;
+    return v2;
+  }
+}
+
+function msAvailAdjust(ranges, idx, field, deltaMin){
+  var r = ranges[idx];
+  var raw = (field === 'start' ? r.start : r.end) + deltaMin;
+  var clamped = msAvailClampEdge(ranges, idx, field, raw);
+  if(field === 'start') r.start = clamped; else r.end = clamped;
+}
+
+function msAvailSetEdgeFromSlot(idx, field, slot){
+  var raw = (field === 'start') ? (slot * 30) : ((slot + 1) * 30);
+  var clamped = msAvailClampEdge(msAvailRanges, idx, field, raw);
+  if(field === 'start') msAvailRanges[idx].start = clamped; else msAvailRanges[idx].end = clamped;
+}
+
+function msFmtTime12h(mins){
+  var h = Math.floor(mins/60) % 24, m = mins % 60;
+  var period = h < 12 ? 'AM' : 'PM';
+  var h12 = h % 12; if(h12 === 0) h12 = 12;
+  return h12 + ':' + String(m).padStart(2,'0') + ' ' + period;
+}
+
+function msAvailSlotFromClientY(clientY){
+  var el = document.getElementById('msAvailTimeline');
+  if(!el) return 0;
+  var rect = el.getBoundingClientRect();
+  var relY = clientY - rect.top;
+  var slot = Math.floor((relY / rect.height) * MS_AVAIL_SLOTS);
+  if(slot < 0) slot = 0;
+  if(slot > MS_AVAIL_SLOTS - 1) slot = MS_AVAIL_SLOTS - 1;
+  return slot;
+}
+
+function msAvailRenderLabels(){
+  var wrap = document.getElementById('msAvailLabels');
+  if(!wrap) return;
+  var html = '';
+  for(var hr=0; hr<24; hr+=2){
+    var y = (hr*60/1440) * MS_AVAIL_PX;
+    html += '<span style="top:' + y + 'px">' + String(hr).padStart(2,'0') + ':00</span>';
+  }
+  wrap.innerHTML = html;
+}
+
+function msAvailRenderTimeline(){
+  var el = document.getElementById('msAvailTimeline');
+  if(!el) return;
+  var html = '';
+  for(var hr=2; hr<24; hr+=2){
+    var y = (hr*60/1440) * MS_AVAIL_PX;
+    html += '<div class="ms-avail-hourline" style="top:' + y + 'px"></div>';
+  }
+  var displayRanges = msAvailRanges.slice();
+  if(msAvailDrag){
+    var a = Math.min(msAvailDrag.anchorSlot, msAvailDrag.currentSlot) * 30;
+    var b = (Math.max(msAvailDrag.anchorSlot, msAvailDrag.currentSlot) + 1) * 30;
+    displayRanges = displayRanges.concat([{start:a, end:b, pending:true}]);
+  }
+  displayRanges.forEach(function(r, i){
+    var top = (r.start/1440) * MS_AVAIL_PX;
+    var h = ((r.end - r.start)/1440) * MS_AVAIL_PX;
+    var isEditing = (!r.pending && i === msAvailEditingIndex);
+    var handles = isEditing
+      ? '<div class="ms-avail-handle ms-avail-handle-top"><span></span></div><div class="ms-avail-handle ms-avail-handle-bottom"><span></span></div>'
+      : '';
+    html += '<div class="ms-avail-range-block' + (isEditing ? ' editing' : '') + '" style="top:' + top + 'px;height:' + h + 'px;' + (r.pending ? 'opacity:0.7;' : '') + '">' + handles + '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function msAvailRenderSummary(){
+  var el = document.getElementById('msAvailSummary');
+  if(!el) return;
+  if(!msAvailRanges.length){
+    el.innerHTML = "Tap and drag on the timeline above to mark when you're available.";
+    return;
+  }
+  el.innerHTML = msAvailRanges.map(function(r){
+    return '<span class="ms-avail-summary-item">' + msFmtTime12h(r.start) + '\u2013' + msFmtTime12h(r.end) + '</span>';
+  }).join('');
+}
+
+function msAvailRenderEditbar(){
+  var bar = document.getElementById('msAvailEditbar');
+  if(!bar) return;
+  if(msAvailEditingIndex === null || !msAvailRanges[msAvailEditingIndex]){
+    bar.style.display = 'none';
+    return;
+  }
+  var r = msAvailRanges[msAvailEditingIndex];
+  document.getElementById('msAvailEditbarLabel').textContent =
+    'Editing: ' + msFmtTime12h(r.start) + '\u2013' + msFmtTime12h(r.end);
+  bar.style.display = 'flex';
+}
+
+function msAvailRenderAll(){
+  msAvailRenderLabels();
+  msAvailRenderTimeline();
+  msAvailRenderSummary();
+  msAvailRenderEditbar();
+}
+
+function msAvailFindRangeAtSlot(slot){
+  var mins = slot * 30;
+  for(var i=0; i<msAvailRanges.length; i++){
+    if(mins >= msAvailRanges[i].start && mins < msAvailRanges[i].end) return i;
+  }
+  return -1;
+}
+
+function msAvailResetState(){
+  msAvailRanges = [];
+  msAvailEditingIndex = null;
+  msAvailDrag = null;
+}
+
+function msAvailShowError(msg){
+  var el = document.getElementById('msAvailError');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(function(){ el.style.display = 'none'; }, 2600);
+}
+
+(function initAvailTimeline(){
+  var el = document.getElementById('msAvailTimeline');
+  if(!el) return;
+  var msAvailResizeDrag = null; // {idx, field} while dragging a resize handle
+
+  el.addEventListener('pointerdown', function(e){
+    var handleField = null;
+    if(e.target.classList && e.target.classList.contains('ms-avail-handle-top')) handleField = 'start';
+    else if(e.target.classList && e.target.classList.contains('ms-avail-handle-bottom')) handleField = 'end';
+    else{
+      var parentHandle = e.target.closest ? e.target.closest('.ms-avail-handle') : null;
+      if(parentHandle){
+        handleField = parentHandle.classList.contains('ms-avail-handle-top') ? 'start' : 'end';
+      }
+    }
+
+    if(handleField && msAvailEditingIndex !== null){
+      e.stopPropagation();
+      e.preventDefault();
+      msAvailResizeDrag = { idx: msAvailEditingIndex, field: handleField };
+      try{ el.setPointerCapture(e.pointerId); }catch(err){}
+      return;
+    }
+
+    var slot = msAvailSlotFromClientY(e.clientY);
+    var hitIndex = msAvailFindRangeAtSlot(slot);
+    if(hitIndex !== -1){
+      msAvailEditingIndex = hitIndex;
+      msAvailDrag = null;
+      msAvailRenderAll();
+      return;
+    }
+    msAvailEditingIndex = null;
+    msAvailDrag = { anchorSlot: slot, currentSlot: slot };
+    try{ el.setPointerCapture(e.pointerId); }catch(err){}
+    msAvailRenderAll();
+  });
+
+  el.addEventListener('pointermove', function(e){
+    if(msAvailResizeDrag){
+      var rslot = msAvailSlotFromClientY(e.clientY);
+      msAvailSetEdgeFromSlot(msAvailResizeDrag.idx, msAvailResizeDrag.field, rslot);
+      msAvailRenderTimeline();
+      msAvailRenderEditbar();
+      msAvailRenderSummary();
+      return;
+    }
+    if(!msAvailDrag) return;
+    msAvailDrag.currentSlot = msAvailSlotFromClientY(e.clientY);
+    msAvailRenderTimeline();
+  });
+
+  function finishDrag(){
+    if(msAvailResizeDrag){
+      msAvailResizeDrag = null;
+      return;
+    }
+    if(!msAvailDrag) return;
+    var startMin = Math.min(msAvailDrag.anchorSlot, msAvailDrag.currentSlot) * 30;
+    var endMin = (Math.max(msAvailDrag.anchorSlot, msAvailDrag.currentSlot) + 1) * 30;
+    msAvailDrag = null;
+    var result = msAvailAddRange(msAvailRanges, {start:startMin, end:endMin});
+    if(!result.ok){
+      msAvailShowError('Only 2 separate availability windows are supported \u2014 remove or extend an existing one first.');
+    } else {
+      msAvailRanges = result.ranges;
+      // Auto-select the just-placed (or merged) range so it's immediately
+      // ready to fine-tune with the handles or nudge buttons — no extra
+      // tap needed right after placing it.
+      for(var i=0; i<msAvailRanges.length; i++){
+        if(startMin >= msAvailRanges[i].start && startMin < msAvailRanges[i].end){
+          msAvailEditingIndex = i;
+          break;
+        }
+      }
+    }
+    msAvailRenderAll();
+  }
+
+  el.addEventListener('pointerup', finishDrag);
+  el.addEventListener('pointercancel', finishDrag);
+
+  function nudge(field, delta){
+    if(msAvailEditingIndex === null) return;
+    msAvailAdjust(msAvailRanges, msAvailEditingIndex, field, delta);
+    msAvailRenderAll();
+  }
+  var sMinus = document.getElementById('msAvailStartMinus');
+  var sPlus  = document.getElementById('msAvailStartPlus');
+  var eMinus = document.getElementById('msAvailEndMinus');
+  var ePlus  = document.getElementById('msAvailEndPlus');
+  var removeBtn = document.getElementById('msAvailRemoveRange');
+  if(sMinus) sMinus.addEventListener('click', function(){ nudge('start', -30); });
+  if(sPlus)  sPlus.addEventListener('click', function(){ nudge('start', 30); });
+  if(eMinus) eMinus.addEventListener('click', function(){ nudge('end', -30); });
+  if(ePlus)  ePlus.addEventListener('click', function(){ nudge('end', 30); });
+  if(removeBtn) removeBtn.addEventListener('click', function(){
+    if(msAvailEditingIndex === null) return;
+    msAvailRanges.splice(msAvailEditingIndex, 1);
+    msAvailEditingIndex = null;
+    msAvailRenderAll();
+  });
+
+  // Informational only — the selector always operates in UTC regardless of
+  // the visitor's local timezone, to match every other UTC-based time field
+  // in this dashboard. This just helps them mentally convert.
+  try{
+    var offsetMin = -new Date().getTimezoneOffset();
+    var offsetHr = offsetMin / 60;
+    var sign = offsetHr >= 0 ? '+' : '';
+    var tzEl = document.getElementById('msAvailLocalTz');
+    if(tzEl) tzEl.textContent = ' (your device is currently UTC' + sign + offsetHr + ')';
+  }catch(err){}
+
+  msAvailRenderAll();
+})();
+
+
+
+function msOpenApplyModal(key){
+  if(!msApplyIsOpen(key)){
+    flag('Applications for this appointment are closed.');
+    return;
+  }
+  msApplyTargetKey = key;
+  document.getElementById('msApplyModalTitle').textContent = 'Apply for ' + MS_LABELS[key];
+  document.getElementById('msApplyName').value = '';
+  document.getElementById('msApplySpeedups').value = '';
+  document.getElementById('msApplyTruegold').value = '';
+  document.getElementById('msApplyT9').value = '';
+  document.getElementById('msApplySpeed').value = '';
+  msAvailResetState();
+  msAvailRenderAll();
+  document.getElementById('msApplyError').style.display = 'none';
+  document.getElementById('msApplyLevel').value = 'TC25';
+  var isConstruction = (key === 'd1');
+  var isNobleAdvisor = (key === 'd4');
+  document.getElementById('msApplyLevelWrap').style.display = isConstruction ? 'block' : 'none';
+  document.getElementById('msApplyAutoCalcHint').style.display = isConstruction ? 'block' : 'none';
+  document.getElementById('msApplyTruegoldWrap').style.display = isNobleAdvisor ? 'none' : 'block';
+  document.getElementById('msApplyT9Wrap').style.display = isNobleAdvisor ? 'block' : 'none';
+  document.getElementById('msApplySpeedWrap').style.display = isNobleAdvisor ? 'block' : 'none';
+  var check = document.getElementById('msApplyIdCheck');
+  if(check){ check.textContent = ''; check.className = 'ms-apply-idcheck'; }
+  msApplyLookupResult = null;
+  msApplyLookupSeq++;
+  document.getElementById('msApplyModalBackdrop').classList.add('open');
+}
+
+function msCloseApplyModal(){
+  document.getElementById('msApplyModalBackdrop').classList.remove('open');
+  msApplyTargetKey = null;
+}
+
+function msApplyShowError(msg){
+  var el = document.getElementById('msApplyError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function msSubmitApplication(){
+  var key = msApplyTargetKey;
+  if(!key) return;
+
+  if(!msApplyIsOpen(key)){
+    msApplyShowError('The deadline for this appointment has passed \u2014 applications are closed.');
+    return;
+  }
+
+  var kingshotId = document.getElementById('msApplyName').value.trim();
+  var spRaw = document.getElementById('msApplySpeedups').value.trim();
+  var tgRaw = document.getElementById('msApplyTruegold').value.trim();
+  var t9Raw = document.getElementById('msApplyT9').value.trim();
+
+  if(!kingshotId){ msApplyShowError('Please enter your Kingshot ID.'); return; }
+
+  var sp = spRaw ? parseFloat(spRaw) : 0;
+  if(spRaw && (isNaN(sp) || sp < 0)){ msApplyShowError('Speedups must be a positive number.'); return; }
+
+  var tg = tgRaw ? parseFloat(tgRaw) : 0;
+  if(tgRaw && (isNaN(tg) || tg < 0)){ msApplyShowError('Truegold quantity must be a positive number.'); return; }
+
+  var t9 = t9Raw ? parseInt(t9Raw, 10) : 0;
+  if(key === 'd4' && t9Raw && (isNaN(t9) || t9 < 0)){ msApplyShowError('T9 count must be a positive whole number.'); return; }
+
+  var speedRaw = document.getElementById('msApplySpeed').value.trim();
+  if(key === 'd4' && speedRaw && (isNaN(parseFloat(speedRaw)) || parseFloat(speedRaw) < 0)){
+    msApplyShowError('Training Speed % must be a positive number.');
+    return;
+  }
+
+  if(!msAvailRanges.length){
+    msApplyShowError('Please mark at least one availability window on the timeline above.');
+    return;
+  }
+  var s1 = msAvailRanges[0].start, e1 = msAvailRanges[0].end;
+  var s2 = msAvailRanges[1] ? msAvailRanges[1].start : null;
+  var e2 = msAvailRanges[1] ? msAvailRanges[1].end : null;
+
+  // Use the confirmed Jeabslist lookup only if it matches the ID currently
+  // in the field (guards against a stale result if they edited the ID
+  // after a successful lookup without leaving the field again).
+  var lookup = (msApplyLookupResult && msApplyLookupResult.forId === kingshotId) ? msApplyLookupResult : null;
+  var displayName = lookup ? lookup.name : kingshotId;
+
+  var p = {
+    id: 'p' + Date.now() + (msEntryCounter++),
+    name: displayName,
+    kingshotId: kingshotId,
+    tcLevel: lookup ? lookup.tcLevel : null,
+    allianceName: lookup ? lookup.allianceName : '',
+    tg: tg,
+    entryOrder: msEntryCounter,
+    carried: false,
+    source: 'apply',
+    s1: s1, e1: e1, s2: s2, e2: e2
+  };
+
+  if(key === 'd1'){
+    var currentLevel = document.getElementById('msApplyLevel').value;
+    p.sp = sp + 'd';
+    p.currentLevel = currentLevel;
+    p.pts = msCalcConstructionPts(currentLevel, tg, sp);
+  } else if(key === 'd4'){
+    // Noble Advisor — T11 isn't unlocked yet, so always pass t10:0, t11:false.
+    // The field collects BASE Training Speed only; Noble Advisor/Mobilize/
+    // KvK Bonus buffs are added here before scoring, not entered by hand.
+    var baseSpeed = speedRaw ? parseFloat(speedRaw) : D4_BASE_SPEED_DEFAULT;
+    if(isNaN(baseSpeed)) baseSpeed = D4_BASE_SPEED_DEFAULT;
+    var effectiveSpeed = baseSpeed + D4_ADDITIONAL_BUFFS_TOTAL;
+    p.sp = sp + 'd'; p.t9 = t9; p.t10 = 0; p.t11 = false;
+    p.trainingSpeedBasePct = speedRaw || null;
+    p.trainingSpeedEffectivePct = effectiveSpeed;
+    p.pts = msCalcD4Pts(sp, t9, 0, false, effectiveSpeed);
+  } else {
+    // d4cm (Chief Minister overflow) \u2014 unchanged.
+    p.sp = sp + 'd'; p.t9 = 0; p.t10 = 0; p.t11 = false; p.pts = msCalcD4Pts(sp, 0, 0, false);
+  }
+
+  msPlayers[key].push(p);
+  msRecalcAll();
+  msSyncAndSave();
+  msCloseApplyModal();
+  flag('Application submitted!');
+  if(msCurrentRenderedKey === key) msRenderBody(key);
+}
+
+var APPT_CHOOSER_KEYS = ['d1', 'd4', 'd4cm'];
+
+function renderApptChooserList(){
+  var list = document.getElementById('apptChooserList');
+  if(!list) return;
+  list.innerHTML = APPT_CHOOSER_KEYS.map(function(key){
+    var status = msApplyStatusFor(key);
+    var open = (status.state === 'open' || status.state === 'no-deadline');
+    var statusText;
+    if(status.state === 'open') statusText = 'Closes in ' + msFmtCountdown(status.at - Date.now());
+    else if(status.state === 'not-yet-open') statusText = 'Opens in ' + msFmtCountdown(status.at - Date.now());
+    else if(status.state === 'closed') statusText = 'Applications closed';
+    else statusText = 'Open';
+    return '<button class="appt-chooser-item' + (open ? '' : ' closed') + '" data-key="' + key + '"' + (open ? '' : ' disabled') + '>' +
+      '<span class="appt-chooser-item-label">' + msEsc(MS_LABELS[key]) + '</span>' +
+      '<span class="appt-chooser-item-status">' + statusText + '</span>' +
+    '</button>';
+  }).join('');
+  list.querySelectorAll('.appt-chooser-item').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var key = btn.getAttribute('data-key');
+      if(!msApplyIsOpen(key)) return;
+      closeApptChooser();
+      msOpenApplyModal(key);
+    });
+  });
+}
+
+function openApptChooser(){
+  renderApptChooserList();
+  document.getElementById('apptChooserBackdrop').classList.add('open');
+}
+function closeApptChooser(){
+  document.getElementById('apptChooserBackdrop').classList.remove('open');
+}
+
+function msReserveButtonTargetKey(){
+  // Direct routing: Chief Minister Construction is the priority position
+  // until its deadline passes, at which point Noble Advisor (now open)
+  // becomes the target automatically. If neither is currently open, fall
+  // through to null so the caller can show the full chooser instead.
+  if(msApplyIsOpen('d1')) return 'd1';
+  if(msApplyIsOpen('d4')) return 'd4';
+  return null;
+}
+
+(function initReserveButton(){
+  var btn = document.getElementById('reserveApptBtn');
+  var closeBtn = document.getElementById('apptChooserClose');
+  var backdrop = document.getElementById('apptChooserBackdrop');
+  if(btn) btn.addEventListener('click', function(){
+    var target = msReserveButtonTargetKey();
+    if(target){
+      msOpenApplyModal(target);
+    } else {
+      openApptChooser();
+    }
+  });
+  if(closeBtn) closeBtn.addEventListener('click', closeApptChooser);
+  if(backdrop) backdrop.addEventListener('click', function(e){
+    if(e.target === backdrop) closeApptChooser();
+  });
+})();
+
+(function initApplyModal(){
+  var closeBtn = document.getElementById('msApplyModalClose');
+  var cancelBtn = document.getElementById('msApplyCancel');
+  var submitBtn = document.getElementById('msApplySubmit');
+  var backdrop = document.getElementById('msApplyModalBackdrop');
+  var idField = document.getElementById('msApplyName');
+
+  if(closeBtn) closeBtn.addEventListener('click', msCloseApplyModal);
+  if(cancelBtn) cancelBtn.addEventListener('click', msCloseApplyModal);
+  if(submitBtn) submitBtn.addEventListener('click', msSubmitApplication);
+  if(backdrop) backdrop.addEventListener('click', function(e){
+    if(e.target === backdrop) msCloseApplyModal();
+  });
+  if(idField) idField.addEventListener('blur', function(){
+    msLookupKingshotId(idField.value.trim());
+  });
+})();
+
 function msLoadFromState(){
-  var sch = (state && state.scheduler) || { players:{d1:[],d2:[],d4:[],d4cm:[]}, entryCounter:0 };
+  var sch = (state && state.scheduler) || { players:{d1:[],d4:[],d4cm:[]}, entryCounter:0 };
   msPlayers = {
-    d1: sch.players.d1 || [], d2: sch.players.d2 || [],
+    d1: sch.players.d1 || [],
     d4: sch.players.d4 || [], d4cm: sch.players.d4cm || []
   };
   msEntryCounter = sch.entryCounter || 0;
@@ -1982,8 +3077,7 @@ function msCurrentKeys(){
 }
 
 function msFieldsFor(key){
-  if(key === 'd1') return ['tg'];
-  if(key === 'd2') return ['sp','tgd'];
+  if(key === 'd1' || key === 'd4') return ['sp'];
   return ['t9','t10','t11','sp'];
 }
 
@@ -1994,16 +3088,13 @@ function msColsFor(key){
   var timeW = narrow ? '38px' : '62px';
   var playerW = narrow ? '90px' : '170px';
   if(key === 'd1') return [
-    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'', w:'1fr'}
-  ];
-  if(key === 'd2') return [
-    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Speedups', w:'1fr'}, {h:'TG Dust', w:'1fr'}, {h:'', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Alliance', w:'1fr'}, {h:'TC Level', w:'1fr'}, {h:'Truegold', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'KvK Potential', w:'1fr'}
   ];
   if(key === 'd4') return [
-    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'Alliance', w:'1fr'}, {h:'TC Level', w:'1fr'}, {h:'T9 Count', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'KvK Potential', w:'1fr'}
   ];
   return [
-    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'T9', w:'1fr'}, {h:'T10', w:'1fr'}, {h:'T11', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'T9', w:'1fr'}, {h:'T10', w:'1fr'}, {h:'T11', w:'1fr'}, {h:'Alliance', w:'1fr'}, {h:'TC Level', w:'1fr'}, {h:'Truegold', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'KvK Potential', w:'1fr'}
   ];
 }
 
@@ -2015,9 +3106,14 @@ function msGridStyle(key){
 }
 
 function msRowValues(key, p){
-  if(key === 'd1' || key === 'd4') return [];
-  if(key === 'd2') return [msEsc(p.sp||'\u2014'), msFmtNum(p.tgd||0)];
-  return [msFmtNum(p.t9||0), msFmtNum(p.t10||0), p.t11 ? 'Y' : 'N', msEsc(p.sp||'\u2014')];
+  if(key === 'd1'){
+    return [msEsc(p.allianceName || '\u2014'), msEsc(p.tcLevel || '\u2014'), msFmtNum(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+  }
+  if(key === 'd4'){
+    return [msEsc(p.allianceName || '\u2014'), msEsc(p.tcLevel || '\u2014'), msFmtNum(p.t9 || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+  }
+  var common = [msEsc(p.allianceName || '\u2014'), msEsc(p.tcLevel || '\u2014'), msFmtNum(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+  return [msFmtNum(p.t9||0), msFmtNum(p.t10||0), p.t11 ? 'Y' : 'N'].concat(common);
 }
 
 function msRenderMsPanel(){
@@ -2073,6 +3169,10 @@ function msRenderBody(key){
   var html = '';
   html += '<div id="msCurrentCardSlot">' + msCurrentAppointedHtml(key) + '</div>';
 
+  if(key === 'd1' || key === 'd4' || key === 'd4cm'){
+    html += '<div id="msApplySlot">' + msApplySlotHtml(key) + '</div>';
+  }
+
   if(EDIT_MODE){
     if(!msCsvOpen.hasOwnProperty(key)) msCsvOpen[key] = (q.length === 0);
     var csvOpen = msCsvOpen[key];
@@ -2084,7 +3184,7 @@ function msRenderBody(key){
         '<input type="file" id="ms-file-' + key + '" accept=".csv" style="display:none">' +
         '<div class="ms-csv-icn">&#8679;</div>' +
         '<div class="ms-csv-label">Drop CSV or click to browse</div>' +
-        '<div class="ms-csv-sub" id="ms-status-' + key + '">Replaces the current list</div>' +
+        '<div class="ms-csv-sub" id="ms-status-' + key + '">Replaces CSV rows only — applications are kept</div>' +
         '</div>';
     }
   }
@@ -2101,7 +3201,7 @@ function msRenderBody(key){
 
   html += '<div class="ms-list">';
   html += '<div class="ms-head-row" style="grid-template-columns:' + gridStyle + '">';
-  cols.forEach(function(c, i){ html += '<span' + (i>1 && i<cols.length-1 ? ' style="text-align:right"':'') + '>' + c.h + '</span>'; });
+  cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:right"':'') + '>' + c.h + '</span>'; });
   if(EDIT_MODE) html += '<span></span>';
   html += '</div>';
 
@@ -2146,6 +3246,9 @@ function msRenderBody(key){
 
   var copyBtn = document.getElementById('ms-copy-' + key);
   if(copyBtn) copyBtn.addEventListener('click', function(){ msCopySchedule(key); });
+
+  var applyBtn = document.getElementById('ms-apply-btn-' + key);
+  if(applyBtn) applyBtn.addEventListener('click', function(){ msOpenApplyModal(key); });
 
   if(EDIT_MODE){
     var csvToggle = document.getElementById('ms-csv-toggle-' + key);
@@ -2289,6 +3392,71 @@ function msCurrentAppointedEmptyHtml(reasonText){
     '</div>';
 }
 
+function msDeadlineMsFor(key){
+  // Applications close 23:00 UTC the day before that position's schedule
+  // starts — 1 hour before the first (00:00 UTC) appointment slot.
+  var dateStr = MS_KEY_TO_DATE[key];
+  if(!dateStr) return null;
+  var parts = dateStr.split('-').map(Number);
+  var dayStartMs = Date.UTC(parts[0], parts[1]-1, parts[2], 0, 0, 0);
+  return dayStartMs - DAY_MS + 23*3600000;
+}
+
+function msOpensAtFor(key){
+  // Noble Advisor (Thursday) is deliberately gated shut until Chief
+  // Minister Construction's (Monday) application deadline has passed —
+  // it opens automatically the instant that deadline hits. Every other
+  // position opens as soon as its cycle is generated (no gate).
+  if(key === 'd4') return msDeadlineMsFor('d1');
+  return null;
+}
+
+function msFmtCountdown(msRemaining){
+  if(msRemaining <= 0) return "closed";
+  var totalMin = Math.floor(msRemaining / 60000);
+  var d = Math.floor(totalMin / 1440);
+  var h = Math.floor((totalMin % 1440) / 60);
+  var m = totalMin % 60;
+  if(d > 0) return d + "d " + h + "h " + m + "m";
+  if(h > 0) return h + "h " + m + "m";
+  return m + "m";
+}
+
+function msApplyIsOpen(key){
+  var now = Date.now();
+  var opensAt = msOpensAtFor(key);
+  if(opensAt !== null && now < opensAt) return false;
+  var deadline = msDeadlineMsFor(key);
+  return (deadline === null) || (now < deadline);
+}
+
+// Returns one of: 'open' | 'not-yet-open' | 'closed' | 'no-deadline',
+// plus whichever timestamp is relevant to that state.
+function msApplyStatusFor(key){
+  var now = Date.now();
+  var opensAt = msOpensAtFor(key);
+  if(opensAt !== null && now < opensAt) return { state:'not-yet-open', at:opensAt };
+  var deadline = msDeadlineMsFor(key);
+  if(deadline === null) return { state:'no-deadline', at:null };
+  if(now >= deadline) return { state:'closed', at:deadline };
+  return { state:'open', at:deadline };
+}
+
+function msApplySlotHtml(key){
+  var status = msApplyStatusFor(key);
+  if(status.state === 'not-yet-open'){
+    return '<div class="ms-apply-closed">Applications for this appointment open in <span class="notranslate" translate="no">' +
+      msFmtCountdown(status.at - Date.now()) + '</span> \u2014 once Chief Minister Construction\u2019s deadline passes.</div>';
+  }
+  if(status.state === 'closed'){
+    return '<div class="ms-apply-closed">Applications are closed for this appointment \u2014 the deadline (23:00 UTC the day before) has passed.</div>';
+  }
+  var countdownHtml = (status.state === 'open')
+    ? '<div class="ms-apply-deadline">Applications close in <span class="notranslate" translate="no">' + msFmtCountdown(status.at - Date.now()) + '</span> (23:00 UTC the day before)</div>'
+    : '';
+  return '<button class="ms-apply-btn" id="ms-apply-btn-' + key + '">+ Apply for this Appointment</button>' + countdownHtml;
+}
+
 function msCurrentAppointedHtml(key){
   var idx = msCurrentSlotIndexFor(key);
   if(idx < 0) return msCurrentAppointedEmptyHtml('Not currently active');
@@ -2315,7 +3483,6 @@ function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' +
     '<span class="ms-name notranslate" translate="no">' + msEsc(p.name) + (p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '') + '</span>';
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
-  cellsHtml += '<span></span>';
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '" data-carried="' + (p.carried ? '1' : '0') + '">\u00d7</button>';
   }
@@ -2328,7 +3495,7 @@ function msSetStatus(key, msg, isErr){
   if(!el) return;
   el.textContent = msg;
   el.className = 'ms-csv-sub' + (isErr ? ' err' : ' ok');
-  setTimeout(function(){ if(el.textContent === msg){ el.textContent = 'Replaces the current list'; el.className = 'ms-csv-sub'; } }, 4000);
+  setTimeout(function(){ if(el.textContent === msg){ el.textContent = 'Replaces CSV rows only — applications are kept'; el.className = 'ms-csv-sub'; } }, 4000);
 }
 
 // Splits one CSV line into fields, respecting double-quoted fields so that
@@ -2396,16 +3563,16 @@ function msParseCSV(text, key){
         pts: msParseNum(clean[2]) || 0,
         entryOrder: msEntryCounter,
         slotIndex: slotIndex,
-        carried: false
+        carried: false,
+        source: 'csv'
       });
     });
     return { players: parsed, errors: errors };
   }
 
+  // Only d4cm reaches here now (d2 removed, d1/d4 handled above).
   var hasH = ['name','player','player name'].indexOf(fc[0]) !== -1;
   var data = hasH ? lines.slice(1) : lines;
-  var isD2 = key === 'd2';
-  var isTroop = key === 'd4cm';
 
   data.forEach(function(line, idx){
     if(!line.trim()) return;
@@ -2415,22 +3582,16 @@ function msParseCSV(text, key){
 
     var s1 = msCsvTM(clean[1]), e1 = msCsvTM(clean[2]), s2 = msCsvTM(clean[3]), e2 = msCsvTM(clean[4]);
 
-    var p = { id: 'p' + Date.now() + (msEntryCounter++), name: name, entryOrder: msEntryCounter, carried: false,
+    var p = { id: 'p' + Date.now() + (msEntryCounter++), name: name, entryOrder: msEntryCounter, carried: false, source: 'csv',
       s1: (s1!==null && e1!==null) ? s1 : null, e1: (s1!==null && e1!==null) ? e1 : null,
       s2: (s2!==null && e2!==null) ? s2 : null, e2: (s2!==null && e2!==null) ? e2 : null };
 
-    if(isD2){
-      var spDays = parseFloat(clean[5]) || 0;
-      var tgdVal = parseInt(clean[6]) || 0;
-      p.sp = spDays + 'd'; p.tgd = tgdVal; p.pts = msCalcD2Pts(spDays, tgdVal);
-    } else if(isTroop){
-      var sp2 = parseFloat(clean[5]) || 0;
-      var t9 = parseInt(clean[6]) || 0;
-      var t10 = parseInt(clean[7]) || 0;
-      var t11v = (clean[8] || '').toLowerCase();
-      var t11 = t11v==='true' || t11v==='yes' || t11v==='1';
-      p.sp = sp2 + 'd'; p.t9 = t9; p.t10 = t10; p.t11 = t11; p.pts = msCalcD4Pts(sp2, t9, t10, t11);
-    }
+    var sp2 = parseFloat(clean[5]) || 0;
+    var t9 = parseInt(clean[6]) || 0;
+    var t10 = parseInt(clean[7]) || 0;
+    var t11v = (clean[8] || '').toLowerCase();
+    var t11 = t11v==='true' || t11v==='yes' || t11v==='1';
+    p.sp = sp2 + 'd'; p.t9 = t9; p.t10 = t10; p.t11 = t11; p.pts = msCalcD4Pts(sp2, t9, t10, t11);
 
     if(p.s1===null && p.s2===null){ p.s1 = 0; p.e1 = 1440; }
     parsed.push(p);
@@ -2446,11 +3607,16 @@ function msImportCSV(key, text){
     return;
   }
   var target = key === 'd4cm' ? 'd4cm' : key;
-  msPlayers[target] = result.players;
+  // Only replace the CSV-sourced rows — any applications submitted through
+  // the "Apply" button (source: 'apply') are kept exactly as they were,
+  // so re-importing an updated sheet never wipes out real applicants.
+  var preserved = msPlayers[target].filter(function(p){ return p.source === 'apply'; });
+  msPlayers[target] = result.players.concat(preserved);
   msRecalcAll();
   msSyncAndSave();
   msCsvOpen[key] = false;
-  var msg = result.players.length + ' player' + (result.players.length!==1 ? 's' : '') + ' imported (replaced previous list)';
+  var msg = result.players.length + ' player' + (result.players.length!==1 ? 's' : '') + ' imported (replaced previous CSV rows';
+  msg += preserved.length ? ', kept ' + preserved.length + ' application' + (preserved.length!==1?'s':'') + ')' : ')';
   if(result.errors.length) msg += ' \u2014 ' + result.errors.length + ' skipped';
   msRenderBody(key);
   flag(msg);
@@ -2464,7 +3630,6 @@ function msCopySchedule(key){
     var p = sc[i];
     if(p){
       var extra = '';
-      if(key==='d2') extra = ' TGDust:' + msFmtNum(p.tgd||0);
       if(key==='d4cm') extra = ' T9:' + msFmtNum(p.t9||0) + ' T10:' + msFmtNum(p.t10||0) + ' T11:' + (p.t11?'Y':'N');
       text += msSlotLabel(i) + '  ' + p.name + extra + ' (' + msFmtPts(p.pts) + ')\n';
     } else {
@@ -2484,6 +3649,7 @@ function renderMsPanel(){ msRenderMsPanel(); }
 
 function renderCurrentView(){
   renderStrip();
+  renderTodayView();
   var summaryVisible = document.getElementById('summaryView').style.display !== 'none';
   if(summaryVisible){ renderSummary(); } else { renderPanel(); }
 }
@@ -2505,7 +3671,17 @@ function checkUrlAutoUnlock(){
   }catch(e){}
 }
 
+function renderReserveButtonLabel(){
+  var btn = document.getElementById('reserveApptBtn');
+  if(!btn) return;
+  var target = msReserveButtonTargetKey();
+  btn.textContent = target
+    ? '\uD83D\uDC51 Reserve: ' + MS_LABELS[target]
+    : '\uD83D\uDC51 Appointments Closed For Now';
+}
+
 function msRefreshCurrentSlotHighlight(){
+  renderReserveButtonLabel();
   if(!msCurrentRenderedKey) return;
   var idx = msCurrentSlotIndexFor(msCurrentRenderedKey);
   document.querySelectorAll('#msBody .ms-row[data-slot]').forEach(function(row){
@@ -2514,14 +3690,36 @@ function msRefreshCurrentSlotHighlight(){
   });
   var cardSlot = document.getElementById('msCurrentCardSlot');
   if(cardSlot) cardSlot.innerHTML = msCurrentAppointedHtml(msCurrentRenderedKey);
+
+  var applySlot = document.getElementById('msApplySlot');
+  if(applySlot){
+    var key = msCurrentRenderedKey;
+    applySlot.innerHTML = msApplySlotHtml(key);
+    var btn = document.getElementById('ms-apply-btn-' + key);
+    if(btn) btn.addEventListener('click', function(){ msOpenApplyModal(key); });
+  }
+}
+
+function populateCycleHeaderText(){
+  var sub = document.getElementById('headerSub');
+  if(sub){
+    sub.textContent = "Daily R5 tasks, King's buffs, minister appointments and area of focus \u2014 "
+      + fmtDateHuman(ACTIVE_CYCLE_START_MS) + " \u2013 " + fmtDateHuman(BATTLE_START) + ", UTC";
+  }
+  var prepTag = document.getElementById('prepDateTag');
+  if(prepTag) prepTag.textContent = DAYS[2].dow + " " + fmtDateHuman(PREP_START) + ", 00:00 UTC";
+  var battleTag = document.getElementById('battleDateTag');
+  if(battleTag) battleTag.textContent = DAYS[7].dow + " " + fmtDateHuman(BATTLE_START) + ", 12:00 UTC";
 }
 
 function init(){
   selectedIdx = computeDefaultIdx();
+  populateCycleHeaderText();
   checkUrlAutoUnlock();
   applyEditModeUI();
   tickClocks();
   setInterval(tickClocks, 1000);
+  renderReserveButtonLabel();
   setInterval(msRefreshCurrentSlotHighlight, 60000);
 
   if(!dbRef){
@@ -2542,30 +3740,7 @@ function init(){
 
   dbRef.on('value', function(snap){
     var val = snap.val();
-    if(val){
-      applyLoadedState(migrateState(val));
-      return;
-    }
-
-    // New (August) location is empty — check whether old July data exists
-    // and migrate it automatically, once, onto the new dates.
-    if(dbRefOld){
-      dbRefOld.once('value').then(function(oldSnap){
-        var oldVal = oldSnap.val();
-        if(oldVal && oldVal.days){
-          var migrated = migrateJulyDataToAugust(oldVal);
-          applyLoadedState(migrated);
-          flag("migrated July data to August dates");
-          dbRef.set(migrated).catch(function(){});
-        } else {
-          applyLoadedState(defaultState());
-        }
-      }).catch(function(){
-        applyLoadedState(defaultState());
-      });
-    } else {
-      applyLoadedState(defaultState());
-    }
+    applyLoadedState(val ? migrateState(val) : defaultState());
   }, function(){
     applyLoadedState(defaultState());
     flag("connection error — showing local defaults");
