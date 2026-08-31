@@ -890,53 +890,6 @@
     <button class="view-btn" data-view="summary">Summary</button>
   </div>
 
-  <div id="todayView">
-    <div id="todayViewBody"></div>
-  </div>
-
-  <div id="dayView" style="display:none;">
-    <div class="strip" id="dayStrip"></div>
-
-    <div class="panel day-summary-panel" id="daySummaryPanel">
-      <div class="panel-head"><div class="panel-icn">DS</div><div class="panel-title">Day summary</div></div>
-      <textarea class="day-summary-text" id="daySummaryText" placeholder="What to focus on today, tips to maximize your points, and what to prep for tomorrow..."></textarea>
-      <div class="day-summary-static" id="daySummaryStatic" style="display:none;"></div>
-    </div>
-
-    <div class="cols r5-hidden" id="colsRow">
-      <div class="panel tasks r5-hidden" id="tasksPanel">
-        <div class="panel-head"><div class="panel-icn">R5</div><div class="panel-title">R5 tasks</div></div>
-        <div id="tasksList"></div>
-        <div class="add-row" data-add="tasks"><span class="plus">+</span>Add task</div>
-      </div>
-      <div class="panel buffs">
-        <div class="panel-head"><div class="panel-icn">&#9733;</div><div class="panel-title">Kingdom buffs (King)</div></div>
-        <div id="buffsList"></div>
-        <div class="add-row" data-add="buffs"><span class="plus">+</span>Add buff</div>
-      </div>
-      <div class="panel ministers">
-        <div class="panel-head"><div class="panel-icn">&#9878;</div><div class="panel-title">Minister appointments</div></div>
-        <div id="ministersList"></div>
-        <div class="add-row" data-add="ministers">Add appointment</div>
-      </div>
-    </div>
-
-    <div class="scoring-cols">
-      <div class="panel scoring scoring-panel">
-        <div class="panel-head"><div class="panel-icn">pt</div><div class="panel-title">Scoring tasks &amp; point values</div></div>
-        <div class="scoring-filters" id="scoringFilters"></div>
-        <div class="scoring-grid" id="scoringList"></div>
-        <div class="add-row" data-add="scoring"><span class="plus">+</span>Add scoring task</div>
-      </div>
-
-      <div class="panel tomorrow-panel">
-        <div class="panel-head"><div class="panel-icn">&#8594;</div><div class="panel-title" id="tomorrowTitle">Tomorrow's tasks</div></div>
-        <div class="scoring-grid" id="tomorrowList"></div>
-      </div>
-    </div>
-
-    <div class="panel ms-panel" id="msPanel" style="display:none;"></div>
-
     <div class="ms-apply-modal-backdrop" id="msApplyModalBackdrop">
       <div class="ms-apply-modal">
         <div class="ms-apply-modal-head">
@@ -1023,6 +976,54 @@
         </div>
       </div>
     </div>
+
+  <div id="todayView">
+    <div id="todayViewBody"></div>
+  </div>
+
+  <div id="dayView" style="display:none;">
+    <div class="strip" id="dayStrip"></div>
+
+    <div class="panel day-summary-panel" id="daySummaryPanel">
+      <div class="panel-head"><div class="panel-icn">DS</div><div class="panel-title">Day summary</div></div>
+      <textarea class="day-summary-text" id="daySummaryText" placeholder="What to focus on today, tips to maximize your points, and what to prep for tomorrow..."></textarea>
+      <div class="day-summary-static" id="daySummaryStatic" style="display:none;"></div>
+    </div>
+
+    <div class="cols r5-hidden" id="colsRow">
+      <div class="panel tasks r5-hidden" id="tasksPanel">
+        <div class="panel-head"><div class="panel-icn">R5</div><div class="panel-title">R5 tasks</div></div>
+        <div id="tasksList"></div>
+        <div class="add-row" data-add="tasks"><span class="plus">+</span>Add task</div>
+      </div>
+      <div class="panel buffs">
+        <div class="panel-head"><div class="panel-icn">&#9733;</div><div class="panel-title">Kingdom buffs (King)</div></div>
+        <div id="buffsList"></div>
+        <div class="add-row" data-add="buffs"><span class="plus">+</span>Add buff</div>
+      </div>
+      <div class="panel ministers">
+        <div class="panel-head"><div class="panel-icn">&#9878;</div><div class="panel-title">Minister appointments</div></div>
+        <div id="ministersList"></div>
+        <div class="add-row" data-add="ministers">Add appointment</div>
+      </div>
+    </div>
+
+    <div class="scoring-cols">
+      <div class="panel scoring scoring-panel">
+        <div class="panel-head"><div class="panel-icn">pt</div><div class="panel-title">Scoring tasks &amp; point values</div></div>
+        <div class="scoring-filters" id="scoringFilters"></div>
+        <div class="scoring-grid" id="scoringList"></div>
+        <div class="add-row" data-add="scoring"><span class="plus">+</span>Add scoring task</div>
+      </div>
+
+      <div class="panel tomorrow-panel">
+        <div class="panel-head"><div class="panel-icn">&#8594;</div><div class="panel-title" id="tomorrowTitle">Tomorrow's tasks</div></div>
+        <div class="scoring-grid" id="tomorrowList"></div>
+      </div>
+    </div>
+
+    <div class="panel ms-panel" id="msPanel" style="display:none;"></div>
+
 
     <div class="foot">
       <div class="foot-note">Tap any text to edit. Checkboxes and edits sync for everyone viewing this board.</div>
