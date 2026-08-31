@@ -381,6 +381,7 @@
   .ms-apply-modal{
     background:var(--bg-1);border:1px solid var(--glass-border);border-radius:14px;
     padding:22px 24px;max-width:420px;width:100%;
+    max-height:calc(100vh - 40px);overflow-y:auto;box-sizing:border-box;
   }
   .ms-apply-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
   .ms-apply-modal-head h3{font-family:'Rajdhani',sans-serif;font-size:19px;color:var(--text-hi);margin:0;}
@@ -413,17 +414,12 @@
     padding:8px 10px 8px 4px;background:rgba(255,255,255,0.03);user-select:none;
   }
   .ms-avail-labels{
-    position:relative;width:38px;flex:0 0 auto;height:480px;
-    font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim);
+    position:relative;width:36px;flex:0 0 auto;height:340px;
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;color:var(--text-mid);
   }
   .ms-avail-labels span{position:absolute;right:4px;transform:translateY(-50%);}
   .ms-avail-timeline{
-    position:relative;flex:1;height:480px;border-radius:6px;overflow:visible;
-    background:repeating-linear-gradient(
-      to bottom,
-      rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px,
-      transparent 1px, transparent 20px
-    );
+    position:relative;flex:1;height:340px;border-radius:6px;overflow:visible;
     background-color:rgba(255,255,255,0.02);
     touch-action:none;cursor:pointer;
   }
@@ -446,21 +442,21 @@
     width:34px;height:6px;border-radius:4px;background:var(--amber);
     box-shadow:0 0 0 3px rgba(10,14,20,0.9);
   }
-  .ms-avail-editbar{
-    display:flex;align-items:center;justify-content:space-between;gap:8px;
-    margin-top:8px;padding:8px 10px;border-radius:8px;flex-wrap:wrap;
-    background:rgba(232,163,61,0.08);border:1px solid rgba(232,163,61,0.3);
+  .ms-avail-remove-btn{
+    position:absolute;top:50%;right:6px;transform:translateY(-50%);
+    width:22px;height:22px;border-radius:50%;padding:0;
+    background:rgba(227,91,86,0.85);border:1px solid rgba(227,91,86,1);
+    color:#fff;font-size:15px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;touch-action:none;
   }
-  .ms-avail-editbar-label{font-size:11.5px;color:var(--text-hi);font-weight:600;flex:1 1 auto;}
-  .ms-avail-editbar-btns{display:flex;gap:5px;flex-wrap:wrap;}
-  .ms-avail-editbar-btns button{
-    background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);color:var(--text-mid);
-    font-family:'Inter',sans-serif;font-size:11px;font-weight:600;padding:5px 9px;
-    border-radius:7px;cursor:pointer;
+  .ms-avail-remove-btn:hover{background:rgba(227,91,86,1);}
+  .ms-avail-range-label{
+    position:absolute;top:50%;left:8px;right:8px;transform:translateY(-50%);
+    font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
+    color:var(--text-hi);line-height:1.25;pointer-events:none;
+    white-space:normal;overflow-wrap:break-word;
   }
-  .ms-avail-editbar-btns button:hover{border-color:var(--glass-hi);color:var(--text-hi);}
-  .ms-avail-editbar-btns button.ms-avail-remove{color:var(--crimson);border-color:rgba(227,91,86,0.4);}
-  .ms-avail-editbar-btns button.ms-avail-remove:hover{background:rgba(227,91,86,0.1);}
+  .ms-avail-range-label.editing{right:34px;}
   .ms-avail-summary{font-size:12px;color:var(--text-mid);line-height:1.7;margin-top:10px;}
   .ms-avail-summary .ms-avail-summary-item{color:var(--text-hi);font-weight:600;display:block;}
   .ms-apply-range input{flex:1;min-width:0;}
@@ -662,15 +658,23 @@
   .today-daylink:hover{border-color:var(--teal);}
   .today-upcoming-list{display:flex;flex-direction:column;gap:2px;}
   .today-upcoming-row{
-    display:flex;align-items:center;gap:16px;padding:12px 16px;
+    display:flex;align-items:flex-start;gap:16px;padding:12px 16px;
     background:var(--glass);border:1px solid var(--glass-border);border-radius:10px;margin-bottom:6px;
   }
   .today-upcoming-date{
     font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);
-    text-align:center;flex:0 0 52px;line-height:1.4;
+    text-align:center;flex:0 0 52px;line-height:1.4;padding-top:1px;
   }
   .today-upcoming-date span{color:var(--text-hi);font-weight:600;}
+  .today-upcoming-main{flex:1;min-width:0;}
   .today-upcoming-phase{font-size:13.5px;color:var(--text-hi);font-weight:600;}
+  .today-upcoming-detail{margin-top:8px;}
+  .today-upcoming-detail-label{
+    font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;
+    letter-spacing:0.04em;margin-top:8px;margin-bottom:3px;
+  }
+  .today-upcoming-detail-label:first-child{margin-top:0;}
+  .today-upcoming-detail-item{font-size:12px;color:var(--text-mid);line-height:1.5;}
 
   @media (max-width:640px){
     .today-cols{grid-template-columns:1fr;}
@@ -897,24 +901,8 @@
           <button class="ms-apply-modal-close" id="msApplyModalClose" type="button">&times;</button>
         </div>
 
-        <div class="ms-apply-field" id="msApplyLevelWrap" style="display:none;">
-          <label>Current Level</label>
-          <select id="msApplyLevel">
-            <option value="TC25">TC25</option>
-            <option value="TC26">TC26</option>
-            <option value="TC27">TC27</option>
-            <option value="TC28">TC28</option>
-            <option value="TC29">TC29</option>
-            <option value="TC30">TC30</option>
-            <option value="TG1">TG1</option>
-            <option value="TG2">TG2</option>
-            <option value="TG3">TG3</option>
-            <option value="TG4">TG4</option>
-            <option value="TG5">TG5</option>
-          </select>
-        </div>
         <div class="ms-apply-hint" id="msApplyAutoCalcHint" style="display:none;">
-          Your KvK Potential is calculated automatically from your level and resources below \u2014 you don't need to figure it out yourself.
+          Your KvK Potential is calculated automatically from your level and resources below &mdash; you don't need to figure it out yourself.
         </div>
 
         <div class="ms-apply-field">
@@ -941,7 +929,7 @@
         <div class="ms-apply-field" id="msApplySpeedWrap" style="display:none;">
           <label>Base Training Speed % (optional)</label>
           <input type="text" inputmode="decimal" id="msApplySpeed" placeholder="Leave blank to use default (178.7%)">
-          <div class="ms-apply-hint" style="margin-top:8px;margin-bottom:0;">Enter your <strong>base</strong> Training Speed only \u2014 not counting Noble Advisor, Mobilize, or KvK Bonus. Those buffs get added automatically.</div>
+          <div class="ms-apply-hint" style="margin-top:8px;margin-bottom:0;">Enter your <strong>base</strong> Training Speed only &mdash; not counting Noble Advisor, Mobilize, or KvK Bonus. Those buffs get added automatically.</div>
         </div>
 
         <div class="ms-apply-field">
@@ -952,16 +940,6 @@
           <div class="ms-avail-timeline-wrap">
             <div class="ms-avail-labels" id="msAvailLabels"></div>
             <div class="ms-avail-timeline" id="msAvailTimeline"></div>
-          </div>
-          <div class="ms-avail-editbar" id="msAvailEditbar" style="display:none;">
-            <span class="ms-avail-editbar-label" id="msAvailEditbarLabel"></span>
-            <div class="ms-avail-editbar-btns">
-              <button type="button" id="msAvailStartMinus" title="Earlier start">start &minus;</button>
-              <button type="button" id="msAvailStartPlus" title="Later start">start +</button>
-              <button type="button" id="msAvailEndMinus" title="Earlier end">end &minus;</button>
-              <button type="button" id="msAvailEndPlus" title="Later end">end +</button>
-              <button type="button" id="msAvailRemoveRange" class="ms-avail-remove">Remove</button>
-            </div>
           </div>
           <div class="ms-avail-summary" id="msAvailSummary">Tap and drag on the timeline above to mark when you're available.</div>
           <div class="ms-apply-error" id="msAvailError" style="display:none;"></div>
@@ -2075,10 +2053,29 @@ function todayUpcomingHtml(){
   DAYS.filter(function(d){ return d.group !== 'preprep'; }).forEach(function(d){
     var dt = new Date(d.date + 'T00:00:00Z');
     var dateStr = MONTH_ABBR[dt.getUTCMonth()] + ' ' + dt.getUTCDate();
+    var dayData = state.days[d.date];
     html += '<div class="today-upcoming-row">';
     html += '<div class="today-upcoming-date">' + d.dow + '<br><span>' + dateStr + '</span></div>';
+    html += '<div class="today-upcoming-main">';
     html += '<div class="today-upcoming-phase">' + msEsc(d.phase) + '</div>';
-    html += '</div>';
+    html += '<div class="today-upcoming-detail">';
+    html += '<div class="today-upcoming-detail-label">\u2b50 Kingdom Buffs</div>';
+    if(dayData.buffs.length){
+      dayData.buffs.forEach(function(b){
+        html += '<div class="today-upcoming-detail-item">' + msEsc(b.text) + '</div>';
+      });
+    } else {
+      html += '<div class="today-upcoming-detail-item">None scheduled.</div>';
+    }
+    html += '<div class="today-upcoming-detail-label">\u2696\ufe0f Minister Appointments</div>';
+    if(dayData.ministers.length){
+      dayData.ministers.forEach(function(m){
+        html += '<div class="today-upcoming-detail-item">' + msEsc(m.text) + '</div>';
+      });
+    } else {
+      html += '<div class="today-upcoming-detail-item">Not yet open.</div>';
+    }
+    html += '</div></div></div>';
   });
   html += '</div>';
   return html;
@@ -2352,6 +2349,57 @@ var UPGRADE_QUEUE = [
   {order:40, building:"Infirmary",   level:"TG5",  stageGold:67,  stageDays:0.62,  stagesInTier:5}
 ];
 
+// Exact town_hall_level -> BASELINE_ORDER label mapping, confirmed against
+// real Jeabslist data. The API tracks Truegold sub-stages (e.g. "TC30-2",
+// "TG1-3") individually, but those almost certainly reflect Town Center's
+// own progress only — our BASELINE_ORDER assumes ALL FIVE gating buildings
+// (Town Center, Embassy, Stable, Barracks, Range) have finished a tier
+// together. Since we have no data on the other four buildings, every
+// sub-stage collapses conservatively to its parent tier's baseline (e.g.
+// "TC30-2" is treated the same as plain "TC30") rather than assuming
+// those other buildings are also mid-upgrade — this avoids overstating
+// what's actually been completed.
+var API_LEVEL_TO_LABEL = {};
+(function buildApiLevelMap(){
+  for(var i=1; i<=25; i++) API_LEVEL_TO_LABEL[i] = 'TC25'; // nothing before TC25 matters to this queue
+  API_LEVEL_TO_LABEL[26] = 'TC26';
+  API_LEVEL_TO_LABEL[27] = 'TC27';
+  API_LEVEL_TO_LABEL[28] = 'TC28';
+  API_LEVEL_TO_LABEL[29] = 'TC29';
+  API_LEVEL_TO_LABEL[30] = 'TC30';
+  API_LEVEL_TO_LABEL[31] = 'TC30'; // TC30-1
+  API_LEVEL_TO_LABEL[32] = 'TC30'; // TC30-2
+  API_LEVEL_TO_LABEL[33] = 'TC30'; // TC30-3
+  API_LEVEL_TO_LABEL[34] = 'TC30'; // TC30-4
+  API_LEVEL_TO_LABEL[35] = 'TG1';
+  API_LEVEL_TO_LABEL[36] = 'TG1'; // TG1-1
+  API_LEVEL_TO_LABEL[37] = 'TG1'; // TG1-2
+  API_LEVEL_TO_LABEL[38] = 'TG1'; // TG1-3
+  API_LEVEL_TO_LABEL[39] = 'TG1'; // TG1-4
+  API_LEVEL_TO_LABEL[40] = 'TG2';
+  API_LEVEL_TO_LABEL[41] = 'TG2'; // TG2-1
+  API_LEVEL_TO_LABEL[42] = 'TG2'; // TG2-2
+  API_LEVEL_TO_LABEL[43] = 'TG2'; // TG2-3
+  API_LEVEL_TO_LABEL[44] = 'TG2'; // TG2-4
+  API_LEVEL_TO_LABEL[45] = 'TG3';
+  API_LEVEL_TO_LABEL[46] = 'TG3'; // TG3-1
+  API_LEVEL_TO_LABEL[47] = 'TG3'; // TG3-2
+  API_LEVEL_TO_LABEL[48] = 'TG3'; // TG3-3
+  API_LEVEL_TO_LABEL[49] = 'TG3'; // TG3-4
+  API_LEVEL_TO_LABEL[50] = 'TG4';
+  API_LEVEL_TO_LABEL[51] = 'TG4'; // TG4-1
+  API_LEVEL_TO_LABEL[52] = 'TG4'; // TG4-2
+  API_LEVEL_TO_LABEL[53] = 'TG4'; // TG4-3
+  API_LEVEL_TO_LABEL[54] = 'TG4'; // TG4-4
+  API_LEVEL_TO_LABEL[55] = 'TG5';
+})();
+
+function msMapApiTcLevelToConstructionLabel(numericLevel){
+  var n = parseInt(numericLevel, 10);
+  if(isNaN(n)) return null;
+  return API_LEVEL_TO_LABEL[n] || null;
+}
+
 function msCalcConstructionPts(currentLevel, truegoldAvailable, speedupDaysAvailable){
   var EPS = 1e-9;
   var startOrder = BASELINE_ORDER.hasOwnProperty(currentLevel) ? BASELINE_ORDER[currentLevel] : 0;
@@ -2568,7 +2616,10 @@ var msApplyTargetKey = null;
 // s1/e1/s2/e2 minute-range format the rest of the app already expects —
 // nothing downstream of submission changes.
 var MS_AVAIL_SLOTS = 48;
-var MS_AVAIL_PX = 480; // must match .ms-avail-timeline height in CSS
+function msAvailPx(){
+  var el = document.getElementById('msAvailTimeline');
+  return el ? el.clientHeight : 340;
+}
 var msAvailRanges = [];       // up to 2 {start,end} objects, minutes since midnight
 var msAvailEditingIndex = null;
 var msAvailDrag = null;       // {anchorSlot, currentSlot} while actively dragging
@@ -2624,11 +2675,9 @@ function msAvailSetEdgeFromSlot(idx, field, slot){
   if(field === 'start') msAvailRanges[idx].start = clamped; else msAvailRanges[idx].end = clamped;
 }
 
-function msFmtTime12h(mins){
+function msFmtTime24h(mins){
   var h = Math.floor(mins/60) % 24, m = mins % 60;
-  var period = h < 12 ? 'AM' : 'PM';
-  var h12 = h % 12; if(h12 === 0) h12 = 12;
-  return h12 + ':' + String(m).padStart(2,'0') + ' ' + period;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ' UTC';
 }
 
 function msAvailSlotFromClientY(clientY){
@@ -2645,9 +2694,10 @@ function msAvailSlotFromClientY(clientY){
 function msAvailRenderLabels(){
   var wrap = document.getElementById('msAvailLabels');
   if(!wrap) return;
+  var px = msAvailPx();
   var html = '';
   for(var hr=0; hr<24; hr+=2){
-    var y = (hr*60/1440) * MS_AVAIL_PX;
+    var y = (hr*60/1440) * px;
     html += '<span style="top:' + y + 'px">' + String(hr).padStart(2,'0') + ':00</span>';
   }
   wrap.innerHTML = html;
@@ -2656,9 +2706,10 @@ function msAvailRenderLabels(){
 function msAvailRenderTimeline(){
   var el = document.getElementById('msAvailTimeline');
   if(!el) return;
+  var px = msAvailPx();
   var html = '';
   for(var hr=2; hr<24; hr+=2){
-    var y = (hr*60/1440) * MS_AVAIL_PX;
+    var y = (hr*60/1440) * px;
     html += '<div class="ms-avail-hourline" style="top:' + y + 'px"></div>';
   }
   var displayRanges = msAvailRanges.slice();
@@ -2668,13 +2719,17 @@ function msAvailRenderTimeline(){
     displayRanges = displayRanges.concat([{start:a, end:b, pending:true}]);
   }
   displayRanges.forEach(function(r, i){
-    var top = (r.start/1440) * MS_AVAIL_PX;
-    var h = ((r.end - r.start)/1440) * MS_AVAIL_PX;
+    var top = (r.start/1440) * px;
+    var h = ((r.end - r.start)/1440) * px;
     var isEditing = (!r.pending && i === msAvailEditingIndex);
     var handles = isEditing
-      ? '<div class="ms-avail-handle ms-avail-handle-top"><span></span></div><div class="ms-avail-handle ms-avail-handle-bottom"><span></span></div>'
+      ? '<div class="ms-avail-handle ms-avail-handle-top"><span></span></div>' +
+        '<div class="ms-avail-handle ms-avail-handle-bottom"><span></span></div>' +
+        '<button type="button" class="ms-avail-remove-btn" title="Remove this range">&times;</button>'
       : '';
-    html += '<div class="ms-avail-range-block' + (isEditing ? ' editing' : '') + '" style="top:' + top + 'px;height:' + h + 'px;' + (r.pending ? 'opacity:0.7;' : '') + '">' + handles + '</div>';
+    var label = '<span class="ms-avail-range-label' + (isEditing ? ' editing' : '') + '">' +
+      msFmtTime24h(r.start) + '\u2013' + msFmtTime24h(r.end) + '</span>';
+    html += '<div class="ms-avail-range-block' + (isEditing ? ' editing' : '') + '" style="top:' + top + 'px;height:' + h + 'px;' + (r.pending ? 'opacity:0.7;' : '') + '">' + label + handles + '</div>';
   });
   el.innerHTML = html;
 }
@@ -2683,32 +2738,20 @@ function msAvailRenderSummary(){
   var el = document.getElementById('msAvailSummary');
   if(!el) return;
   if(!msAvailRanges.length){
+    el.style.display = 'block';
     el.innerHTML = "Tap and drag on the timeline above to mark when you're available.";
     return;
   }
-  el.innerHTML = msAvailRanges.map(function(r){
-    return '<span class="ms-avail-summary-item">' + msFmtTime12h(r.start) + '\u2013' + msFmtTime12h(r.end) + '</span>';
-  }).join('');
-}
-
-function msAvailRenderEditbar(){
-  var bar = document.getElementById('msAvailEditbar');
-  if(!bar) return;
-  if(msAvailEditingIndex === null || !msAvailRanges[msAvailEditingIndex]){
-    bar.style.display = 'none';
-    return;
-  }
-  var r = msAvailRanges[msAvailEditingIndex];
-  document.getElementById('msAvailEditbarLabel').textContent =
-    'Editing: ' + msFmtTime12h(r.start) + '\u2013' + msFmtTime12h(r.end);
-  bar.style.display = 'flex';
+  // Ranges now show their times directly on the box itself, so this line
+  // has nothing left to add once at least one range exists.
+  el.style.display = 'none';
+  el.innerHTML = '';
 }
 
 function msAvailRenderAll(){
   msAvailRenderLabels();
   msAvailRenderTimeline();
   msAvailRenderSummary();
-  msAvailRenderEditbar();
 }
 
 function msAvailFindRangeAtSlot(slot){
@@ -2739,6 +2782,15 @@ function msAvailShowError(msg){
   var msAvailResizeDrag = null; // {idx, field} while dragging a resize handle
 
   el.addEventListener('pointerdown', function(e){
+    if(e.target.classList && e.target.classList.contains('ms-avail-remove-btn') && msAvailEditingIndex !== null){
+      e.stopPropagation();
+      e.preventDefault();
+      msAvailRanges.splice(msAvailEditingIndex, 1);
+      msAvailEditingIndex = null;
+      msAvailRenderAll();
+      return;
+    }
+
     var handleField = null;
     if(e.target.classList && e.target.classList.contains('ms-avail-handle-top')) handleField = 'start';
     else if(e.target.classList && e.target.classList.contains('ms-avail-handle-bottom')) handleField = 'end';
@@ -2776,7 +2828,6 @@ function msAvailShowError(msg){
       var rslot = msAvailSlotFromClientY(e.clientY);
       msAvailSetEdgeFromSlot(msAvailResizeDrag.idx, msAvailResizeDrag.field, rslot);
       msAvailRenderTimeline();
-      msAvailRenderEditbar();
       msAvailRenderSummary();
       return;
     }
@@ -2815,27 +2866,6 @@ function msAvailShowError(msg){
   el.addEventListener('pointerup', finishDrag);
   el.addEventListener('pointercancel', finishDrag);
 
-  function nudge(field, delta){
-    if(msAvailEditingIndex === null) return;
-    msAvailAdjust(msAvailRanges, msAvailEditingIndex, field, delta);
-    msAvailRenderAll();
-  }
-  var sMinus = document.getElementById('msAvailStartMinus');
-  var sPlus  = document.getElementById('msAvailStartPlus');
-  var eMinus = document.getElementById('msAvailEndMinus');
-  var ePlus  = document.getElementById('msAvailEndPlus');
-  var removeBtn = document.getElementById('msAvailRemoveRange');
-  if(sMinus) sMinus.addEventListener('click', function(){ nudge('start', -30); });
-  if(sPlus)  sPlus.addEventListener('click', function(){ nudge('start', 30); });
-  if(eMinus) eMinus.addEventListener('click', function(){ nudge('end', -30); });
-  if(ePlus)  ePlus.addEventListener('click', function(){ nudge('end', 30); });
-  if(removeBtn) removeBtn.addEventListener('click', function(){
-    if(msAvailEditingIndex === null) return;
-    msAvailRanges.splice(msAvailEditingIndex, 1);
-    msAvailEditingIndex = null;
-    msAvailRenderAll();
-  });
-
   // Informational only — the selector always operates in UTC regardless of
   // the visitor's local timezone, to match every other UTC-based time field
   // in this dashboard. This just helps them mentally convert.
@@ -2846,8 +2876,6 @@ function msAvailShowError(msg){
     var tzEl = document.getElementById('msAvailLocalTz');
     if(tzEl) tzEl.textContent = ' (your device is currently UTC' + sign + offsetHr + ')';
   }catch(err){}
-
-  msAvailRenderAll();
 })();
 
 
@@ -2865,12 +2893,9 @@ function msOpenApplyModal(key){
   document.getElementById('msApplyT9').value = '';
   document.getElementById('msApplySpeed').value = '';
   msAvailResetState();
-  msAvailRenderAll();
   document.getElementById('msApplyError').style.display = 'none';
-  document.getElementById('msApplyLevel').value = 'TC25';
   var isConstruction = (key === 'd1');
   var isNobleAdvisor = (key === 'd4');
-  document.getElementById('msApplyLevelWrap').style.display = isConstruction ? 'block' : 'none';
   document.getElementById('msApplyAutoCalcHint').style.display = isConstruction ? 'block' : 'none';
   document.getElementById('msApplyTruegoldWrap').style.display = isNobleAdvisor ? 'none' : 'block';
   document.getElementById('msApplyT9Wrap').style.display = isNobleAdvisor ? 'block' : 'none';
@@ -2880,6 +2905,10 @@ function msOpenApplyModal(key){
   msApplyLookupResult = null;
   msApplyLookupSeq++;
   document.getElementById('msApplyModalBackdrop').classList.add('open');
+  // Render the timeline only after the modal is actually visible — its
+  // positioning math reads the container's real rendered height, which is
+  // always 0 while an ancestor is still display:none.
+  msAvailRenderAll();
 }
 
 function msCloseApplyModal(){
@@ -2952,9 +2981,13 @@ function msSubmitApplication(){
   };
 
   if(key === 'd1'){
-    var currentLevel = document.getElementById('msApplyLevel').value;
+    // Level comes from the Jeabslist lookup instead of a manual picker.
+    // See API_LEVEL_TO_LABEL above for the confirmed town_hall_level mapping.
+    var currentLevel = lookup ? msMapApiTcLevelToConstructionLabel(lookup.tcLevel) : null;
+    if(!currentLevel) currentLevel = 'TC25'; // conservative fallback if level is unknown
     p.sp = sp + 'd';
     p.currentLevel = currentLevel;
+    p.levelSource = (lookup && msMapApiTcLevelToConstructionLabel(lookup.tcLevel)) ? 'api' : 'unknown-fallback';
     p.pts = msCalcConstructionPts(currentLevel, tg, sp);
   } else if(key === 'd4'){
     // Noble Advisor — T11 isn't unlocked yet, so always pass t10:0, t11:false.
