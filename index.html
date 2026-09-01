@@ -385,6 +385,10 @@
   }
   .ms-apply-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
   .ms-apply-modal-head h3{font-family:'Rajdhani',sans-serif;font-size:19px;color:var(--text-hi);margin:0;}
+  .ms-apply-step-label{
+    font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
+    letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin:0 0 14px;
+  }
   .ms-apply-modal-close{
     background:transparent;border:none;color:var(--text-dim);font-size:20px;line-height:1;
     cursor:pointer;padding:2px 6px;
@@ -841,57 +845,65 @@
           <h3 id="msApplyModalTitle">Apply for Appointment</h3>
           <button class="ms-apply-modal-close" id="msApplyModalClose" type="button">&times;</button>
         </div>
+        <div class="ms-apply-step-label" id="msApplyStepLabel">Step 1 of 2 &mdash; Your Info</div>
 
-        <div class="ms-apply-hint" id="msApplyAutoCalcHint" style="display:none;">
-          Your KvK Potential is calculated automatically from your level and resources below &mdash; you don't need to figure it out yourself.
-        </div>
-
-        <div class="ms-apply-field">
-          <label>Kingshot ID</label>
-          <input type="text" id="msApplyName" placeholder="Enter your Kingshot ID" spellcheck="false">
-          <div class="ms-apply-idcheck" id="msApplyIdCheck"></div>
-        </div>
-
-        <div class="ms-apply-field">
-          <label>Speedups (Days)</label>
-          <input type="text" inputmode="decimal" id="msApplySpeedups" placeholder="e.g. 20">
-        </div>
-
-        <div class="ms-apply-field" id="msApplyTruegoldWrap">
-          <label>Truegold Quantity</label>
-          <input type="text" inputmode="decimal" id="msApplyTruegold" placeholder="e.g. 1500">
-        </div>
-
-        <div class="ms-apply-field" id="msApplyT9Wrap" style="display:none;">
-          <label>T9 Troop Count</label>
-          <input type="text" inputmode="numeric" id="msApplyT9" placeholder="e.g. 500000">
-        </div>
-
-        <div class="ms-apply-field" id="msApplySpeedWrap" style="display:none;">
-          <label>Base Training Speed % (optional)</label>
-          <input type="text" inputmode="decimal" id="msApplySpeed" placeholder="Leave blank to use default (178.7%)">
-          <div class="ms-apply-hint" style="margin-top:8px;margin-bottom:0;">Enter your <strong>base</strong> Training Speed only &mdash; not counting Noble Advisor, Mobilize, or KvK Bonus. Those buffs get added automatically.</div>
-        </div>
-
-        <div class="ms-apply-field">
-          <label>Availability</label>
-          <div class="ms-avail-tz-note">
-            All times shown in <strong>UTC</strong><span id="msAvailLocalTz"></span>
-          </div>
-          <div class="ms-avail-timeline-wrap">
-            <div class="ms-avail-labels" id="msAvailLabels"></div>
-            <div class="ms-avail-timeline" id="msAvailTimeline"></div>
-          </div>
-          <div class="ms-avail-summary" id="msAvailSummary">Tap and drag on the timeline above to mark when you're available.</div>
-          <div class="ms-apply-error" id="msAvailError" style="display:none;"></div>
-        </div>
-
-        <div class="ms-apply-hint">Tip: the wider your availability window, the better your chances of being assigned a slot.</div>
         <div class="ms-apply-error" id="msApplyError" style="display:none;"></div>
+
+        <div id="msApplyStep1">
+          <div class="ms-apply-hint" id="msApplyAutoCalcHint" style="display:none;">
+            Your KvK Potential is calculated automatically from your level and resources below &mdash; you don't need to figure it out yourself.
+          </div>
+
+          <div class="ms-apply-field">
+            <label>Kingshot ID *</label>
+            <input type="text" id="msApplyName" placeholder="Enter your Kingshot ID" spellcheck="false">
+            <div class="ms-apply-idcheck" id="msApplyIdCheck"></div>
+          </div>
+
+          <div class="ms-apply-field">
+            <label>Speedups (Days) *</label>
+            <input type="text" inputmode="decimal" id="msApplySpeedups" placeholder="e.g. 20">
+          </div>
+
+          <div class="ms-apply-field" id="msApplyTruegoldWrap">
+            <label>Truegold Quantity *</label>
+            <input type="text" inputmode="decimal" id="msApplyTruegold" placeholder="e.g. 1500">
+          </div>
+
+          <div class="ms-apply-field" id="msApplyT9Wrap" style="display:none;">
+            <label>T9 Troop Count *</label>
+            <input type="text" inputmode="numeric" id="msApplyT9" placeholder="e.g. 500000">
+          </div>
+
+          <div class="ms-apply-field" id="msApplySpeedWrap" style="display:none;">
+            <label>Base Training Speed % *</label>
+            <input type="text" inputmode="decimal" id="msApplySpeed" placeholder="e.g. 178.7">
+            <div class="ms-apply-hint" style="margin-top:8px;margin-bottom:0;">Enter your <strong>base</strong> Training Speed only &mdash; not counting Noble Advisor, Mobilize, or KvK Bonus. Those buffs get added automatically.</div>
+          </div>
+        </div>
+
+        <div id="msApplyStep2" style="display:none;">
+          <div class="ms-apply-field">
+            <label>Availability</label>
+            <div class="ms-avail-tz-note">
+              All times shown in <strong>UTC</strong><span id="msAvailLocalTz"></span>
+            </div>
+            <div class="ms-avail-timeline-wrap">
+              <div class="ms-avail-labels" id="msAvailLabels"></div>
+              <div class="ms-avail-timeline" id="msAvailTimeline"></div>
+            </div>
+            <div class="ms-avail-summary" id="msAvailSummary">Tap and drag on the timeline above to mark when you're available.</div>
+            <div class="ms-apply-error" id="msAvailError" style="display:none;"></div>
+          </div>
+
+          <div class="ms-apply-hint">Tip: the wider your availability window, the better your chances of being assigned a slot.</div>
+        </div>
 
         <div class="ms-apply-actions">
           <button class="ms-apply-cancel" id="msApplyCancel" type="button">Cancel</button>
-          <button class="ms-apply-submit" id="msApplySubmit" type="button">Submit Application</button>
+          <button class="ms-apply-cancel" id="msApplyBack" type="button" style="display:none;">Back</button>
+          <button class="ms-apply-submit" id="msApplyContinue" type="button">Continue</button>
+          <button class="ms-apply-submit" id="msApplySubmit" type="button" style="display:none;">Submit Application</button>
         </div>
       </div>
     </div>
@@ -948,6 +960,7 @@
       <div class="foot-note">Tap any text to edit. Checkboxes and edits sync for everyone viewing this board.</div>
       <div style="display:flex;align-items:center;gap:10px;">
         <span class="save-flag" id="saveFlag"></span>
+        <button class="reset-btn" id="restoreCycleBtn">Restore inputs from last cycle</button>
         <button class="reset-btn" id="resetBtn">Reset this day to defaults</button>
       </div>
     </div>
@@ -1297,6 +1310,117 @@ function migrateState(parsed){
   }
   return parsed;
 }
+
+// --- Carrying inputs forward across cycles --------------------------------
+// Each new cycle used to always start from the hardcoded DAY_TEMPLATES
+// defaults, discarding any alliance-specific customizations (task lists,
+// buff notes, scoring point tweaks, etc.) from the previous cycle. Now,
+// whenever a brand-new cycle's Firebase key is empty, we look back through
+// previous cycles (matched by day-offset, since the actual dates differ)
+// and carry their text-field content forward instead. Checkbox completion
+// state always resets to false for the new week; everything else carries.
+function msMergeCarryForwardInto(targetState, prevData, prevCycleStartMs){
+  var prevDays = buildDaysArray(prevCycleStartMs);
+  var appliedCount = 0;
+  DAY_TEMPLATES.forEach(function(t, i){
+    var prevDateKey = prevDays[i].date;
+    var newDateKey = DAYS[i].date;
+    var prevDayData = prevData.days ? prevData.days[prevDateKey] : null;
+    if(!prevDayData) return;
+    var nd = targetState.days[newDateKey];
+    if(!nd) return;
+
+    if(typeof prevDayData.summary === 'string') nd.summary = prevDayData.summary;
+
+    if(Array.isArray(prevDayData.tasks)){
+      nd.tasks = prevDayData.tasks.map(function(task){
+        return {
+          text: task.text || '',
+          done: false, // reset completion for the new week
+          notes: task.notes || '',
+          category: (typeof task.category !== 'undefined') ? task.category : null,
+          subject: task.subject || ''
+        };
+      });
+    }
+    if(Array.isArray(prevDayData.buffs)){
+      nd.buffs = prevDayData.buffs.map(function(b){ return { text: b.text || '' }; });
+    }
+    if(Array.isArray(prevDayData.ministers)){
+      nd.ministers = prevDayData.ministers.map(function(m){ return { text: m.text || '' }; });
+    }
+    if(Array.isArray(prevDayData.scoring)){
+      nd.scoring = prevDayData.scoring.map(function(s){
+        return {
+          text: s.text || '',
+          points: (typeof s.points === 'number') ? s.points : 0,
+          rating: s.rating || null
+        };
+      });
+    }
+    appliedCount++;
+  });
+  return appliedCount;
+}
+
+// Walks backwards cycle by cycle (up to a year) looking for the most
+// recent one that actually has saved data, since an alliance might skip
+// tracking a cycle here and there.
+function msFindMostRecentPreviousCycleData(){
+  var MAX_LOOKBACK_CYCLES = 13;
+  function tryCycle(i){
+    if(i > MAX_LOOKBACK_CYCLES || !dbRef) return Promise.resolve(null);
+    var prevCycleStartMs = ACTIVE_CYCLE_START_MS - i * CYCLE_LENGTH_MS;
+    var prevKey = "kvk-cycle-" + fmtDateISO(prevCycleStartMs);
+    return firebase.database().ref(prevKey).once('value').then(function(snap){
+      var prevData = snap.val();
+      if(prevData && prevData.days){
+        return { data: prevData, cycleStartMs: prevCycleStartMs, key: prevKey };
+      }
+      return tryCycle(i + 1);
+    }).catch(function(){
+      return tryCycle(i + 1);
+    });
+  }
+  return tryCycle(1);
+}
+
+// Used the first time a brand-new cycle's key is loaded and found empty —
+// seeds it from the most recent previous cycle's content instead of the
+// bare hardcoded template, so alliance customizations persist automatically.
+function msBuildSeededOrDefaultState(){
+  var def = defaultState();
+  return msFindMostRecentPreviousCycleData().then(function(found){
+    if(found) msMergeCarryForwardInto(def, found.data, found.cycleStartMs);
+    return def;
+  });
+}
+
+// Manual "Restore inputs from last cycle" button — re-pulls the most
+// recent previous cycle's content into the CURRENT cycle on demand,
+// overwriting whatever is there now. Useful right after this feature
+// ships (to backfill a cycle that already reset to hardcoded defaults)
+// and as a manual fix-it later if something ever goes sideways.
+function msRestoreFromPreviousCycle(){
+  if(!EDIT_MODE || !state) return;
+  var btn = document.getElementById('restoreCycleBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Restoring\u2026'; }
+  msFindMostRecentPreviousCycleData().then(function(found){
+    if(!found){
+      flag('No previous cycle data found to restore from');
+      return;
+    }
+    var applied = msMergeCarryForwardInto(state, found.data, found.cycleStartMs);
+    saveState();
+    renderPanel();
+    flag('Restored ' + applied + ' day' + (applied !== 1 ? 's' : '') + ' from ' + fmtDateHuman(found.cycleStartMs));
+  }).catch(function(){
+    flag('Restore failed \u2014 check connection');
+  }).finally(function(){
+    if(btn){ btn.disabled = false; btn.textContent = 'Restore inputs from last cycle'; }
+  });
+}
+
 
 function flag(msg){
   var el = document.getElementById('saveFlag');
@@ -1766,6 +1890,8 @@ function applyEditModeUI(){
     el.style.display = EDIT_MODE ? 'flex' : 'none';
   });
   document.getElementById('resetBtn').style.display = EDIT_MODE ? 'inline-block' : 'none';
+  var restoreBtn = document.getElementById('restoreCycleBtn');
+  if(restoreBtn) restoreBtn.style.display = EDIT_MODE ? 'inline-block' : 'none';
 }
 
 document.querySelectorAll('.add-row').forEach(function(el){
@@ -1783,6 +1909,16 @@ document.getElementById('resetBtn').addEventListener('click', function(){
   saveState();
   renderPanel();
 });
+
+var restoreCycleBtnEl = document.getElementById('restoreCycleBtn');
+if(restoreCycleBtnEl){
+  restoreCycleBtnEl.addEventListener('click', function(){
+    if(!EDIT_MODE) return;
+    var ok = window.confirm('This will overwrite Day Summary, R5 Tasks, Buffs, Ministers, and Scoring for every day this cycle with content from the most recent previous cycle that has saved data. Continue?');
+    if(!ok) return;
+    msRestoreFromPreviousCycle();
+  });
+}
 
 var kingdomInput = document.getElementById('kingdomName');
 kingdomInput.addEventListener('blur', function(){
@@ -2711,10 +2847,10 @@ function msOpenApplyModal(key){
   msApplyLookupResult = null;
   msApplyLookupSeq++;
   document.getElementById('msApplyModalBackdrop').classList.add('open');
-  // Render the timeline only after the modal is actually visible — its
-  // positioning math reads the container's real rendered height, which is
-  // always 0 while an ancestor is still display:none.
-  msAvailRenderAll();
+  // Two-step flow (mobile-friendly — each step fits on screen without
+  // scrolling): step 1 collects the applicant's info, step 2 is just the
+  // availability timeline. Always reopen on step 1.
+  msSetApplyStep(1);
 }
 
 function msCloseApplyModal(){
@@ -2726,6 +2862,91 @@ function msApplyShowError(msg){
   var el = document.getElementById('msApplyError');
   el.textContent = msg;
   el.style.display = 'block';
+}
+
+var msApplyCurrentStep = 1;
+
+function msSetApplyStep(step){
+  msApplyCurrentStep = step;
+  var step1 = document.getElementById('msApplyStep1');
+  var step2 = document.getElementById('msApplyStep2');
+  var cancelBtn = document.getElementById('msApplyCancel');
+  var backBtn = document.getElementById('msApplyBack');
+  var continueBtn = document.getElementById('msApplyContinue');
+  var submitBtn = document.getElementById('msApplySubmit');
+  var stepLabel = document.getElementById('msApplyStepLabel');
+  document.getElementById('msApplyError').style.display = 'none';
+
+  if(step === 2){
+    if(step1) step1.style.display = 'none';
+    if(step2) step2.style.display = 'block';
+    if(cancelBtn) cancelBtn.style.display = 'none';
+    if(backBtn) backBtn.style.display = 'inline-block';
+    if(continueBtn) continueBtn.style.display = 'none';
+    if(submitBtn) submitBtn.style.display = 'inline-block';
+    if(stepLabel) stepLabel.textContent = 'Step 2 of 2 \u2014 Availability';
+    // Render the timeline only once its container is actually visible —
+    // its positioning math reads the container's real rendered height,
+    // which is always 0 while an ancestor is still display:none.
+    msAvailRenderAll();
+  } else {
+    if(step1) step1.style.display = 'block';
+    if(step2) step2.style.display = 'none';
+    if(cancelBtn) cancelBtn.style.display = 'inline-block';
+    if(backBtn) backBtn.style.display = 'none';
+    if(continueBtn) continueBtn.style.display = 'inline-block';
+    if(submitBtn) submitBtn.style.display = 'none';
+    if(stepLabel) stepLabel.textContent = 'Step 1 of 2 \u2014 Your Info';
+  }
+}
+
+function msApplyGoToStep2(){
+  var key = msApplyTargetKey;
+  if(!key) return;
+
+  if(!msApplyIsOpen(key)){
+    msApplyShowError('The deadline for this appointment has passed \u2014 applications are closed.');
+    return;
+  }
+
+  var kingshotId = document.getElementById('msApplyName').value.trim();
+  var spRaw = document.getElementById('msApplySpeedups').value.trim();
+  var tgRaw = document.getElementById('msApplyTruegold').value.trim();
+  var t9Raw = document.getElementById('msApplyT9').value.trim();
+  var speedRaw = document.getElementById('msApplySpeed').value.trim();
+
+  // Every field currently visible on step 1 is required — which fields
+  // are visible depends on the position (msOpenApplyModal toggles the
+  // wraps below per key), so check visibility rather than hardcoding by key.
+  var truegoldVisible = document.getElementById('msApplyTruegoldWrap').style.display !== 'none';
+  var t9Visible = document.getElementById('msApplyT9Wrap').style.display !== 'none';
+  var speedVisible = document.getElementById('msApplySpeedWrap').style.display !== 'none';
+
+  if(!kingshotId){ msApplyShowError('Please enter your Kingshot ID.'); return; }
+
+  if(!spRaw){ msApplyShowError('Please enter your Speedups (Days).'); return; }
+  var sp = parseFloat(spRaw);
+  if(isNaN(sp) || sp < 0){ msApplyShowError('Speedups must be a positive number.'); return; }
+
+  if(truegoldVisible){
+    if(!tgRaw){ msApplyShowError('Please enter your Truegold Quantity.'); return; }
+    var tg = parseFloat(tgRaw);
+    if(isNaN(tg) || tg < 0){ msApplyShowError('Truegold quantity must be a positive number.'); return; }
+  }
+
+  if(t9Visible){
+    if(!t9Raw){ msApplyShowError('Please enter your T9 Troop Count.'); return; }
+    var t9 = parseInt(t9Raw, 10);
+    if(isNaN(t9) || t9 < 0){ msApplyShowError('T9 count must be a positive whole number.'); return; }
+  }
+
+  if(speedVisible){
+    if(!speedRaw){ msApplyShowError('Please enter your Base Training Speed %.'); return; }
+    var speedVal = parseFloat(speedRaw);
+    if(isNaN(speedVal) || speedVal < 0){ msApplyShowError('Training Speed % must be a positive number.'); return; }
+  }
+
+  msSetApplyStep(2);
 }
 
 function msSubmitApplication(){
@@ -2741,22 +2962,39 @@ function msSubmitApplication(){
   var spRaw = document.getElementById('msApplySpeedups').value.trim();
   var tgRaw = document.getElementById('msApplyTruegold').value.trim();
   var t9Raw = document.getElementById('msApplyT9').value.trim();
-
-  if(!kingshotId){ msApplyShowError('Please enter your Kingshot ID.'); return; }
-
-  var sp = spRaw ? parseFloat(spRaw) : 0;
-  if(spRaw && (isNaN(sp) || sp < 0)){ msApplyShowError('Speedups must be a positive number.'); return; }
-
-  var tg = tgRaw ? parseFloat(tgRaw) : 0;
-  if(tgRaw && (isNaN(tg) || tg < 0)){ msApplyShowError('Truegold quantity must be a positive number.'); return; }
-
-  var t9 = t9Raw ? parseInt(t9Raw, 10) : 0;
-  if(key === 'd4' && t9Raw && (isNaN(t9) || t9 < 0)){ msApplyShowError('T9 count must be a positive whole number.'); return; }
-
   var speedRaw = document.getElementById('msApplySpeed').value.trim();
-  if(key === 'd4' && speedRaw && (isNaN(parseFloat(speedRaw)) || parseFloat(speedRaw) < 0)){
-    msApplyShowError('Training Speed % must be a positive number.');
-    return;
+
+  var truegoldVisible = document.getElementById('msApplyTruegoldWrap').style.display !== 'none';
+  var t9Visible = document.getElementById('msApplyT9Wrap').style.display !== 'none';
+  var speedVisible = document.getElementById('msApplySpeedWrap').style.display !== 'none';
+
+  if(!kingshotId){ msSetApplyStep(1); msApplyShowError('Please enter your Kingshot ID.'); return; }
+
+  if(!spRaw){ msSetApplyStep(1); msApplyShowError('Please enter your Speedups (Days).'); return; }
+  var sp = parseFloat(spRaw);
+  if(isNaN(sp) || sp < 0){ msSetApplyStep(1); msApplyShowError('Speedups must be a positive number.'); return; }
+
+  var tg = 0;
+  if(truegoldVisible){
+    if(!tgRaw){ msSetApplyStep(1); msApplyShowError('Please enter your Truegold Quantity.'); return; }
+    tg = parseFloat(tgRaw);
+    if(isNaN(tg) || tg < 0){ msSetApplyStep(1); msApplyShowError('Truegold quantity must be a positive number.'); return; }
+  }
+
+  var t9 = 0;
+  if(t9Visible){
+    if(!t9Raw){ msSetApplyStep(1); msApplyShowError('Please enter your T9 Troop Count.'); return; }
+    t9 = parseInt(t9Raw, 10);
+    if(isNaN(t9) || t9 < 0){ msSetApplyStep(1); msApplyShowError('T9 count must be a positive whole number.'); return; }
+  }
+
+  if(speedVisible){
+    if(!speedRaw){ msSetApplyStep(1); msApplyShowError('Please enter your Base Training Speed %.'); return; }
+    if(isNaN(parseFloat(speedRaw)) || parseFloat(speedRaw) < 0){
+      msSetApplyStep(1);
+      msApplyShowError('Training Speed % must be a positive number.');
+      return;
+    }
   }
 
   if(!msAvailRanges.length){
@@ -2813,6 +3051,14 @@ function msSubmitApplication(){
     p.sp = sp + 'd'; p.t9 = 0; p.t10 = 0; p.t11 = false; p.pts = msCalcD4Pts(sp, 0, 0, false);
   }
 
+  // A resubmission with the same Kingshot ID replaces their earlier entry
+  // for this position rather than creating a second row — only matches
+  // other self-submitted applications (source: 'apply'), never a CSV-
+  // imported row, and matching is case-insensitive.
+  var normalizedId = kingshotId.toLowerCase();
+  msPlayers[key] = msPlayers[key].filter(function(existing){
+    return !(existing.source === 'apply' && existing.kingshotId && existing.kingshotId.toLowerCase() === normalizedId);
+  });
   msPlayers[key].push(p);
   msRecalcAll();
   msSyncAndSave();
@@ -2888,12 +3134,16 @@ function msReserveButtonTargetKey(){
 (function initApplyModal(){
   var closeBtn = document.getElementById('msApplyModalClose');
   var cancelBtn = document.getElementById('msApplyCancel');
+  var backBtn = document.getElementById('msApplyBack');
+  var continueBtn = document.getElementById('msApplyContinue');
   var submitBtn = document.getElementById('msApplySubmit');
   var backdrop = document.getElementById('msApplyModalBackdrop');
   var idField = document.getElementById('msApplyName');
 
   if(closeBtn) closeBtn.addEventListener('click', msCloseApplyModal);
   if(cancelBtn) cancelBtn.addEventListener('click', msCloseApplyModal);
+  if(backBtn) backBtn.addEventListener('click', function(){ msSetApplyStep(1); });
+  if(continueBtn) continueBtn.addEventListener('click', msApplyGoToStep2);
   if(submitBtn) submitBtn.addEventListener('click', msSubmitApplication);
   if(backdrop) backdrop.addEventListener('click', function(e){
     if(e.target === backdrop) msCloseApplyModal();
@@ -3582,7 +3832,17 @@ function init(){
 
   dbRef.on('value', function(snap){
     var val = snap.val();
-    applyLoadedState(val ? migrateState(val) : defaultState());
+    if(val){
+      applyLoadedState(migrateState(val));
+    } else {
+      // Brand-new cycle key with nothing saved yet — seed it from the most
+      // recent previous cycle's content (if any) rather than the bare
+      // hardcoded template, then persist that as this cycle's baseline.
+      msBuildSeededOrDefaultState().then(function(seeded){
+        applyLoadedState(seeded);
+        saveState();
+      });
+    }
   }, function(){
     applyLoadedState(defaultState());
     flag("connection error — showing local defaults");
