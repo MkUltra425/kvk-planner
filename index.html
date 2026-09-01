@@ -687,6 +687,27 @@
   }
   .today-upcoming-detail-label:first-child{margin-top:0;}
   .today-upcoming-detail-item{font-size:12px;color:var(--text-mid);line-height:1.5;}
+  .today-expand-btn{
+    display:inline-block;background:transparent;border:1px solid var(--glass-border);
+    color:var(--teal);font-family:'Inter',sans-serif;font-size:11.5px;font-weight:600;
+    padding:6px 10px;border-radius:8px;cursor:pointer;margin-top:10px;
+  }
+  .today-expand-btn:hover{border-color:var(--teal);}
+  .today-expand-body{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);}
+  .today-upcoming-summary-text{
+    font-size:12.5px;color:var(--text-mid);line-height:1.6;white-space:pre-wrap;margin-bottom:10px;
+  }
+  .today-upcoming-scoring-row{
+    display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:12px;
+  }
+  .today-upcoming-scoring-row:last-child{border-bottom:none;}
+  .today-upcoming-scoring-text{flex:1;color:var(--text-hi);}
+  .today-upcoming-scoring-pts{flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--amber);}
+  .today-edit-daylink{
+    display:inline-block;background:transparent;border:none;color:var(--text-dim);
+    font-family:'Inter',sans-serif;font-size:11px;padding:0;margin-top:10px;cursor:pointer;text-decoration:underline;
+  }
+  .today-edit-daylink:hover{color:var(--teal);}
 
   @media (max-width:640px){
     .today-cols{grid-template-columns:1fr;}
@@ -1316,12 +1337,78 @@ function migrateState(parsed){
 // defaults, discarding any alliance-specific customizations (task lists,
 // buff notes, scoring point tweaks, etc.) from the previous cycle. Now,
 // whenever a brand-new cycle's Firebase key is empty, we look back through
-// previous cycles (matched by day-offset, since the actual dates differ)
-// and carry their text-field content forward instead. Checkbox completion
-// state always resets to false for the new week; everything else carries.
-function msMergeCarryForwardInto(targetState, prevData, prevCycleStartMs){
-  var prevDays = buildDaysArray(prevCycleStartMs);
+// previous cycles and carry their text-field content forward instead.
+// Checkbox completion state always resets to false for the new week;
+// everything else carries. Two source shapes are supported:
+//   'offset'  — a normal kvk-cycle-YYYY-MM-DD key, matched by day-offset
+//               via buildDaysArray (Monday->Monday, Tuesday->Tuesday, etc.)
+//   'datemap' — a fixed legacy key (from before the auto-naming scheme
+//               existed) with an explicit {date: offset} mapping, since its
+//               dates don't line up with any computable cycle-start math.
+var LEGACY_CARRY_FORWARD_SOURCES = [
+  {
+    key: 'kvk-jul2026',
+    dateOffsetMap: {
+      '2026-07-13': 2, // Monday    — Construction
+      '2026-07-14': 3, // Tuesday   — Research
+      '2026-07-15': 4, // Wednesday — Pet training
+      '2026-07-16': 5, // Thursday  — Troop training
+      '2026-07-17': 6  // Friday    — Power boost
+    }
+  }
+];
+
+function msApplyCarryForwardDay(nd, prevDayData){
+  if(typeof prevDayData.summary === 'string') nd.summary = prevDayData.summary;
+
+  if(Array.isArray(prevDayData.tasks)){
+    nd.tasks = prevDayData.tasks.map(function(task){
+      return {
+        text: task.text || '',
+        done: false, // reset completion for the new week
+        notes: task.notes || '',
+        category: (typeof task.category !== 'undefined') ? task.category : null,
+        subject: task.subject || ''
+      };
+    });
+  }
+  if(Array.isArray(prevDayData.buffs)){
+    nd.buffs = prevDayData.buffs.map(function(b){ return { text: b.text || '' }; });
+  }
+  if(Array.isArray(prevDayData.ministers)){
+    nd.ministers = prevDayData.ministers.map(function(m){ return { text: m.text || '' }; });
+  }
+  if(Array.isArray(prevDayData.scoring)){
+    nd.scoring = prevDayData.scoring.map(function(s){
+      return {
+        text: s.text || '',
+        points: (typeof s.points === 'number') ? s.points : 0,
+        rating: s.rating || null
+      };
+    });
+  }
+}
+
+function msMergeCarryForwardInto(targetState, found){
   var appliedCount = 0;
+  var prevData = found.data;
+
+  if(found.mode === 'datemap'){
+    Object.keys(found.dateOffsetMap).forEach(function(prevDateKey){
+      var offset = found.dateOffsetMap[prevDateKey];
+      var newDateKey = DAYS[offset] ? DAYS[offset].date : null;
+      var prevDayData = prevData.days ? prevData.days[prevDateKey] : null;
+      if(!newDateKey || !prevDayData) return;
+      var nd = targetState.days[newDateKey];
+      if(!nd) return;
+      msApplyCarryForwardDay(nd, prevDayData);
+      appliedCount++;
+    });
+    return appliedCount;
+  }
+
+  // 'offset' mode (default) — match by day-offset via buildDaysArray.
+  var prevDays = buildDaysArray(found.cycleStartMs);
   DAY_TEMPLATES.forEach(function(t, i){
     var prevDateKey = prevDays[i].date;
     var newDateKey = DAYS[i].date;
@@ -1329,57 +1416,43 @@ function msMergeCarryForwardInto(targetState, prevData, prevCycleStartMs){
     if(!prevDayData) return;
     var nd = targetState.days[newDateKey];
     if(!nd) return;
-
-    if(typeof prevDayData.summary === 'string') nd.summary = prevDayData.summary;
-
-    if(Array.isArray(prevDayData.tasks)){
-      nd.tasks = prevDayData.tasks.map(function(task){
-        return {
-          text: task.text || '',
-          done: false, // reset completion for the new week
-          notes: task.notes || '',
-          category: (typeof task.category !== 'undefined') ? task.category : null,
-          subject: task.subject || ''
-        };
-      });
-    }
-    if(Array.isArray(prevDayData.buffs)){
-      nd.buffs = prevDayData.buffs.map(function(b){ return { text: b.text || '' }; });
-    }
-    if(Array.isArray(prevDayData.ministers)){
-      nd.ministers = prevDayData.ministers.map(function(m){ return { text: m.text || '' }; });
-    }
-    if(Array.isArray(prevDayData.scoring)){
-      nd.scoring = prevDayData.scoring.map(function(s){
-        return {
-          text: s.text || '',
-          points: (typeof s.points === 'number') ? s.points : 0,
-          rating: s.rating || null
-        };
-      });
-    }
+    msApplyCarryForwardDay(nd, prevDayData);
     appliedCount++;
   });
   return appliedCount;
 }
 
 // Walks backwards cycle by cycle (up to a year) looking for the most
-// recent one that actually has saved data, since an alliance might skip
-// tracking a cycle here and there.
+// recent auto-named cycle that actually has saved data, since an alliance
+// might skip tracking a cycle here and there. Falls back to any known
+// legacy (pre-auto-naming) source if no auto-named cycle has data.
 function msFindMostRecentPreviousCycleData(){
   var MAX_LOOKBACK_CYCLES = 13;
   function tryCycle(i){
-    if(i > MAX_LOOKBACK_CYCLES || !dbRef) return Promise.resolve(null);
+    if(i > MAX_LOOKBACK_CYCLES || !dbRef) return tryLegacySources(0);
     var prevCycleStartMs = ACTIVE_CYCLE_START_MS - i * CYCLE_LENGTH_MS;
     var prevKey = "kvk-cycle-" + fmtDateISO(prevCycleStartMs);
     return firebase.database().ref(prevKey).once('value').then(function(snap){
       var prevData = snap.val();
       if(prevData && prevData.days){
-        return { data: prevData, cycleStartMs: prevCycleStartMs, key: prevKey };
+        return { data: prevData, cycleStartMs: prevCycleStartMs, key: prevKey, mode: 'offset' };
       }
       return tryCycle(i + 1);
     }).catch(function(){
       return tryCycle(i + 1);
+    });
+  }
+  function tryLegacySources(i){
+    if(i >= LEGACY_CARRY_FORWARD_SOURCES.length || !dbRef) return Promise.resolve(null);
+    var source = LEGACY_CARRY_FORWARD_SOURCES[i];
+    return firebase.database().ref(source.key).once('value').then(function(snap){
+      var prevData = snap.val();
+      if(prevData && prevData.days){
+        return { data: prevData, dateOffsetMap: source.dateOffsetMap, key: source.key, mode: 'datemap' };
+      }
+      return tryLegacySources(i + 1);
+    }).catch(function(){
+      return tryLegacySources(i + 1);
     });
   }
   return tryCycle(1);
@@ -1391,7 +1464,7 @@ function msFindMostRecentPreviousCycleData(){
 function msBuildSeededOrDefaultState(){
   var def = defaultState();
   return msFindMostRecentPreviousCycleData().then(function(found){
-    if(found) msMergeCarryForwardInto(def, found.data, found.cycleStartMs);
+    if(found) msMergeCarryForwardInto(def, found);
     return def;
   });
 }
@@ -1410,10 +1483,11 @@ function msRestoreFromPreviousCycle(){
       flag('No previous cycle data found to restore from');
       return;
     }
-    var applied = msMergeCarryForwardInto(state, found.data, found.cycleStartMs);
+    var applied = msMergeCarryForwardInto(state, found);
     saveState();
     renderPanel();
-    flag('Restored ' + applied + ' day' + (applied !== 1 ? 's' : '') + ' from ' + fmtDateHuman(found.cycleStartMs));
+    var sourceLabel = (found.mode === 'datemap') ? found.key : fmtDateHuman(found.cycleStartMs);
+    flag('Restored ' + applied + ' day' + (applied !== 1 ? 's' : '') + ' from ' + sourceLabel);
   }).catch(function(){
     flag('Restore failed \u2014 check connection');
   }).finally(function(){
@@ -2018,57 +2092,42 @@ function isActiveWindowNow(){
 function renderTodayView(){
   var body = document.getElementById('todayViewBody');
   if(!body) return;
-  body.innerHTML = isActiveWindowNow() ? todayActiveHtml() : todayUpcomingHtml();
-  var goBtn = document.getElementById('todayGoToDayView');
-  if(goBtn) goBtn.addEventListener('click', function(){
-    switchView('day');
-    renderStrip();
-    renderPanel();
+  body.innerHTML = todayListHtml();
+  wireTodayExpandButtons();
+}
+
+function wireTodayExpandButtons(){
+  document.querySelectorAll('.today-expand-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var targetId = btn.getAttribute('data-target');
+      var bodyEl = document.getElementById(targetId);
+      if(!bodyEl) return;
+      var isOpen = bodyEl.style.display !== 'none';
+      bodyEl.style.display = isOpen ? 'none' : 'block';
+      btn.textContent = isOpen ? 'Show summary & scoring \u25be' : 'Hide summary & scoring \u25b4';
+      btn.classList.toggle('open', !isOpen);
+    });
+  });
+  document.querySelectorAll('.today-edit-daylink').forEach(function(el){
+    el.addEventListener('click', function(){
+      var idx = parseInt(el.getAttribute('data-idx'), 10);
+      if(isNaN(idx)) return;
+      selectedIdx = idx;
+      switchView('day');
+      renderStrip();
+      renderPanel();
+    });
   });
 }
 
-function todayActiveHtml(){
-  var todayDate = todayStr();
-  var idx = DAYS.findIndex(function(d){ return d.date === todayDate; });
-  var d = DAYS[idx];
-  var dayData = state.days[d.date];
-  var html = '<div class="today-hero">';
-  html += '<div class="today-hero-phase">' + msEsc(d.phase) + '</div>';
-  html += '<div class="today-hero-sub">Today \u00b7 ' + msEsc(d.dow) + '</div>';
-  html += '</div>';
-
-  if(dayData.summary && dayData.summary.trim()){
-    html += '<div class="today-card"><div class="today-card-title">What to focus on today</div>';
-    html += '<div class="today-summary-text">' + msEsc(dayData.summary.trim()) + '</div></div>';
-  }
-
-  html += '<div class="today-cols">';
-  html += '<div class="today-card"><div class="today-card-title">\u2b50 Kingdom Buffs</div>';
-  if(!dayData.buffs.length){
-    html += '<div class="today-empty">None scheduled.</div>';
-  } else {
-    dayData.buffs.forEach(function(b){ html += '<div class="today-list-item">' + msEsc(b.text) + '</div>'; });
-  }
-  html += '</div>';
-
-  html += '<div class="today-card"><div class="today-card-title">\u2696\uFE0F Minister Appointments</div>';
-  if(!dayData.ministers.length){
-    html += '<div class="today-empty">Not yet open.</div>';
-  } else {
-    dayData.ministers.forEach(function(m){ html += '<div class="today-list-item">' + msEsc(m.text) + '</div>'; });
-  }
-  html += '</div></div>';
-
-  var bestItems = dayData.scoring.filter(function(s){ return s.rating === 'best'; });
-  if(bestItems.length){
-    html += '<div class="today-card"><div class="today-card-title">\uD83D\uDFE2 Best Use of Points Today</div>';
-    bestItems.forEach(function(s){ html += '<div class="today-list-item">' + msEsc(s.text) + '</div>'; });
-    html += '</div>';
-  }
-
-  html += '<button class="today-daylink" id="todayGoToDayView">See full day details \u2192</button>';
-  return html;
+// Inserts thousand-separator commas into a point value for readability
+// (e.g. 30000 -> "30,000"). Exact values matter here for scoring
+// planning, so this stays full-precision rather than abbreviated (8K/1.2M).
+function todayFmtPtsFull(n){
+  var s = String(Math.round(n));
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
+
 
 var PHASE_ICONS = {
   'Construction': '\uD83D\uDEE0\uFE0F',
@@ -2110,15 +2169,26 @@ var DAY_PRIORITY_ITEMS = {
   // add more phases here later
 };
 
-function todayUpcomingHtml(){
-  var html = '<div class="today-hero"><div class="today-hero-phase">Coming Up</div>';
-  html += '<div class="today-hero-sub">The next KvK cycle hasn\u2019t started yet \u2014 here\u2019s what\u2019s ahead</div></div>';
+function todayListHtml(){
+  var active = isActiveWindowNow();
+  var todayDate = todayStr();
+  var html = '<div class="today-hero">';
+  if(active){
+    html += '<div class="today-hero-phase">This Cycle</div>';
+    html += '<div class="today-hero-sub">Today\u2019s day is expanded below</div>';
+  } else {
+    html += '<div class="today-hero-phase">Coming Up</div>';
+    html += '<div class="today-hero-sub">The next KvK cycle hasn\u2019t started yet \u2014 here\u2019s what\u2019s ahead</div>';
+  }
+  html += '</div>';
   html += '<div class="today-upcoming-list">';
-  DAYS.filter(function(d){ return d.group !== 'preprep'; }).forEach(function(d){
+  DAYS.filter(function(d){ return d.group !== 'preprep'; }).forEach(function(d, i){
     var dt = new Date(d.date + 'T00:00:00Z');
     var dateStr = MONTH_ABBR[dt.getUTCMonth()] + ' ' + dt.getUTCDate();
     var dayData = state.days[d.date];
     var icon = PHASE_ICONS[d.phase] || '\uD83D\uDCC5';
+    var isToday = (d.date === todayDate);
+    var expandId = 'today-expand-' + d.date;
     html += '<div class="today-upcoming-row">';
     html += '<div class="today-upcoming-date">' + d.dow + '<br><span>' + dateStr + '</span><div class="today-upcoming-icon">' + icon + '</div></div>';
     html += '<div class="today-upcoming-main">';
@@ -2150,7 +2220,34 @@ function todayUpcomingHtml(){
     } else {
       html += '<div class="today-upcoming-detail-item">Not yet open.</div>';
     }
-    html += '</div></div></div>';
+    html += '</div>';
+
+    // Expand/collapse: day summary + full scoring list (text, points, rating)
+    html += '<button class="today-expand-btn" data-target="' + expandId + '">' +
+      (isToday ? 'Hide summary & scoring \u25b4' : 'Show summary & scoring \u25be') + '</button>';
+    html += '<div class="today-expand-body" id="' + expandId + '" style="display:' + (isToday ? 'block' : 'none') + ';">';
+    if(dayData.summary && dayData.summary.trim()){
+      html += '<div class="today-upcoming-summary-text">' + msEsc(dayData.summary.trim()) + '</div>';
+    } else {
+      html += '<div class="today-upcoming-detail-item">No summary yet.</div>';
+    }
+    if(dayData.scoring.length){
+      dayData.scoring.forEach(function(s){
+        var indicatorClass = 'rating-indicator' + (s.rating ? ' ' + s.rating : '');
+        html += '<div class="today-upcoming-scoring-row">';
+        html += '<div class="' + indicatorClass + '"></div>';
+        html += '<div class="today-upcoming-scoring-text">' + msEsc(s.text) + '</div>';
+        html += '<div class="today-upcoming-scoring-pts">' + todayFmtPtsFull(s.points || 0) + '</div>';
+        html += '</div>';
+      });
+    } else {
+      html += '<div class="today-upcoming-detail-item">No scoring tasks for this day.</div>';
+    }
+    var dIdx = DAYS.indexOf(d);
+    html += '<button class="today-edit-daylink" data-idx="' + dIdx + '">Edit this day \u2192</button>';
+    html += '</div>';
+
+    html += '</div></div>';
   });
   html += '</div>';
   return html;
