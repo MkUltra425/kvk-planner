@@ -823,6 +823,7 @@
         <option value="de">Deutsch</option>
         <option value="hi">हिन्दी</option>
         <option value="id">Bahasa Indonesia</option>
+        <option value="it">Italiano</option>
         <option value="ko">한국어</option>
         <option value="es">Español</option>
         <option value="tl">Tagalog</option>
@@ -2334,6 +2335,13 @@ function msCsvTM(v){
 }
 function msFmtPts(n){ if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(0)+'K'; return String(n); }
 function msFmtNum(n){ if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(0)+'K'; return n>0 ? String(n) : '0'; }
+// Full-precision number with thousand separators (e.g. 125000 -> "125,000").
+// Used for Truegold in the scheduler tables, where the exact quantity
+// matters more than a compact glance value.
+function msFmtNumFull(n){
+  var s = String(Math.round(n || 0));
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
 function msEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // Lightweight formatting for the Daily Summary text: supports **bold**,
@@ -3357,12 +3365,12 @@ function msGridStyle(key){
 
 function msRowValues(key, p){
   if(key === 'd1'){
-    return [msEsc(p.tcLevel || '\u2014'), msFmtNum(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+    return [msEsc(p.tcLevel || '\u2014'), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
   }
   if(key === 'd4'){
     return [msEsc(p.tcLevel || '\u2014'), msFmtNum(p.t9 || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
   }
-  var common = [msEsc(p.tcLevel || '\u2014'), msFmtNum(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+  var common = [msEsc(p.tcLevel || '\u2014'), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
   return [msFmtNum(p.t9||0), msFmtNum(p.t10||0), p.t11 ? 'Y' : 'N'].concat(common);
 }
 
@@ -3971,12 +3979,10 @@ function kaActiveKey(){
 }
 
 function kaGridStyle(key){
-  // Never includes the delete-column width msGridStyle adds in edit
-  // mode — this view never shows a delete button, regardless of the
-  // viewer's own edit-mode state.
+  var delCol = EDIT_MODE ? (msIsNarrow() ? ' 18px' : ' 22px') : '';
   return msColsFor(key).map(function(c){
     return c.w.indexOf('fr') !== -1 ? 'minmax(0,' + c.w + ')' : c.w;
-  }).join(' ');
+  }).join(' ') + delCol;
 }
 
 function kaApplySlotHtml(key){
@@ -4000,6 +4006,9 @@ function kaRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' +
     '<span class="ms-name notranslate" translate="no">' + msEsc(p.name) + (p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '') + '</span>';
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
+  if(EDIT_MODE){
+    cellsHtml += '<button class="ms-del" data-pid="' + p.id + '">\u00d7</button>';
+  }
   var slotAttr = (slotIdx !== undefined && slotIdx !== null) ? ' data-slot="' + slotIdx + '"' : '';
   return '<div class="ms-row' + (isNoSlot ? ' noslot' : '') + (isCurrent ? ' current' : '') + '"' + slotAttr + ' style="grid-template-columns:' + gridStyle + '">' + cellsHtml + '</div>';
 }
@@ -4036,6 +4045,7 @@ function renderKingApptView(){
   html += '<div class="ms-list">';
   html += '<div class="ms-head-row" style="grid-template-columns:' + gridStyle + '">';
   cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:right"':'') + '>' + c.h + '</span>'; });
+  if(EDIT_MODE) html += '<span></span>';
   html += '</div>';
 
   var rows = '';
@@ -4049,7 +4059,8 @@ function renderKingApptView(){
     } else if(kaFilter==='all' || kaFilter==='open'){
       rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time notranslate" translate="no">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
-        cols.slice(2).map(function(){ return '<span></span>'; }).join('') + '</div>';
+        cols.slice(2).map(function(){ return '<span></span>'; }).join('') +
+        (EDIT_MODE ? '<span></span>' : '') + '</div>';
     }
   }
   if(kaFilter==='all' || kaFilter==='ns'){
@@ -4078,6 +4089,16 @@ function renderKingApptView(){
 
   var applyBtn = document.getElementById('ka-apply-btn-' + key);
   if(applyBtn) applyBtn.addEventListener('click', function(){ msOpenApplyModal(key); });
+
+  if(EDIT_MODE){
+    body.querySelectorAll('.ms-del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var pid = btn.getAttribute('data-pid');
+        msPlayers[key] = msPlayers[key].filter(function(p){ return p.id !== pid; });
+        msRecalcAll(); msSyncAndSave(); renderKingApptView();
+      });
+    });
+  }
 }
 
 function kaRefreshHighlight(){
@@ -4181,7 +4202,7 @@ window.addEventListener('resize', function(){
 function googleTranslateElementInit(){
   new google.translate.TranslateElement(
     { pageLanguage: 'en', autoDisplay: false,
-      includedLanguages: 'en,ko,zh-CN,tr,id,ar,hi,tl,de,es' },
+      includedLanguages: 'en,ko,zh-CN,tr,id,ar,hi,tl,de,es,it' },
     'google_translate_element'
   );
 }
