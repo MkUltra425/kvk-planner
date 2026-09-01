@@ -861,7 +861,8 @@
 
   <div class="view-toggle" id="viewToggle">
     <button class="view-btn active" data-view="today">Today</button>
-    <button class="view-btn" data-view="day">Day view</button>
+    <button class="view-btn" data-view="kingappt">King Appointment Schedule</button>
+    <button class="view-btn" id="dayViewBtn" data-view="day" style="display:none;">Day view</button>
   </div>
 
     <div class="ms-apply-modal-backdrop" id="msApplyModalBackdrop">
@@ -990,6 +991,10 @@
         <button class="reset-btn" id="resetBtn">Reset this day to defaults</button>
       </div>
     </div>
+  </div>
+
+  <div id="kingApptView" style="display:none;">
+    <div id="kingApptViewBody"></div>
   </div>
 
 </div>
@@ -1974,6 +1979,17 @@ function applyEditModeUI(){
   document.getElementById('resetBtn').style.display = EDIT_MODE ? 'inline-block' : 'none';
   var restoreBtn = document.getElementById('restoreCycleBtn');
   if(restoreBtn) restoreBtn.style.display = EDIT_MODE ? 'inline-block' : 'none';
+
+  // Day view exposes raw editing controls for every field, so it's
+  // restricted to edit-mode users. Anyone else gets bounced back to
+  // Today if they were on it when edit mode was switched off.
+  var dayViewBtn = document.getElementById('dayViewBtn');
+  if(dayViewBtn){
+    dayViewBtn.style.display = EDIT_MODE ? '' : 'none';
+    if(!EDIT_MODE && dayViewBtn.classList.contains('active')){
+      switchView('today');
+    }
+  }
 }
 
 document.querySelectorAll('.add-row').forEach(function(el){
@@ -2080,8 +2096,10 @@ function switchView(view){
     b.classList.toggle('active', b.getAttribute('data-view') === view);
   });
   document.getElementById('todayView').style.display = view === 'today' ? 'block' : 'none';
+  document.getElementById('kingApptView').style.display = view === 'kingappt' ? 'block' : 'none';
   document.getElementById('dayView').style.display = view === 'day' ? 'block' : 'none';
   if(view === 'today') renderTodayView();
+  if(view === 'kingappt') renderKingApptView();
 }
 
 document.querySelectorAll('.view-btn').forEach(function(btn){
@@ -2231,7 +2249,9 @@ function todayListHtml(){
       html += '<div class="today-upcoming-detail-item">No summary yet.</div>';
     }
     var dIdx = DAYS.indexOf(d);
-    html += '<button class="today-edit-daylink" data-idx="' + dIdx + '">Edit this day \u2192</button>';
+    if(EDIT_MODE){
+      html += '<button class="today-edit-daylink" data-idx="' + dIdx + '">Edit this day \u2192</button>';
+    }
     html += '</div>';
 
     html += '</div></div>';
@@ -3881,6 +3901,7 @@ function renderCurrentView(){
   renderStrip();
   renderTodayView();
   renderPanel();
+  renderKingApptView();
 }
 
 function checkUrlAutoUnlock(){
@@ -3929,6 +3950,161 @@ function msRefreshCurrentSlotHighlight(){
   }
 }
 
+/* ============================================================
+   KING APPOINTMENT SCHEDULE TAB
+   A simplified, always-visible (not edit-gated) view of whichever
+   appointment position is currently live: Chief Minister —
+   Construction until its application deadline passes, then Noble
+   Advisor — Troop Training automatically takes its place. This is
+   read + apply only — CSV import, recalculate, clear-all, and
+   per-row delete stay exclusive to Day view (edit mode). Element
+   ids here are all "ka-" prefixed so this can render at the same
+   time as Day view's own ms-panel (e.g. both showing "d1" before
+   the deadline) without ever colliding with its "ms-" ids.
+============================================================ */
+
+var kaCurrentRenderedKey = null;
+var kaFilter = 'all';
+
+function kaActiveKey(){
+  return msApplyIsOpen('d1') ? 'd1' : 'd4';
+}
+
+function kaGridStyle(key){
+  // Never includes the delete-column width msGridStyle adds in edit
+  // mode — this view never shows a delete button, regardless of the
+  // viewer's own edit-mode state.
+  return msColsFor(key).map(function(c){
+    return c.w.indexOf('fr') !== -1 ? 'minmax(0,' + c.w + ')' : c.w;
+  }).join(' ');
+}
+
+function kaApplySlotHtml(key){
+  var status = msApplyStatusFor(key);
+  if(status.state === 'not-yet-open'){
+    return '<div class="ms-apply-closed">Applications for this appointment open in <span class="notranslate" translate="no">' +
+      msFmtCountdown(status.at - Date.now()) + '</span> \u2014 once Chief Minister Construction\u2019s deadline passes.</div>';
+  }
+  if(status.state === 'closed'){
+    return '<div class="ms-apply-closed">Applications are closed for this appointment \u2014 the deadline (23:00 UTC the day before) has passed.</div>';
+  }
+  var countdownHtml = (status.state === 'open')
+    ? '<div class="ms-apply-deadline">Applications close in <span class="notranslate" translate="no">' + msFmtCountdown(status.at - Date.now()) + '</span> (23:00 UTC the day before)</div>'
+    : '';
+  return '<button class="ms-apply-btn" id="ka-apply-btn-' + key + '">+ Apply for this Appointment</button>' + countdownHtml;
+}
+
+function kaRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
+  var vals = msRowValues(key, p);
+  var timeInner = isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : ('<span class="notranslate" translate="no">' + timeLabel + '</span>');
+  var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' +
+    '<span class="ms-name notranslate" translate="no">' + msEsc(p.name) + (p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '') + '</span>';
+  vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
+  var slotAttr = (slotIdx !== undefined && slotIdx !== null) ? ' data-slot="' + slotIdx + '"' : '';
+  return '<div class="ms-row' + (isNoSlot ? ' noslot' : '') + (isCurrent ? ' current' : '') + '"' + slotAttr + ' style="grid-template-columns:' + gridStyle + '">' + cellsHtml + '</div>';
+}
+
+function renderKingApptView(){
+  var body = document.getElementById('kingApptViewBody');
+  if(!body) return;
+  var key = kaActiveKey();
+  kaCurrentRenderedKey = key;
+
+  var q = msPlayers[key];
+  var sc = msSchedule[key];
+  var aIds = new Set(sc.filter(Boolean).map(function(p){ return p.id; }));
+  var noSlotPlayers = q.filter(function(p){ return !aIds.has(p.id); });
+  var cols = msColsFor(key);
+  var gridStyle = kaGridStyle(key);
+
+  var html = '<div class="today-hero"><div class="today-hero-phase">King Appointment Schedule</div>';
+  html += '<div class="today-hero-sub">' + msEsc(MS_LABELS[key]) + '</div></div>';
+
+  html += '<div class="panel ms-panel">';
+  html += '<div id="kaCurrentCardSlot">' + msCurrentAppointedHtml(key) + '</div>';
+  html += '<div id="kaApplySlot">' + kaApplySlotHtml(key) + '</div>';
+
+  var assignedCount = sc.filter(Boolean).length;
+  var totalPts = sc.filter(Boolean).reduce(function(s,p){ return s+p.pts; }, 0);
+  html += '<div class="ms-statbar">' +
+    '<div class="ms-stat' + (kaFilter==='all'?' active':'') + '" data-kaf="all"><div class="ms-stat-v">' + assignedCount + '</div><div class="ms-stat-l">Assigned</div></div>' +
+    '<div class="ms-stat' + (kaFilter==='open'?' active':'') + '" data-kaf="open"><div class="ms-stat-v">' + (MS_SLOTS-assignedCount) + '</div><div class="ms-stat-l">Open</div></div>' +
+    '<div class="ms-stat' + (kaFilter==='ns'?' active':'') + '" data-kaf="ns"><div class="ms-stat-v">' + noSlotPlayers.length + '</div><div class="ms-stat-l">No Slot</div></div>' +
+    '<div class="ms-stat"><div class="ms-stat-v">' + msFmtPts(totalPts) + '</div><div class="ms-stat-l">Total Pts</div></div>' +
+    '</div>';
+
+  html += '<div class="ms-list">';
+  html += '<div class="ms-head-row" style="grid-template-columns:' + gridStyle + '">';
+  cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:right"':'') + '>' + c.h + '</span>'; });
+  html += '</div>';
+
+  var rows = '';
+  var curIdx = msCurrentSlotIndexFor(key);
+  for(var i=0; i<MS_SLOTS; i++){
+    var p = sc[i], t = msSlotLabelShort(i);
+    var isCurrent = (i === curIdx);
+    if(p){
+      if(kaFilter==='open' || kaFilter==='ns') continue;
+      rows += kaRowHtml(key, gridStyle, t, p, false, i, isCurrent);
+    } else if(kaFilter==='all' || kaFilter==='open'){
+      rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" style="grid-template-columns:' + gridStyle + '">' +
+        '<span class="ms-time notranslate" translate="no">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
+        cols.slice(2).map(function(){ return '<span></span>'; }).join('') + '</div>';
+    }
+  }
+  if(kaFilter==='all' || kaFilter==='ns'){
+    noSlotPlayers.forEach(function(p){
+      rows += kaRowHtml(key, gridStyle, null, p, true);
+    });
+  }
+  if(!rows) rows = '<div class="score-empty">No players imported yet.</div>';
+  html += rows + '</div>';
+
+  html += '<div class="ms-actions"><button class="ms-btn" id="ka-copy-' + key + '">Copy schedule</button></div>';
+  html += '</div>';
+
+  body.innerHTML = html;
+
+  body.querySelectorAll('.ms-stat[data-kaf]').forEach(function(el){
+    el.addEventListener('click', function(){
+      var f2 = el.getAttribute('data-kaf');
+      kaFilter = (kaFilter === f2) ? 'all' : f2;
+      renderKingApptView();
+    });
+  });
+
+  var copyBtn = document.getElementById('ka-copy-' + key);
+  if(copyBtn) copyBtn.addEventListener('click', function(){ msCopySchedule(key); });
+
+  var applyBtn = document.getElementById('ka-apply-btn-' + key);
+  if(applyBtn) applyBtn.addEventListener('click', function(){ msOpenApplyModal(key); });
+}
+
+function kaRefreshHighlight(){
+  var newKey = kaActiveKey();
+  if(newKey !== kaCurrentRenderedKey){
+    // The deadline flipped since the last render (e.g. the tab was left
+    // open across it) — do a full re-render so the schedule swaps over.
+    renderKingApptView();
+    return;
+  }
+  if(!kaCurrentRenderedKey) return;
+  var idx = msCurrentSlotIndexFor(kaCurrentRenderedKey);
+  document.querySelectorAll('#kingApptViewBody .ms-row[data-slot]').forEach(function(row){
+    var slot = parseInt(row.getAttribute('data-slot'), 10);
+    row.classList.toggle('current', slot === idx);
+  });
+  var cardSlot = document.getElementById('kaCurrentCardSlot');
+  if(cardSlot) cardSlot.innerHTML = msCurrentAppointedHtml(kaCurrentRenderedKey);
+  var applySlot = document.getElementById('kaApplySlot');
+  if(applySlot){
+    var key = kaCurrentRenderedKey;
+    applySlot.innerHTML = kaApplySlotHtml(key);
+    var btn = document.getElementById('ka-apply-btn-' + key);
+    if(btn) btn.addEventListener('click', function(){ msOpenApplyModal(key); });
+  }
+}
+
 function populateCycleHeaderText(){
   var sub = document.getElementById('headerSub');
   var lastDayMs = ACTIVE_CYCLE_START_MS + (DAYS.length - 1) * DAY_MS;
@@ -3951,6 +4127,7 @@ function init(){
   setInterval(tickClocks, 1000);
   renderReserveButtonLabel();
   setInterval(msRefreshCurrentSlotHighlight, 60000);
+  setInterval(kaRefreshHighlight, 60000);
 
   if(!dbRef){
     state = defaultState();
