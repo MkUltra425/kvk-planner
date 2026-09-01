@@ -184,9 +184,19 @@
   .day-summary-text[readonly]{cursor:default;}
   .day-summary-static{
     width:100%;color:var(--text-hi);font-family:'Inter',sans-serif;font-size:13.5px;
-    line-height:1.6;white-space:pre-wrap;word-break:break-word;
+    line-height:1.6;white-space:normal;word-break:break-word;
   }
   .day-summary-panel.empty-readonly{display:none;}
+  .day-summary-hint{
+    font-size:10.5px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;
+    margin-top:4px;letter-spacing:0.02em;
+  }
+  .day-summary-heading{
+    font-weight:700;color:var(--amber);margin:10px 0 4px;
+  }
+  .day-summary-heading:first-child{ margin-top:0; }
+  .day-summary-list{ margin:2px 0 8px 18px;padding:0; }
+  .day-summary-list li{ margin-bottom:3px; }
 
   .cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
   @media (max-width:760px){.cols{grid-template-columns:1fr;}}
@@ -695,14 +705,8 @@
   .today-expand-btn:hover{border-color:var(--teal);}
   .today-expand-body{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);}
   .today-upcoming-summary-text{
-    font-size:12.5px;color:var(--text-mid);line-height:1.6;white-space:pre-wrap;margin-bottom:10px;
+    font-size:12.5px;color:var(--text-mid);line-height:1.6;white-space:normal;margin-bottom:10px;
   }
-  .today-upcoming-scoring-row{
-    display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:12px;
-  }
-  .today-upcoming-scoring-row:last-child{border-bottom:none;}
-  .today-upcoming-scoring-text{flex:1;color:var(--text-hi);}
-  .today-upcoming-scoring-pts{flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--amber);}
   .today-edit-daylink{
     display:inline-block;background:transparent;border:none;color:var(--text-dim);
     font-family:'Inter',sans-serif;font-size:11px;padding:0;margin-top:10px;cursor:pointer;text-decoration:underline;
@@ -939,6 +943,7 @@
     <div class="panel day-summary-panel" id="daySummaryPanel">
       <div class="panel-head"><div class="panel-icn">DS</div><div class="panel-title">Day summary</div></div>
       <textarea class="day-summary-text" id="daySummaryText" placeholder="What to focus on today, tips to maximize your points, and what to prep for tomorrow..."></textarea>
+      <div class="day-summary-hint" id="daySummaryHint" style="display:none;">Supports **bold**, "- " bullet lists, and "## " section headers</div>
       <div class="day-summary-static" id="daySummaryStatic" style="display:none;"></div>
     </div>
 
@@ -1775,6 +1780,7 @@ function renderDaySummary(){
   var panel = document.getElementById('daySummaryPanel');
   var textarea = document.getElementById('daySummaryText');
   var staticEl = document.getElementById('daySummaryStatic');
+  var hintEl = document.getElementById('daySummaryHint');
   if(!panel || !textarea || !staticEl) return;
 
   var dayData = state.days[DAYS[selectedIdx].date];
@@ -1788,13 +1794,15 @@ function renderDaySummary(){
 
   if(EDIT_MODE){
     textarea.style.display = 'block';
+    if(hintEl) hintEl.style.display = 'block';
     staticEl.style.display = 'none';
     textarea.value = summary;
     requestAnimationFrame(function(){ autosize(textarea); });
   } else {
     textarea.style.display = 'none';
+    if(hintEl) hintEl.style.display = 'none';
     staticEl.style.display = 'block';
-    staticEl.textContent = summary;
+    staticEl.innerHTML = summaryMdToHtml(summary);
   }
 }
 
@@ -2104,7 +2112,7 @@ function wireTodayExpandButtons(){
       if(!bodyEl) return;
       var isOpen = bodyEl.style.display !== 'none';
       bodyEl.style.display = isOpen ? 'none' : 'block';
-      btn.textContent = isOpen ? 'Show summary & scoring \u25be' : 'Hide summary & scoring \u25b4';
+      btn.textContent = isOpen ? 'Show summary \u25be' : 'Hide summary \u25b4';
       btn.classList.toggle('open', !isOpen);
     });
   });
@@ -2119,15 +2127,6 @@ function wireTodayExpandButtons(){
     });
   });
 }
-
-// Inserts thousand-separator commas into a point value for readability
-// (e.g. 30000 -> "30,000"). Exact values matter here for scoring
-// planning, so this stays full-precision rather than abbreviated (8K/1.2M).
-function todayFmtPtsFull(n){
-  var s = String(Math.round(n));
-  return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
 
 var PHASE_ICONS = {
   'Construction': '\uD83D\uDEE0\uFE0F',
@@ -2222,26 +2221,14 @@ function todayListHtml(){
     }
     html += '</div>';
 
-    // Expand/collapse: day summary + full scoring list (text, points, rating)
+    // Expand/collapse: day summary
     html += '<button class="today-expand-btn" data-target="' + expandId + '">' +
-      (isToday ? 'Hide summary & scoring \u25b4' : 'Show summary & scoring \u25be') + '</button>';
+      (isToday ? 'Hide summary \u25b4' : 'Show summary \u25be') + '</button>';
     html += '<div class="today-expand-body" id="' + expandId + '" style="display:' + (isToday ? 'block' : 'none') + ';">';
     if(dayData.summary && dayData.summary.trim()){
-      html += '<div class="today-upcoming-summary-text">' + msEsc(dayData.summary.trim()) + '</div>';
+      html += '<div class="today-upcoming-summary-text">' + summaryMdToHtml(dayData.summary) + '</div>';
     } else {
       html += '<div class="today-upcoming-detail-item">No summary yet.</div>';
-    }
-    if(dayData.scoring.length){
-      dayData.scoring.forEach(function(s){
-        var indicatorClass = 'rating-indicator' + (s.rating ? ' ' + s.rating : '');
-        html += '<div class="today-upcoming-scoring-row">';
-        html += '<div class="' + indicatorClass + '"></div>';
-        html += '<div class="today-upcoming-scoring-text">' + msEsc(s.text) + '</div>';
-        html += '<div class="today-upcoming-scoring-pts">' + todayFmtPtsFull(s.points || 0) + '</div>';
-        html += '</div>';
-      });
-    } else {
-      html += '<div class="today-upcoming-detail-item">No scoring tasks for this day.</div>';
     }
     var dIdx = DAYS.indexOf(d);
     html += '<button class="today-edit-daylink" data-idx="' + dIdx + '">Edit this day \u2192</button>';
@@ -2328,6 +2315,60 @@ function msCsvTM(v){
 function msFmtPts(n){ if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(0)+'K'; return String(n); }
 function msFmtNum(n){ if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(0)+'K'; return n>0 ? String(n) : '0'; }
 function msEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Lightweight formatting for the Daily Summary text: supports **bold**,
+// "- " bullet lists, and "## " section headers. Input is escaped first
+// (so raw HTML in the text can never leak through), then a handful of
+// safe regex substitutions add the markup back in.
+function summaryMdToHtml(raw){
+  var text = (raw || '').trim();
+  if(!text) return '';
+  var lines = text.split('\n');
+  var html = '';
+  var listOpen = false;
+  var paraLines = [];
+
+  function boldify(s){
+    return msEsc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  }
+  function flushPara(){
+    if(paraLines.length){
+      html += '<p>' + paraLines.map(boldify).join('<br>') + '</p>';
+      paraLines = [];
+    }
+  }
+  function closeList(){
+    if(listOpen){ html += '</ul>'; listOpen = false; }
+  }
+
+  lines.forEach(function(line){
+    var trimmed = line.trim();
+    if(!trimmed){
+      flushPara();
+      closeList();
+      return;
+    }
+    var headingMatch = trimmed.match(/^#{1,3}\s+(.*)$/);
+    if(headingMatch){
+      flushPara();
+      closeList();
+      html += '<div class="day-summary-heading">' + boldify(headingMatch[1]) + '</div>';
+      return;
+    }
+    var bulletMatch = trimmed.match(/^[-\u2022]\s+(.*)$/);
+    if(bulletMatch){
+      flushPara();
+      if(!listOpen){ html += '<ul class="day-summary-list">'; listOpen = true; }
+      html += '<li>' + boldify(bulletMatch[1]) + '</li>';
+      return;
+    }
+    closeList();
+    paraLines.push(trimmed);
+  });
+  flushPara();
+  closeList();
+  return html;
+}
 
 function msCalcPts(tg){ return (parseInt(tg)||0) * 2000; }
 // --- Chief Minister: Construction scoring -------------------------------
