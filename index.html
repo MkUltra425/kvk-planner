@@ -323,7 +323,10 @@
   .ms-row.current{background:rgba(95,191,122,0.14);border-left:2px solid var(--green);}
   .ms-row.current .ms-time{color:var(--green);font-weight:700;}
   .ms-time{font-family:'JetBrains Mono',monospace;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:clip;}
-  .ms-name{color:var(--text-hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ms-name{color:var(--text-hi);overflow:hidden;display:flex;align-items:center;gap:6px;}
+  .ms-name-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .ms-avatar{width:18px;height:18px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:var(--glass-border);display:block;}
+  .ms-avatar-fallback{width:18px;height:18px;border-radius:50%;flex:0 0 auto;background:var(--glass-border);}
   .ms-val{text-align:right;color:var(--text-mid);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ms-pts{text-align:right;font-weight:600;color:var(--amber);}
 
@@ -2666,7 +2669,7 @@ function msSyncAndSave(){
 var JEABSLIST_API_BASE = "https://jeabslist.com/api/v1";
 var JEABSLIST_API_TOKEN = "jp_f05159a41aae673e635088bb9531ce84db663a0e";
 
-var msApplyLookupResult = null; // { name, tcLevel, allianceName, allianceAbbr } once confirmed
+var msApplyLookupResult = null; // { name, tcLevel, allianceName, allianceAbbr, avatarUrl } once confirmed
 var msApplyLookupSeq = 0;       // guards against a stale response overwriting a newer one
 
 function msLookupKingshotId(id){
@@ -2697,7 +2700,8 @@ function msLookupKingshotId(id){
         name: data.name || id,
         tcLevel: data.town_hall_level || null,
         allianceName: allianceName,
-        allianceAbbr: allianceAbbr
+        allianceAbbr: allianceAbbr,
+        avatarUrl: data.avatar_url || null
       };
       if(check){
         var bits = [msApplyLookupResult.name];
@@ -3185,6 +3189,7 @@ function msSubmitApplication(){
     kingshotId: kingshotId,
     tcLevel: lookup ? lookup.tcLevel : null,
     allianceName: lookup ? lookup.allianceName : '',
+    avatarUrl: lookup ? lookup.avatarUrl : null,
     tg: tg,
     entryOrder: msEntryCounter,
     carried: false,
@@ -3735,11 +3740,28 @@ function msCurrentAppointedHtml(key){
     '</div>';
 }
 
+// Avatar (from a confirmed Jeabslist lookup) + name, used in every
+// scheduler row. CSV-imported players and unmatched applicants have no
+// avatarUrl, so they fall back to a plain placeholder circle. The <img>
+// itself falls back the same way if the URL 404s or fails to load.
+function msNameCellHtml(p){
+  var avatarHtml;
+  if(p.avatarUrl){
+    avatarHtml = '<img class="ms-avatar" src="' + msEsc(p.avatarUrl) + '" alt="" loading="lazy" ' +
+      'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\';">' +
+      '<span class="ms-avatar-fallback" style="display:none;"></span>';
+  } else {
+    avatarHtml = '<span class="ms-avatar-fallback"></span>';
+  }
+  var tag = p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '';
+  return '<span class="ms-name notranslate" translate="no">' + avatarHtml +
+    '<span class="ms-name-text">' + msEsc(p.name) + tag + '</span></span>';
+}
+
 function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var vals = msRowValues(key, p);
   var timeInner = isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : ('<span class="notranslate" translate="no">' + timeLabel + '</span>');
-  var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' +
-    '<span class="ms-name notranslate" translate="no">' + msEsc(p.name) + (p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '') + '</span>';
+  var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' + msNameCellHtml(p);
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '" data-carried="' + (p.carried ? '1' : '0') + '">\u00d7</button>';
@@ -4003,8 +4025,7 @@ function kaApplySlotHtml(key){
 function kaRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var vals = msRowValues(key, p);
   var timeInner = isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : ('<span class="notranslate" translate="no">' + timeLabel + '</span>');
-  var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' +
-    '<span class="ms-name notranslate" translate="no">' + msEsc(p.name) + (p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '') + '</span>';
+  var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' + msNameCellHtml(p);
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '">\u00d7</button>';
