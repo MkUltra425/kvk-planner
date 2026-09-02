@@ -320,6 +320,8 @@
   .ms-row:last-child{border-bottom:none;}
   .ms-row-tall{padding-top:14px;padding-bottom:14px;}
   .ms-head-row-tall{padding-top:9px;padding-bottom:9px;}
+  /* Keep all opponent scouting tables on the same row rhythm. */
+  .opp-equal-row{height:62px;box-sizing:border-box;}
   .ms-row.em{opacity:0.45;}
   .ms-row.noslot{background:rgba(227,91,86,0.06);border-left:2px solid rgba(227,91,86,0.4);}
   .ms-row.current{background:rgba(95,191,122,0.14);border-left:2px solid var(--green);}
@@ -2378,6 +2380,16 @@ function msFmtNumFull(n){
   var s = String(Math.round(n || 0));
   return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
+// Compact power values with a consistent two-decimal suffix.
+function msFmtPower(n){
+  var value = Number(n) || 0;
+  var abs = Math.abs(value);
+  if(abs >= 1e12) return (value / 1e12).toFixed(2) + 'T';
+  if(abs >= 1e9) return (value / 1e9).toFixed(2) + 'B';
+  if(abs >= 1e6) return (value / 1e6).toFixed(2) + 'M';
+  if(abs >= 1e3) return (value / 1e3).toFixed(2) + 'K';
+  return String(Math.round(value));
+}
 function msEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // Lightweight formatting for the Daily Summary text: supports **bold**,
@@ -3068,19 +3080,19 @@ function findStanding(standings, boardType, labelRe){
   return found || null;
 }
 
-function opponentStandingCell(pStandings, boardType, labelRe){
+function opponentStandingCell(pStandings, boardType, labelRe, formatter){
   if(pStandings === undefined) return '<span class="ms-val opp-loading">\u2026</span>';
   var standing = findStanding(pStandings, boardType, labelRe);
-  return '<span class="ms-val">' + (standing ? msFmtNumFull(standing.points) : '\u2014') + '</span>';
+  return '<span class="ms-val">' + (standing ? (formatter || msFmtNumFull)(standing.points) : '\u2014') + '</span>';
 }
 
 function opponentPlayerRowsHtml(mysticTop, standingsMap, avatarsMap, tall){
   if(!mysticTop || !mysticTop.length) return '<div class="score-empty">No player data available.</div>';
-  var cols = '28px 1fr 60px 90px 90px 90px 50px 90px';
+  var cols = '28px 1fr 90px 90px 90px 50px 90px';
   var headClass = 'ms-head-row' + (tall ? ' ms-head-row-tall' : '');
-  var rowClass = 'ms-row' + (tall ? ' ms-row-tall' : '');
+  var rowClass = 'ms-row opp-equal-row' + (tall ? ' ms-row-tall' : '');
   var html = '<div class="ms-list"><div class="' + headClass + '" style="grid-template-columns:' + cols + ';">' +
-    '<span>#</span><span>Name</span><span style="text-align:center;">Alliance</span>' +
+    '<span>#</span><span>Name</span>' +
     '<span style="text-align:center;">Power</span><span style="text-align:center;">Hero Pwr</span>' +
     '<span style="text-align:center;">Hero Total</span><span style="text-align:center;">TC</span>' +
     '<span style="text-align:center;">Mystic Trial</span></div>';
@@ -3095,14 +3107,14 @@ function opponentPlayerRowsHtml(mysticTop, standingsMap, avatarsMap, tall){
     // with a label-text fallback for boards without a known number.
     var pStandings = standingsMap ? standingsMap[pid] : undefined;
     var avatarUrl = avatarsMap ? avatarsMap[pid] : undefined; // undefined = still loading, null = none/failed
+    var playerName = (entry.alliance ? '[' + entry.alliance + ']' : '') + (entry.name || '\u2014');
 
     html += '<div class="' + rowClass + '" style="grid-template-columns:' + cols + ';">' +
       '<span class="ms-val">' + (entry.rank != null ? entry.rank : '\u2014') + '</span>' +
-      opponentAvatarNameHtml(entry.name, avatarUrl || null, true) +
-      '<span class="ms-val notranslate" translate="no">' + msEsc(entry.alliance || '\u2014') + '</span>' +
-      opponentStandingCell(pStandings, 3, /^personal power$/i) +
-      opponentStandingCell(pStandings, null, /^hero power$/i) +
-      opponentStandingCell(pStandings, 8, /hero.*total.*power/i) +
+      opponentAvatarNameHtml(playerName, avatarUrl || null, true) +
+      opponentStandingCell(pStandings, 3, /^personal power$/i, msFmtPower) +
+      opponentStandingCell(pStandings, null, /^hero power$/i, msFmtPower) +
+      opponentStandingCell(pStandings, 8, /hero.*total.*power/i, msFmtPower) +
       opponentStandingCell(pStandings, 5, /town (center|hall)/i) +
       opponentStandingCell(pStandings, 20, /mystic trial/i) +
       '</div>';
@@ -3113,15 +3125,15 @@ function opponentPlayerRowsHtml(mysticTop, standingsMap, avatarsMap, tall){
 function opponentAllianceRowsHtml(alliances, tall){
   if(!alliances || !alliances.length) return '<div class="score-empty">No alliance data available.</div>';
   var headClass = 'ms-head-row' + (tall ? ' ms-head-row-tall' : '');
-  var rowClass = 'ms-row' + (tall ? ' ms-row-tall' : '');
-  var html = '<div class="ms-list"><div class="' + headClass + '" style="grid-template-columns:28px 70px 1fr 90px 70px;">' +
-    '<span>#</span><span>Tag</span><span>Name</span><span style="text-align:center;">Power</span><span style="text-align:center;">Members</span></div>';
+  var rowClass = 'ms-row opp-equal-row' + (tall ? ' ms-row-tall' : '');
+  var html = '<div class="ms-list"><div class="' + headClass + '" style="grid-template-columns:28px 1fr 90px 70px;">' +
+    '<span>#</span><span>Name</span><span style="text-align:center;">Power</span><span style="text-align:center;">Members</span></div>';
   alliances.slice(0,5).forEach(function(a, i){
-    html += '<div class="' + rowClass + '" style="grid-template-columns:28px 70px 1fr 90px 70px;">' +
+    var allianceName = (a.abbr ? '[' + a.abbr + ']' : '') + (a.name || '\u2014');
+    html += '<div class="' + rowClass + '" style="grid-template-columns:28px 1fr 90px 70px;">' +
       '<span class="ms-val">' + (i+1) + '</span>' +
-      '<span class="ms-val notranslate" translate="no">[' + msEsc(a.abbr || '\u2014') + ']</span>' +
-      '<span class="ms-name notranslate" translate="no">' + msEsc(a.name || '\u2014') + '</span>' +
-      '<span class="ms-val">' + msFmtNumFull(a.power || 0) + '</span>' +
+      '<span class="ms-name notranslate" translate="no"><span class="ms-name-text ms-name-text-lg">' + msEsc(allianceName) + '</span></span>' +
+      '<span class="ms-val">' + msFmtPower(a.power || 0) + '</span>' +
       '<span class="ms-val">' + (a.member_count != null ? a.member_count : '\u2014') + '</span></div>';
   });
   return html + '</div>';
@@ -3139,18 +3151,15 @@ function opponentMatchRowsHtml(kvk){
   if(!matches.length) return '<div class="score-empty">No match history available.</div>';
   matches.sort(function(a,b){ return (b.ts||0) - (a.ts||0); }); // most recent first
   var kid = kvk.kingdom_id;
-  var html = '<div class="ms-list"><div class="ms-head-row" style="grid-template-columns:90px 90px 60px 60px 1fr 70px;">' +
-    '<span>Date</span><span>Opponent</span><span style="text-align:center;">Prep</span><span style="text-align:center;">Battle</span><span>Castle</span><span style="text-align:center;">Source</span></div>';
+  var html = '<div class="ms-list"><div class="ms-head-row ms-head-row-tall" style="grid-template-columns:90px 90px 60px 60px;">' +
+    '<span>Date</span><span>Opponent</span><span style="text-align:center;">Prep</span><span style="text-align:center;">Battle</span></div>';
   matches.forEach(function(m){
     var dateStr = m.date ? m.date.slice(0,10) : '\u2014';
-    var castleText = m.castle_taken_from ? ('taken from ' + m.castle_taken_from) : '\u2014';
-    html += '<div class="ms-row" style="grid-template-columns:90px 90px 60px 60px 1fr 70px;">' +
+    html += '<div class="ms-row ms-row-tall opp-equal-row" style="grid-template-columns:90px 90px 60px 60px;">' +
       '<span class="ms-val notranslate" translate="no">' + msEsc(dateStr) + '</span>' +
       '<span class="ms-val">' + (m.opponent_kingdom_id != null ? msEsc(m.opponent_kingdom_id) : '\u2014') + '</span>' +
       '<span class="ms-val">' + opponentMatchOutcomeTag(m.prep_winner, m.prep_loser, kid, m.decided) + '</span>' +
-      '<span class="ms-val">' + opponentMatchOutcomeTag(m.battle_winner, m.battle_loser, kid, m.decided) + '</span>' +
-      '<span class="ms-val">' + msEsc(castleText) + '</span>' +
-      '<span class="ms-val">' + msEsc(m.source || '\u2014') + '</span></div>';
+      '<span class="ms-val">' + opponentMatchOutcomeTag(m.battle_winner, m.battle_loser, kid, m.decided) + '</span></div>';
   });
   return html + '</div>';
 }
@@ -3227,7 +3236,7 @@ function renderOpponentView(){
   // Sourced from the Mystic Trial leaderboard (board_type 20), not the
   // kingdom summary's top_players — that list isn't ranked by Mystic
   // Trial, so it can't be used to answer "who's actually leading it".
-  html += '<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">TP</div><div class="panel-title">Top 5 Players (by Mystic Trial)</div></div>';
+  html += '<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">TP</div><div class="panel-title">Top 5 Players</div></div>';
   html += opponentPlayerRowsHtml(opponentCache.mysticTop, opponentCache.standings, opponentCache.avatars, true);
   html += '</div>';
 
