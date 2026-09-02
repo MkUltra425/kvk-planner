@@ -327,8 +327,8 @@
   .ms-name-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
   .ms-avatar{width:18px;height:18px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:var(--glass-border);display:block;}
   .ms-avatar-fallback{width:18px;height:18px;border-radius:50%;flex:0 0 auto;background:var(--glass-border);}
-  .ms-val{text-align:right;color:var(--text-mid);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .ms-pts{text-align:right;font-weight:600;color:var(--amber);}
+  .ms-val{text-align:center;color:var(--text-mid);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ms-pts{text-align:center;font-weight:600;color:var(--amber);}
 
   .ms-current-card{
     position:relative;overflow:hidden;border-radius:14px;padding:18px 20px;margin-bottom:16px;
@@ -3349,7 +3349,7 @@ function msIsNarrow(){ return window.innerWidth <= 640; }
 function msColsFor(key){
   var narrow = msIsNarrow();
   var timeW = narrow ? '38px' : '62px';
-  var playerW = narrow ? '110px' : '190px';
+  var playerW = narrow ? '100px' : '160px';
   if(key === 'd1') return [
     {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'TC', w:'1fr'}, {h:'TG', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
   ];
@@ -3464,7 +3464,7 @@ function msRenderBody(key){
 
   html += '<div class="ms-list">';
   html += '<div class="ms-head-row" style="grid-template-columns:' + gridStyle + '">';
-  cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:right"':'') + '>' + c.h + '</span>'; });
+  cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:center"':'') + '>' + c.h + '</span>'; });
   if(EDIT_MODE) html += '<span></span>';
   html += '</div>';
 
@@ -4065,7 +4065,7 @@ function renderKingApptView(){
 
   html += '<div class="ms-list">';
   html += '<div class="ms-head-row" style="grid-template-columns:' + gridStyle + '">';
-  cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:right"':'') + '>' + c.h + '</span>'; });
+  cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:center"':'') + '>' + c.h + '</span>'; });
   if(EDIT_MODE) html += '<span></span>';
   html += '</div>';
 
