@@ -318,6 +318,8 @@
     display:grid;gap:10px;align-items:center;padding:7px 8px;border-bottom:1px solid var(--line);font-size:11px;
   }
   .ms-row:last-child{border-bottom:none;}
+  .ms-row-tall{padding-top:14px;padding-bottom:14px;}
+  .ms-head-row-tall{padding-top:9px;padding-bottom:9px;}
   .ms-row.em{opacity:0.45;}
   .ms-row.noslot{background:rgba(227,91,86,0.06);border-left:2px solid rgba(227,91,86,0.4);}
   .ms-row.current{background:rgba(95,191,122,0.14);border-left:2px solid var(--green);}
@@ -325,8 +327,11 @@
   .ms-time{font-family:'JetBrains Mono',monospace;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:clip;}
   .ms-name{color:var(--text-hi);overflow:hidden;display:flex;align-items:center;gap:6px;}
   .ms-name-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .ms-name-text-lg{font-size:14px;font-weight:700;}
   .ms-avatar{width:18px;height:18px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:var(--glass-border);display:block;}
   .ms-avatar-fallback{width:18px;height:18px;border-radius:50%;flex:0 0 auto;background:var(--glass-border);}
+  .ms-avatar-lg{width:34px;height:34px;}
+  .ms-avatar-fallback-lg{width:34px;height:34px;}
   .ms-val{text-align:center;color:var(--text-mid);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ms-pts{text-align:center;font-weight:600;color:var(--amber);}
 
@@ -419,6 +424,23 @@
   }
   .ms-apply-field input[type="text"]:focus{border-color:var(--teal);}
   .ms-apply-idcheck{font-size:11.5px;margin-top:6px;min-height:14px;line-height:1.4;}
+
+  .opp-panel{margin-bottom:14px;}
+  .opp-input-row{display:flex;gap:8px;}
+  .opp-kid-input{
+    flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);
+    border-radius:8px;color:var(--text-hi);padding:9px 11px;font-size:13px;font-family:inherit;
+    outline:none;box-sizing:border-box;
+  }
+  .opp-kid-input:focus{border-color:var(--teal);}
+  .opp-tag{
+    display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;
+    padding:2px 7px;border-radius:6px;letter-spacing:0.03em;
+  }
+  .opp-tag.win{background:rgba(79,209,197,0.14);color:var(--teal);}
+  .opp-tag.loss{background:var(--crimson-dim);color:var(--crimson);}
+  .opp-tag.pending{background:rgba(255,255,255,0.06);color:var(--text-dim);}
+  .opp-loading{color:var(--text-dim);font-style:italic;}
   .ms-apply-idcheck.loading{color:var(--text-dim);}
   .ms-apply-idcheck.found{color:var(--green);}
   .ms-apply-idcheck.notfound{color:var(--crimson);}
@@ -866,6 +888,7 @@
   <div class="view-toggle" id="viewToggle">
     <button class="view-btn active" data-view="today">Today</button>
     <button class="view-btn" data-view="kingappt">King Appointment Schedule</button>
+    <button class="view-btn" data-view="opponent">KvK Opponent</button>
     <button class="view-btn" id="dayViewBtn" data-view="day" style="display:none;">Day view</button>
   </div>
 
@@ -999,6 +1022,10 @@
 
   <div id="kingApptView" style="display:none;">
     <div id="kingApptViewBody"></div>
+  </div>
+
+  <div id="opponentView" style="display:none;">
+    <div id="opponentViewBody"></div>
   </div>
 
 </div>
@@ -1297,7 +1324,8 @@ try{
 
 function defaultState(){
   var s = { kingdomName:"KvK War Room", days:{},
-    scheduler:{ players:{d1:[],d4:[],d4cm:[]}, entryCounter:0 } };
+    scheduler:{ players:{d1:[],d4:[],d4cm:[]}, entryCounter:0 },
+    opponentKingdom:{ kid:null } };
   DAYS.forEach(function(d){
     s.days[d.date] = {
       focus: d.focus,
@@ -1342,6 +1370,9 @@ function migrateState(parsed){
       if(!Array.isArray(parsed.scheduler.players[k])) parsed.scheduler.players[k] = [];
     });
     if(typeof parsed.scheduler.entryCounter !== 'number') parsed.scheduler.entryCounter = 0;
+  }
+  if(!parsed.opponentKingdom || typeof parsed.opponentKingdom !== 'object'){
+    parsed.opponentKingdom = { kid: null };
   }
   return parsed;
 }
@@ -2101,9 +2132,11 @@ function switchView(view){
   });
   document.getElementById('todayView').style.display = view === 'today' ? 'block' : 'none';
   document.getElementById('kingApptView').style.display = view === 'kingappt' ? 'block' : 'none';
+  document.getElementById('opponentView').style.display = view === 'opponent' ? 'block' : 'none';
   document.getElementById('dayView').style.display = view === 'day' ? 'block' : 'none';
   if(view === 'today') renderTodayView();
   if(view === 'kingappt') renderKingApptView();
+  if(view === 'opponent') renderOpponentView();
 }
 
 document.querySelectorAll('.view-btn').forEach(function(btn){
@@ -2910,6 +2943,317 @@ function msLookupKingshotId(id){
 }
 
 var msApplyTargetKey = null;
+
+// --- KvK Opponent scouting -------------------------------------------------
+// Pulls a kingdom summary + KvK track record from Jeabslist for whichever
+// kingdom_id an editor has set. The id itself is shared state (synced to
+// everyone via Firebase), but the fetched data is not persisted — every
+// viewer's browser fetches fresh from the API when the tab opens, same
+// pattern as the minister-application ID lookup above.
+var opponentCache = { kid: null, summary: null, kvk: null, mysticTop: null, standings: {}, avatars: {}, loading: false, error: null };
+var opponentFetchSeq = 0;
+
+function jeabslistFetch(path){
+  return fetch(JEABSLIST_API_BASE + path, {
+    headers: { 'Authorization': 'Bearer ' + JEABSLIST_API_TOKEN }
+  }).then(function(res){
+    if(!res.ok) throw new Error('status ' + res.status);
+    return res.json();
+  });
+}
+
+function msFetchOpponentKingdom(kid){
+  var mySeq = ++opponentFetchSeq;
+  opponentCache = { kid: kid, summary: null, kvk: null, mysticTop: null, standings: {}, avatars: {}, loading: true, error: null };
+  renderOpponentView();
+
+  Promise.all([
+    jeabslistFetch('/kingdoms/' + encodeURIComponent(kid)),
+    jeabslistFetch('/kingdoms/' + encodeURIComponent(kid) + '/kvk'),
+    // Kingdom summary's top_players isn't ranked by Mystic Trial — it's
+    // some other default ordering (most likely power) and there's no
+    // guarantee those 5 are even the kingdom's Mystic Trial leaders. The
+    // dedicated leaderboard endpoint (board_type 20 = Mystic Trial, per
+    // Jeabslist's own docs) is the only way to get a real top-5-by-Mystic-
+    // Trial list. Premium, so this only works because the token has it.
+    jeabslistFetch('/kingdoms/' + encodeURIComponent(kid) + '/leaderboards/20?cached=1')
+  ]).then(function(results){
+    if(mySeq !== opponentFetchSeq) return; // a newer fetch superseded this one
+    var summary = results[0], kvk = results[1], mysticBoard = results[2];
+    var entries = (mysticBoard && Array.isArray(mysticBoard.entries)) ? mysticBoard.entries.slice() : [];
+    entries.sort(function(a,b){ return (a.rank||0) - (b.rank||0); });
+    var mysticTop = entries.slice(0,5);
+    opponentCache = { kid: kid, summary: summary, kvk: kvk, mysticTop: mysticTop, standings: {}, avatars: {}, loading: false, error: null };
+    renderOpponentView(); // show what we have now; per-player detail arrives separately below
+
+    // Every numeric stat in the Top 5 table — Personal Power, Hero Power,
+    // Hero's Total Power, TC Level, and now Mystic Trial too — is sourced
+    // the same way, from each player's own /standings (Premium). Only
+    // avatar_url isn't on a standings board, so that's one extra base-tier
+    // call per player. ?cached=1 throughout — Jeabslist's own 6-hour cache
+    // is fresh enough for a scouting report.
+    mysticTop.forEach(function(entry){
+      var pid = entry.player_id;
+      if(!pid) return;
+      jeabslistFetch('/players/' + encodeURIComponent(pid) + '/standings?cached=1')
+        .then(function(data){
+          if(mySeq !== opponentFetchSeq) return;
+          opponentCache.standings[pid] = (data && Array.isArray(data.standings)) ? data.standings : [];
+          renderOpponentView();
+        })
+        .catch(function(){
+          if(mySeq !== opponentFetchSeq) return;
+          opponentCache.standings[pid] = null; // attempted and failed — show "—", not a permanent loading spinner
+          renderOpponentView();
+        });
+      jeabslistFetch('/players/' + encodeURIComponent(pid))
+        .then(function(data){
+          if(mySeq !== opponentFetchSeq) return;
+          opponentCache.avatars[pid] = (data && data.avatar_url) ? data.avatar_url : null;
+          renderOpponentView();
+        })
+        .catch(function(){
+          if(mySeq !== opponentFetchSeq) return;
+          opponentCache.avatars[pid] = null;
+          renderOpponentView();
+        });
+    });
+  }).catch(function(err){
+    if(mySeq !== opponentFetchSeq) return;
+    opponentCache = { kid: kid, summary: null, kvk: null, mysticTop: null, standings: {}, avatars: {}, loading: false, error: 'Could not load kingdom ' + kid + ' \u2014 check the ID and try again.' };
+    renderOpponentView();
+  });
+}
+
+function msSetOpponentKingdom(kid){
+  state.opponentKingdom = { kid: kid };
+  saveState();
+  msFetchOpponentKingdom(kid);
+}
+
+function opponentStatRow(label, value){
+  return '<div class="ms-stat"><div class="ms-stat-v">' + value + '</div><div class="ms-stat-l">' + msEsc(label) + '</div></div>';
+}
+
+function opponentAvatarNameHtml(name, avatarUrl, large){
+  var avatarClass = 'ms-avatar' + (large ? ' ms-avatar-lg' : '');
+  var fallbackClass = 'ms-avatar-fallback' + (large ? ' ms-avatar-fallback-lg' : '');
+  var textClass = 'ms-name-text' + (large ? ' ms-name-text-lg' : '');
+  var avatarHtml;
+  if(avatarUrl){
+    avatarHtml = '<img class="' + avatarClass + '" src="' + msEsc(avatarUrl) + '" alt="" loading="lazy" ' +
+      'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\';">' +
+      '<span class="' + fallbackClass + '" style="display:none;"></span>';
+  } else {
+    avatarHtml = '<span class="' + fallbackClass + '"></span>';
+  }
+  return '<span class="ms-name notranslate" translate="no">' + avatarHtml +
+    '<span class="' + textClass + '">' + msEsc(name || '\u2014') + '</span></span>';
+}
+
+// Finds a player's standings-board entry, preferring an exact board_type
+// match (most reliable) and falling back to matching the board's label
+// text (useful for boards like plain "Hero Power" that weren't given a
+// board_type number at all). "points" is the value to read per Jeabslist's
+// own docs — "score" is the raw board value before any tier offset.
+function findStanding(standings, boardType, labelRe){
+  if(!standings || !standings.length) return null;
+  var found = null;
+  if(boardType != null){
+    found = standings.find(function(s){ return s.board_type === boardType; });
+  }
+  if(!found && labelRe){
+    found = standings.find(function(s){ return s.label && labelRe.test(s.label); });
+  }
+  return found || null;
+}
+
+function opponentStandingCell(pStandings, boardType, labelRe){
+  if(pStandings === undefined) return '<span class="ms-val opp-loading">\u2026</span>';
+  var standing = findStanding(pStandings, boardType, labelRe);
+  return '<span class="ms-val">' + (standing ? msFmtNumFull(standing.points) : '\u2014') + '</span>';
+}
+
+function opponentPlayerRowsHtml(mysticTop, standingsMap, avatarsMap, tall){
+  if(!mysticTop || !mysticTop.length) return '<div class="score-empty">No player data available.</div>';
+  var cols = '28px 1fr 60px 90px 90px 90px 50px 90px';
+  var headClass = 'ms-head-row' + (tall ? ' ms-head-row-tall' : '');
+  var rowClass = 'ms-row' + (tall ? ' ms-row-tall' : '');
+  var html = '<div class="ms-list"><div class="' + headClass + '" style="grid-template-columns:' + cols + ';">' +
+    '<span>#</span><span>Name</span><span style="text-align:center;">Alliance</span>' +
+    '<span style="text-align:center;">Power</span><span style="text-align:center;">Hero Pwr</span>' +
+    '<span style="text-align:center;">Hero Total</span><span style="text-align:center;">TC</span>' +
+    '<span style="text-align:center;">Mystic Trial</span></div>';
+  mysticTop.forEach(function(entry){
+    var pid = entry.player_id;
+    // Name and alliance come straight off the leaderboard entry itself —
+    // Jeabslist's docs confirm each row carries the same fields as the
+    // bulk feed, so no extra lookup is needed for those. Every numeric
+    // stat (Personal Power, Hero Power, Hero's Total Power, TC Level, and
+    // Mystic Trial) is instead sourced identically, from this player's own
+    // /standings — the one place all five actually live, board_type first
+    // with a label-text fallback for boards without a known number.
+    var pStandings = standingsMap ? standingsMap[pid] : undefined;
+    var avatarUrl = avatarsMap ? avatarsMap[pid] : undefined; // undefined = still loading, null = none/failed
+
+    html += '<div class="' + rowClass + '" style="grid-template-columns:' + cols + ';">' +
+      '<span class="ms-val">' + (entry.rank != null ? entry.rank : '\u2014') + '</span>' +
+      opponentAvatarNameHtml(entry.name, avatarUrl || null, true) +
+      '<span class="ms-val notranslate" translate="no">' + msEsc(entry.alliance || '\u2014') + '</span>' +
+      opponentStandingCell(pStandings, 3, /^personal power$/i) +
+      opponentStandingCell(pStandings, null, /^hero power$/i) +
+      opponentStandingCell(pStandings, 8, /hero.*total.*power/i) +
+      opponentStandingCell(pStandings, 5, /town (center|hall)/i) +
+      opponentStandingCell(pStandings, 20, /mystic trial/i) +
+      '</div>';
+  });
+  return html + '</div>';
+}
+
+function opponentAllianceRowsHtml(alliances, tall){
+  if(!alliances || !alliances.length) return '<div class="score-empty">No alliance data available.</div>';
+  var headClass = 'ms-head-row' + (tall ? ' ms-head-row-tall' : '');
+  var rowClass = 'ms-row' + (tall ? ' ms-row-tall' : '');
+  var html = '<div class="ms-list"><div class="' + headClass + '" style="grid-template-columns:28px 70px 1fr 90px 70px;">' +
+    '<span>#</span><span>Tag</span><span>Name</span><span style="text-align:center;">Power</span><span style="text-align:center;">Members</span></div>';
+  alliances.slice(0,5).forEach(function(a, i){
+    html += '<div class="' + rowClass + '" style="grid-template-columns:28px 70px 1fr 90px 70px;">' +
+      '<span class="ms-val">' + (i+1) + '</span>' +
+      '<span class="ms-val notranslate" translate="no">[' + msEsc(a.abbr || '\u2014') + ']</span>' +
+      '<span class="ms-name notranslate" translate="no">' + msEsc(a.name || '\u2014') + '</span>' +
+      '<span class="ms-val">' + msFmtNumFull(a.power || 0) + '</span>' +
+      '<span class="ms-val">' + (a.member_count != null ? a.member_count : '\u2014') + '</span></div>';
+  });
+  return html + '</div>';
+}
+
+function opponentMatchOutcomeTag(winnerId, loserId, kid, decided){
+  if(winnerId == null) return '<span class="opp-tag pending">pending</span>';
+  if(winnerId === kid) return '<span class="opp-tag win">W</span>';
+  if(loserId === kid) return '<span class="opp-tag loss">L</span>';
+  return '<span class="opp-tag pending">\u2014</span>';
+}
+
+function opponentMatchRowsHtml(kvk){
+  var matches = (kvk && Array.isArray(kvk.matches)) ? kvk.matches.slice() : [];
+  if(!matches.length) return '<div class="score-empty">No match history available.</div>';
+  matches.sort(function(a,b){ return (b.ts||0) - (a.ts||0); }); // most recent first
+  var kid = kvk.kingdom_id;
+  var html = '<div class="ms-list"><div class="ms-head-row" style="grid-template-columns:90px 90px 60px 60px 1fr 70px;">' +
+    '<span>Date</span><span>Opponent</span><span style="text-align:center;">Prep</span><span style="text-align:center;">Battle</span><span>Castle</span><span style="text-align:center;">Source</span></div>';
+  matches.forEach(function(m){
+    var dateStr = m.date ? m.date.slice(0,10) : '\u2014';
+    var castleText = m.castle_taken_from ? ('taken from ' + m.castle_taken_from) : '\u2014';
+    html += '<div class="ms-row" style="grid-template-columns:90px 90px 60px 60px 1fr 70px;">' +
+      '<span class="ms-val notranslate" translate="no">' + msEsc(dateStr) + '</span>' +
+      '<span class="ms-val">' + (m.opponent_kingdom_id != null ? msEsc(m.opponent_kingdom_id) : '\u2014') + '</span>' +
+      '<span class="ms-val">' + opponentMatchOutcomeTag(m.prep_winner, m.prep_loser, kid, m.decided) + '</span>' +
+      '<span class="ms-val">' + opponentMatchOutcomeTag(m.battle_winner, m.battle_loser, kid, m.decided) + '</span>' +
+      '<span class="ms-val">' + msEsc(castleText) + '</span>' +
+      '<span class="ms-val">' + msEsc(m.source || '\u2014') + '</span></div>';
+  });
+  return html + '</div>';
+}
+
+function renderOpponentView(){
+  var body = document.getElementById('opponentViewBody');
+  if(!body) return;
+
+  var savedKid = (state.opponentKingdom && state.opponentKingdom.kid) ? state.opponentKingdom.kid : null;
+  var html = '<div class="today-hero"><div class="today-hero-phase">KvK Opponent</div>';
+  html += '<div class="today-hero-sub">Scouting report pulled from Jeabslist</div></div>';
+
+  if(EDIT_MODE){
+    html += '<div class="panel opp-input-panel opp-panel">';
+    html += '<div class="panel-head"><div class="panel-icn">ID</div><div class="panel-title">Set opponent kingdom</div></div>';
+    html += '<div class="opp-input-row">';
+    html += '<input type="number" class="opp-kid-input" id="oppKidInput" placeholder="Kingdom ID (e.g. 172)" value="' + (savedKid != null ? savedKid : '') + '">';
+    html += '<button class="ms-btn" id="oppKidLoadBtn">Load</button>';
+    html += '</div></div>';
+  }
+
+  if(savedKid == null){
+    html += '<div class="score-empty">No opponent kingdom set yet' + (EDIT_MODE ? ' — enter an ID above.' : '.') + '</div>';
+    body.innerHTML = html;
+    if(EDIT_MODE) wireOpponentInput();
+    return;
+  }
+
+  if(opponentCache.kid !== savedKid && !opponentCache.loading){
+    // Saved kid changed (e.g. another editor set it, or first load) —
+    // kick off a fetch; renderOpponentView will be called again once it
+    // resolves, so just show a loading state for now.
+    msFetchOpponentKingdom(savedKid);
+    html += '<div class="score-empty">Loading kingdom ' + msEsc(savedKid) + '\u2026</div>';
+    body.innerHTML = html;
+    if(EDIT_MODE) wireOpponentInput();
+    return;
+  }
+
+  if(opponentCache.loading){
+    html += '<div class="score-empty">Loading kingdom ' + msEsc(savedKid) + '\u2026</div>';
+    body.innerHTML = html;
+    if(EDIT_MODE) wireOpponentInput();
+    return;
+  }
+
+  if(opponentCache.error){
+    html += '<div class="score-empty">' + msEsc(opponentCache.error) + '</div>';
+    body.innerHTML = html;
+    if(EDIT_MODE) wireOpponentInput();
+    return;
+  }
+
+  var summary = opponentCache.summary;
+  var kvk = opponentCache.kvk;
+
+  if(kvk && kvk.record){
+    var r = kvk.record;
+    html += '<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">KvK</div><div class="panel-title">KvK Record</div></div>';
+    html += '<div class="ms-statbar">';
+    html += opponentStatRow('Engagements', r.engagements);
+    html += opponentStatRow('Prep W/L', r.prep_wins + '/' + r.prep_losses);
+    html += opponentStatRow('Battle W/L', r.battle_wins + '/' + r.battle_losses);
+    html += opponentStatRow('Castles +/-', r.castles_taken + '/' + r.castles_lost);
+    html += opponentStatRow('Opponents', r.opponents);
+    html += opponentStatRow('Pending', r.pending);
+    html += '</div></div>';
+
+    html += '<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">M</div><div class="panel-title">Match History</div></div>';
+    html += opponentMatchRowsHtml(kvk);
+    html += '</div>';
+  }
+
+  // Sourced from the Mystic Trial leaderboard (board_type 20), not the
+  // kingdom summary's top_players — that list isn't ranked by Mystic
+  // Trial, so it can't be used to answer "who's actually leading it".
+  html += '<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">TP</div><div class="panel-title">Top 5 Players (by Mystic Trial)</div></div>';
+  html += opponentPlayerRowsHtml(opponentCache.mysticTop, opponentCache.standings, opponentCache.avatars, true);
+  html += '</div>';
+
+  if(summary){
+    html += '<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">TA</div><div class="panel-title">Top 5 Alliances</div></div>';
+    html += opponentAllianceRowsHtml(summary.alliances, true);
+    html += '</div>';
+  }
+
+  body.innerHTML = html;
+  if(EDIT_MODE) wireOpponentInput();
+}
+
+function wireOpponentInput(){
+  var btn = document.getElementById('oppKidLoadBtn');
+  var input = document.getElementById('oppKidInput');
+  if(!btn || !input) return;
+  btn.addEventListener('click', function(){
+    var kid = parseInt(input.value, 10);
+    if(isNaN(kid)){ flag('enter a valid kingdom ID'); return; }
+    msSetOpponentKingdom(kid);
+  });
+  input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter') btn.click();
+  });
+}
 
 // --- Availability drag-select timeline -----------------------------------
 // Replaces manual Start/End text entry with a 24-hour vertical timeline the
@@ -4122,6 +4466,7 @@ function renderCurrentView(){
   renderTodayView();
   renderPanel();
   renderKingApptView();
+  renderOpponentView();
 }
 
 function checkUrlAutoUnlock(){
