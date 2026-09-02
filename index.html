@@ -2410,108 +2410,292 @@ function msCalcPts(tg){ return (parseInt(tg)||0) * 2000; }
 // it doesn't finish), while speedup-days register for whatever partial
 // amount is actually used. Tempered Truegold isn't wired in yet (nothing
 // before TG6 needs it) but the structure leaves room to add it.
-var BASELINE_ORDER = {
-  "TC25": 0, "TC26": 1, "TC27": 2, "TC28": 3, "TC29": 4, "TC30": 5,
-  "TG1": 10, "TG2": 15, "TG3": 26, "TG4": 31, "TG5": 36
-};
-
+// Simulates spending a player's on-hand Truegold + speedup-days optimally
+// down the fixed, ordered per-substage building-upgrade path, to compute
+// their maximum possible KvK Potential score. Sourced directly from the
+// alliance's own detailed upgrade-cost table (one row per real substage,
+// not collapsed into tiers) — order is the exact build sequence, and
+// townHallLevel matches the Jeabslist API's town_hall_level field exactly,
+// so a player's reported level maps onto this queue with no guesswork.
 var UPGRADE_QUEUE = [
-  {order:1,  building:"Town Center", level:"TC26", stageGold:0,   stageDays:7.80,  stagesInTier:1},
-  {order:2,  building:"Town Center", level:"TC27", stageGold:0,   stageDays:9.35,  stagesInTier:1},
-  {order:3,  building:"Town Center", level:"TC28", stageGold:0,   stageDays:10.76, stagesInTier:1},
-  {order:4,  building:"Town Center", level:"TC29", stageGold:0,   stageDays:12.37, stagesInTier:1},
-  {order:5,  building:"Town Center", level:"TC30", stageGold:0,   stageDays:14.85, stagesInTier:1},
-  {order:6,  building:"Town Center", level:"TG1",  stageGold:132, stageDays:2.59,  stagesInTier:5},
-  {order:7,  building:"Embassy",     level:"TG1",  stageGold:33,  stageDays:1.71,  stagesInTier:5},
-  {order:8,  building:"Stable",      level:"TG1",  stageGold:59,  stageDays:0.39,  stagesInTier:5},
-  {order:9,  building:"Barracks",    level:"TG1",  stageGold:59,  stageDays:0.39,  stagesInTier:5},
-  {order:10, building:"Range",       level:"TG1",  stageGold:59,  stageDays:0.39,  stagesInTier:5},
-  {order:11, building:"Town Center", level:"TG2",  stageGold:158, stageDays:3.32,  stagesInTier:5},
-  {order:12, building:"Embassy",     level:"TG2",  stageGold:39,  stageDays:2.19,  stagesInTier:5},
-  {order:13, building:"Barracks",    level:"TG2",  stageGold:71,  stageDays:0.50,  stagesInTier:5},
-  {order:14, building:"Stable",      level:"TG2",  stageGold:71,  stageDays:0.50,  stagesInTier:5},
-  {order:15, building:"Range",       level:"TG2",  stageGold:71,  stageDays:0.50,  stagesInTier:5},
-  {order:16, building:"Town Center", level:"TG3",  stageGold:238, stageDays:4.06,  stagesInTier:5},
-  {order:17, building:"Embassy",     level:"TG3",  stageGold:59,  stageDays:2.68,  stagesInTier:5},
-  {order:18, building:"Barracks",    level:"TG3",  stageGold:107, stageDays:0.61,  stagesInTier:5},
-  {order:19, building:"Stable",      level:"TG3",  stageGold:107, stageDays:0.61,  stagesInTier:5},
-  {order:20, building:"Range",       level:"TG3",  stageGold:107, stageDays:0.61,  stagesInTier:5},
-  {order:21, building:"Command Center", level:"TG1", stageGold:26, stageDays:0.31, stagesInTier:5},
-  {order:22, building:"Command Center", level:"TG2", stageGold:31, stageDays:0.40, stagesInTier:5},
-  {order:23, building:"Command Center", level:"TG3", stageGold:47, stageDays:0.49, stagesInTier:5},
-  {order:24, building:"Infirmary",   level:"TG1",  stageGold:26,  stageDays:0.31,  stagesInTier:5},
-  {order:25, building:"Infirmary",   level:"TG2",  stageGold:31,  stageDays:0.40,  stagesInTier:5},
-  {order:26, building:"Infirmary",   level:"TG3",  stageGold:47,  stageDays:0.49,  stagesInTier:5},
-  {order:27, building:"Town Center", level:"TG4",  stageGold:280, stageDays:4.43,  stagesInTier:5},
-  {order:28, building:"Embassy",     level:"TG4",  stageGold:70,  stageDays:2.93,  stagesInTier:5},
-  {order:29, building:"Range",       level:"TG4",  stageGold:126, stageDays:0.66,  stagesInTier:5},
-  {order:30, building:"Barracks",    level:"TG4",  stageGold:126, stageDays:0.66,  stagesInTier:5},
-  {order:31, building:"Stable",      level:"TG4",  stageGold:126, stageDays:0.66,  stagesInTier:5},
-  {order:32, building:"Town Center", level:"TG5",  stageGold:335, stageDays:5.17,  stagesInTier:5},
-  {order:33, building:"Embassy",     level:"TG5",  stageGold:83,  stageDays:3.41,  stagesInTier:5},
-  {order:34, building:"Barracks",    level:"TG5",  stageGold:150, stageDays:0.78,  stagesInTier:5},
-  {order:35, building:"Stable",      level:"TG5",  stageGold:150, stageDays:0.78,  stagesInTier:5},
-  {order:36, building:"Range",       level:"TG5",  stageGold:150, stageDays:0.78,  stagesInTier:5},
-  {order:37, building:"Command Center", level:"TG4", stageGold:56, stageDays:0.53, stagesInTier:5},
-  {order:38, building:"Command Center", level:"TG5", stageGold:67, stageDays:0.62, stagesInTier:5},
-  {order:39, building:"Infirmary",   level:"TG4",  stageGold:56,  stageDays:0.53,  stagesInTier:5},
-  {order:40, building:"Infirmary",   level:"TG5",  stageGold:67,  stageDays:0.62,  stagesInTier:5}
+  {order:1, building:"Town Center", level:"25", townHallLevel:25, stageGold:0, stageDays:18.3486, stagesInTier:1},
+  {order:2, building:"Barracks", level:"25", townHallLevel:25, stageGold:0, stageDays:2.7521, stagesInTier:1},
+  {order:3, building:"Stable", level:"25", townHallLevel:25, stageGold:0, stageDays:2.7521, stagesInTier:1},
+  {order:4, building:"Range", level:"25", townHallLevel:25, stageGold:0, stageDays:2.7521, stagesInTier:1},
+  {order:5, building:"Embassy", level:"25", townHallLevel:25, stageGold:0, stageDays:12.1097, stagesInTier:1},
+  {order:6, building:"Command Center", level:"25", townHallLevel:25, stageGold:0, stageDays:2.2014, stagesInTier:1},
+  {order:7, building:"Infirmary", level:"25", townHallLevel:25, stageGold:0, stageDays:2.5687, stagesInTier:1},
+  {order:8, building:"Town Center", level:"26", townHallLevel:26, stageGold:0, stageDays:21.1014, stagesInTier:1},
+  {order:9, building:"Barracks", level:"26", townHallLevel:26, stageGold:0, stageDays:3.1646, stagesInTier:1},
+  {order:10, building:"Stable", level:"26", townHallLevel:26, stageGold:0, stageDays:3.1646, stagesInTier:1},
+  {order:11, building:"Range", level:"26", townHallLevel:26, stageGold:0, stageDays:3.1646, stagesInTier:1},
+  {order:12, building:"Embassy", level:"26", townHallLevel:26, stageGold:0, stageDays:13.9264, stagesInTier:1},
+  {order:13, building:"Command Center", level:"26", townHallLevel:26, stageGold:0, stageDays:2.5319, stagesInTier:1},
+  {order:14, building:"Infirmary", level:"26", townHallLevel:26, stageGold:0, stageDays:2.9542, stagesInTier:1},
+  {order:15, building:"Town Center", level:"27", townHallLevel:27, stageGold:0, stageDays:25.3215, stagesInTier:1},
+  {order:16, building:"Barracks", level:"27", townHallLevel:27, stageGold:0, stageDays:3.7979, stagesInTier:1},
+  {order:17, building:"Stable", level:"27", townHallLevel:27, stageGold:0, stageDays:3.7979, stagesInTier:1},
+  {order:18, building:"Range", level:"27", townHallLevel:27, stageGold:0, stageDays:3.7979, stagesInTier:1},
+  {order:19, building:"Embassy", level:"27", townHallLevel:27, stageGold:0, stageDays:16.7118, stagesInTier:1},
+  {order:20, building:"Command Center", level:"27", townHallLevel:27, stageGold:0, stageDays:3.0382, stagesInTier:1},
+  {order:21, building:"Infirmary", level:"27", townHallLevel:27, stageGold:0, stageDays:3.5444, stagesInTier:1},
+  {order:22, building:"Town Center", level:"28", townHallLevel:28, stageGold:0, stageDays:29.1194, stagesInTier:1},
+  {order:23, building:"Barracks", level:"28", townHallLevel:28, stageGold:0, stageDays:4.3674, stagesInTier:1},
+  {order:24, building:"Stable", level:"28", townHallLevel:28, stageGold:0, stageDays:4.3674, stagesInTier:1},
+  {order:25, building:"Range", level:"28", townHallLevel:28, stageGold:0, stageDays:4.3674, stagesInTier:1},
+  {order:26, building:"Embassy", level:"28", townHallLevel:28, stageGold:0, stageDays:19.2188, stagesInTier:1},
+  {order:27, building:"Command Center", level:"28", townHallLevel:28, stageGold:0, stageDays:3.4938, stagesInTier:1},
+  {order:28, building:"Infirmary", level:"28", townHallLevel:28, stageGold:0, stageDays:4.0764, stagesInTier:1},
+  {order:29, building:"Town Center", level:"29", townHallLevel:29, stageGold:0, stageDays:33.4875, stagesInTier:1},
+  {order:30, building:"Barracks", level:"29", townHallLevel:29, stageGold:0, stageDays:5.0229, stagesInTier:1},
+  {order:31, building:"Stable", level:"29", townHallLevel:29, stageGold:0, stageDays:5.0229, stagesInTier:1},
+  {order:32, building:"Range", level:"29", townHallLevel:29, stageGold:0, stageDays:5.0229, stagesInTier:1},
+  {order:33, building:"Embassy", level:"29", townHallLevel:29, stageGold:0, stageDays:22.1014, stagesInTier:1},
+  {order:34, building:"Command Center", level:"29", townHallLevel:29, stageGold:0, stageDays:4.0181, stagesInTier:1},
+  {order:35, building:"Infirmary", level:"29", townHallLevel:29, stageGold:0, stageDays:4.6882, stagesInTier:1},
+  {order:36, building:"Town Center", level:"30", townHallLevel:30, stageGold:0, stageDays:40.1854, stagesInTier:1},
+  {order:37, building:"Barracks", level:"30", townHallLevel:30, stageGold:0, stageDays:6.0278, stagesInTier:1},
+  {order:38, building:"Stable", level:"30", townHallLevel:30, stageGold:0, stageDays:6.0278, stagesInTier:1},
+  {order:39, building:"Range", level:"30", townHallLevel:30, stageGold:0, stageDays:6.0278, stagesInTier:1},
+  {order:40, building:"Embassy", level:"30", townHallLevel:30, stageGold:0, stageDays:26.5222, stagesInTier:1},
+  {order:41, building:"Command Center", level:"30", townHallLevel:30, stageGold:0, stageDays:4.8222, stagesInTier:1},
+  {order:42, building:"Infirmary", level:"30", townHallLevel:30, stageGold:0, stageDays:5.6257, stagesInTier:1},
+  {order:43, building:"Town Center", level:"30-1", townHallLevel:31, stageGold:132, stageDays:7.0, stagesInTier:1},
+  {order:44, building:"Barracks", level:"30-1", townHallLevel:31, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:45, building:"Stable", level:"30-1", townHallLevel:31, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:46, building:"Range", level:"30-1", townHallLevel:31, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:47, building:"Embassy", level:"30-1", townHallLevel:31, stageGold:33, stageDays:4.6194, stagesInTier:1},
+  {order:48, building:"Command Center", level:"30-1", townHallLevel:31, stageGold:26, stageDays:0.8399, stagesInTier:1},
+  {order:49, building:"Infirmary", level:"30-1", townHallLevel:31, stageGold:26, stageDays:0.9799, stagesInTier:1},
+  {order:50, building:"Town Center", level:"30-2", townHallLevel:32, stageGold:132, stageDays:7.0, stagesInTier:1},
+  {order:51, building:"Barracks", level:"30-2", townHallLevel:32, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:52, building:"Stable", level:"30-2", townHallLevel:32, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:53, building:"Range", level:"30-2", townHallLevel:32, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:54, building:"Embassy", level:"30-2", townHallLevel:32, stageGold:33, stageDays:4.6194, stagesInTier:1},
+  {order:55, building:"Command Center", level:"30-2", townHallLevel:32, stageGold:26, stageDays:0.8399, stagesInTier:1},
+  {order:56, building:"Infirmary", level:"30-2", townHallLevel:32, stageGold:26, stageDays:0.9799, stagesInTier:1},
+  {order:57, building:"Town Center", level:"30-3", townHallLevel:33, stageGold:132, stageDays:7.0, stagesInTier:1},
+  {order:58, building:"Barracks", level:"30-3", townHallLevel:33, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:59, building:"Stable", level:"30-3", townHallLevel:33, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:60, building:"Range", level:"30-3", townHallLevel:33, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:61, building:"Embassy", level:"30-3", townHallLevel:33, stageGold:33, stageDays:4.6194, stagesInTier:1},
+  {order:62, building:"Command Center", level:"30-3", townHallLevel:33, stageGold:26, stageDays:0.8399, stagesInTier:1},
+  {order:63, building:"Infirmary", level:"30-3", townHallLevel:33, stageGold:26, stageDays:0.9799, stagesInTier:1},
+  {order:64, building:"Town Center", level:"30-4", townHallLevel:34, stageGold:132, stageDays:7.0, stagesInTier:1},
+  {order:65, building:"Barracks", level:"30-4", townHallLevel:34, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:66, building:"Stable", level:"30-4", townHallLevel:34, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:67, building:"Range", level:"30-4", townHallLevel:34, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:68, building:"Embassy", level:"30-4", townHallLevel:34, stageGold:33, stageDays:4.6194, stagesInTier:1},
+  {order:69, building:"Command Center", level:"30-4", townHallLevel:34, stageGold:26, stageDays:0.8399, stagesInTier:1},
+  {order:70, building:"Infirmary", level:"30-4", townHallLevel:34, stageGold:26, stageDays:0.9799, stagesInTier:1},
+  {order:71, building:"Town Center", level:"TG 1", townHallLevel:35, stageGold:132, stageDays:7.0, stagesInTier:1},
+  {order:72, building:"Barracks", level:"TG 1", townHallLevel:35, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:73, building:"Stable", level:"TG 1", townHallLevel:35, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:74, building:"Range", level:"TG 1", townHallLevel:35, stageGold:59, stageDays:1.05, stagesInTier:1},
+  {order:75, building:"Embassy", level:"TG 1", townHallLevel:35, stageGold:33, stageDays:4.6194, stagesInTier:1},
+  {order:76, building:"Town Center", level:"TG 1-1", townHallLevel:36, stageGold:158, stageDays:9.0, stagesInTier:1},
+  {order:77, building:"Barracks", level:"TG 1-1", townHallLevel:36, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:78, building:"Stable", level:"TG 1-1", townHallLevel:36, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:79, building:"Range", level:"TG 1-1", townHallLevel:36, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:80, building:"Embassy", level:"TG 1-1", townHallLevel:36, stageGold:39, stageDays:5.9396, stagesInTier:1},
+  {order:81, building:"Town Center", level:"TG 1-2", townHallLevel:37, stageGold:158, stageDays:9.0, stagesInTier:1},
+  {order:82, building:"Barracks", level:"TG 1-2", townHallLevel:37, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:83, building:"Stable", level:"TG 1-2", townHallLevel:37, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:84, building:"Range", level:"TG 1-2", townHallLevel:37, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:85, building:"Embassy", level:"TG 1-2", townHallLevel:37, stageGold:39, stageDays:5.9396, stagesInTier:1},
+  {order:86, building:"Town Center", level:"TG 1-3", townHallLevel:38, stageGold:158, stageDays:9.0, stagesInTier:1},
+  {order:87, building:"Barracks", level:"TG 1-3", townHallLevel:38, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:88, building:"Stable", level:"TG 1-3", townHallLevel:38, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:89, building:"Range", level:"TG 1-3", townHallLevel:38, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:90, building:"Embassy", level:"TG 1-3", townHallLevel:38, stageGold:39, stageDays:5.9396, stagesInTier:1},
+  {order:91, building:"Town Center", level:"TG 1-4", townHallLevel:39, stageGold:158, stageDays:9.0, stagesInTier:1},
+  {order:92, building:"Barracks", level:"TG 1-4", townHallLevel:39, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:93, building:"Stable", level:"TG 1-4", townHallLevel:39, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:94, building:"Range", level:"TG 1-4", townHallLevel:39, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:95, building:"Embassy", level:"TG 1-4", townHallLevel:39, stageGold:39, stageDays:5.9396, stagesInTier:1},
+  {order:96, building:"Town Center", level:"TG 2", townHallLevel:40, stageGold:158, stageDays:9.0, stagesInTier:1},
+  {order:97, building:"Barracks", level:"TG 2", townHallLevel:40, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:98, building:"Stable", level:"TG 2", townHallLevel:40, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:99, building:"Range", level:"TG 2", townHallLevel:40, stageGold:71, stageDays:1.35, stagesInTier:1},
+  {order:100, building:"Embassy", level:"TG 2", townHallLevel:40, stageGold:39, stageDays:5.9396, stagesInTier:1},
+  {order:101, building:"Town Center", level:"TG 2-1", townHallLevel:41, stageGold:238, stageDays:11.0, stagesInTier:1},
+  {order:102, building:"Barracks", level:"TG 2-1", townHallLevel:41, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:103, building:"Stable", level:"TG 2-1", townHallLevel:41, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:104, building:"Range", level:"TG 2-1", townHallLevel:41, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:105, building:"Embassy", level:"TG 2-1", townHallLevel:41, stageGold:59, stageDays:7.2597, stagesInTier:1},
+  {order:106, building:"Town Center", level:"TG 2-2", townHallLevel:42, stageGold:238, stageDays:11.0, stagesInTier:1},
+  {order:107, building:"Barracks", level:"TG 2-2", townHallLevel:42, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:108, building:"Stable", level:"TG 2-2", townHallLevel:42, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:109, building:"Range", level:"TG 2-2", townHallLevel:42, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:110, building:"Embassy", level:"TG 2-2", townHallLevel:42, stageGold:59, stageDays:7.2597, stagesInTier:1},
+  {order:111, building:"Town Center", level:"TG 2-3", townHallLevel:43, stageGold:238, stageDays:11.0, stagesInTier:1},
+  {order:112, building:"Barracks", level:"TG 2-3", townHallLevel:43, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:113, building:"Stable", level:"TG 2-3", townHallLevel:43, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:114, building:"Range", level:"TG 2-3", townHallLevel:43, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:115, building:"Embassy", level:"TG 2-3", townHallLevel:43, stageGold:59, stageDays:7.2597, stagesInTier:1},
+  {order:116, building:"Town Center", level:"TG 2-4", townHallLevel:44, stageGold:238, stageDays:11.0, stagesInTier:1},
+  {order:117, building:"Barracks", level:"TG 2-4", townHallLevel:44, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:118, building:"Stable", level:"TG 2-4", townHallLevel:44, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:119, building:"Range", level:"TG 2-4", townHallLevel:44, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:120, building:"Embassy", level:"TG 2-4", townHallLevel:44, stageGold:59, stageDays:7.2597, stagesInTier:1},
+  {order:121, building:"Town Center", level:"TG 3", townHallLevel:45, stageGold:238, stageDays:11.0, stagesInTier:1},
+  {order:122, building:"Barracks", level:"TG 3", townHallLevel:45, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:123, building:"Stable", level:"TG 3", townHallLevel:45, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:124, building:"Range", level:"TG 3", townHallLevel:45, stageGold:107, stageDays:1.65, stagesInTier:1},
+  {order:125, building:"Embassy", level:"TG 3", townHallLevel:45, stageGold:59, stageDays:7.2597, stagesInTier:1},
+  {order:126, building:"Command Center", level:"TG 1", townHallLevel:35, stageGold:26, stageDays:0.8399, stagesInTier:1},
+  {order:127, building:"Command Center", level:"TG 1-1", townHallLevel:36, stageGold:31, stageDays:1.0799, stagesInTier:1},
+  {order:128, building:"Command Center", level:"TG 1-2", townHallLevel:37, stageGold:31, stageDays:1.0799, stagesInTier:1},
+  {order:129, building:"Command Center", level:"TG 1-3", townHallLevel:38, stageGold:31, stageDays:1.0799, stagesInTier:1},
+  {order:130, building:"Command Center", level:"TG 1-4", townHallLevel:39, stageGold:31, stageDays:1.0799, stagesInTier:1},
+  {order:131, building:"Command Center", level:"TG 2", townHallLevel:40, stageGold:31, stageDays:1.0799, stagesInTier:1},
+  {order:132, building:"Command Center", level:"TG 2-1", townHallLevel:41, stageGold:47, stageDays:1.3194, stagesInTier:1},
+  {order:133, building:"Command Center", level:"TG 2-2", townHallLevel:42, stageGold:47, stageDays:1.3194, stagesInTier:1},
+  {order:134, building:"Command Center", level:"TG 2-3", townHallLevel:43, stageGold:47, stageDays:1.3194, stagesInTier:1},
+  {order:135, building:"Command Center", level:"TG 2-4", townHallLevel:44, stageGold:47, stageDays:1.3194, stagesInTier:1},
+  {order:136, building:"Command Center", level:"TG 3", townHallLevel:45, stageGold:47, stageDays:1.3194, stagesInTier:1},
+  {order:137, building:"Infirmary", level:"TG 1", townHallLevel:35, stageGold:26, stageDays:0.9799, stagesInTier:1},
+  {order:138, building:"Infirmary", level:"TG 1-1", townHallLevel:36, stageGold:31, stageDays:1.2597, stagesInTier:1},
+  {order:139, building:"Infirmary", level:"TG 1-2", townHallLevel:37, stageGold:31, stageDays:1.2597, stagesInTier:1},
+  {order:140, building:"Infirmary", level:"TG 1-3", townHallLevel:38, stageGold:31, stageDays:1.2597, stagesInTier:1},
+  {order:141, building:"Infirmary", level:"TG 1-4", townHallLevel:39, stageGold:31, stageDays:1.2597, stagesInTier:1},
+  {order:142, building:"Infirmary", level:"TG 2", townHallLevel:40, stageGold:31, stageDays:1.2597, stagesInTier:1},
+  {order:143, building:"Infirmary", level:"TG 2-1", townHallLevel:41, stageGold:47, stageDays:1.5396, stagesInTier:1},
+  {order:144, building:"Infirmary", level:"TG 2-2", townHallLevel:42, stageGold:47, stageDays:1.5396, stagesInTier:1},
+  {order:145, building:"Infirmary", level:"TG 2-3", townHallLevel:43, stageGold:47, stageDays:1.5396, stagesInTier:1},
+  {order:146, building:"Infirmary", level:"TG 2-4", townHallLevel:44, stageGold:47, stageDays:1.5396, stagesInTier:1},
+  {order:147, building:"Infirmary", level:"TG 3", townHallLevel:45, stageGold:47, stageDays:1.5396, stagesInTier:1},
+  {order:148, building:"Town Center", level:"TG 3-1", townHallLevel:46, stageGold:280, stageDays:12.0, stagesInTier:1},
+  {order:149, building:"Barracks", level:"TG 3-1", townHallLevel:46, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:150, building:"Stable", level:"TG 3-1", townHallLevel:46, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:151, building:"Range", level:"TG 3-1", townHallLevel:46, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:152, building:"Embassy", level:"TG 3-1", townHallLevel:46, stageGold:70, stageDays:7.9194, stagesInTier:1},
+  {order:153, building:"Town Center", level:"TG 3-2", townHallLevel:47, stageGold:280, stageDays:12.0, stagesInTier:1},
+  {order:154, building:"Barracks", level:"TG 3-2", townHallLevel:47, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:155, building:"Stable", level:"TG 3-2", townHallLevel:47, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:156, building:"Range", level:"TG 3-2", townHallLevel:47, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:157, building:"Embassy", level:"TG 3-2", townHallLevel:47, stageGold:70, stageDays:7.9194, stagesInTier:1},
+  {order:158, building:"Town Center", level:"TG 3-3", townHallLevel:48, stageGold:280, stageDays:12.0, stagesInTier:1},
+  {order:159, building:"Barracks", level:"TG 3-3", townHallLevel:48, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:160, building:"Stable", level:"TG 3-3", townHallLevel:48, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:161, building:"Range", level:"TG 3-3", townHallLevel:48, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:162, building:"Embassy", level:"TG 3-3", townHallLevel:48, stageGold:70, stageDays:7.9194, stagesInTier:1},
+  {order:163, building:"Town Center", level:"TG 3-4", townHallLevel:49, stageGold:280, stageDays:12.0, stagesInTier:1},
+  {order:164, building:"Barracks", level:"TG 3-4", townHallLevel:49, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:165, building:"Stable", level:"TG 3-4", townHallLevel:49, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:166, building:"Range", level:"TG 3-4", townHallLevel:49, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:167, building:"Embassy", level:"TG 3-4", townHallLevel:49, stageGold:70, stageDays:7.9194, stagesInTier:1},
+  {order:168, building:"Town Center", level:"TG 4", townHallLevel:50, stageGold:280, stageDays:12.0, stagesInTier:1},
+  {order:169, building:"Barracks", level:"TG 4", townHallLevel:50, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:170, building:"Stable", level:"TG 4", townHallLevel:50, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:171, building:"Range", level:"TG 4", townHallLevel:50, stageGold:126, stageDays:1.8, stagesInTier:1},
+  {order:172, building:"Embassy", level:"TG 4", townHallLevel:50, stageGold:70, stageDays:7.9194, stagesInTier:1},
+  {order:173, building:"Town Center", level:"TG 4-1", townHallLevel:51, stageGold:335, stageDays:14.0, stagesInTier:1},
+  {order:174, building:"Barracks", level:"TG 4-1", townHallLevel:51, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:175, building:"Stable", level:"TG 4-1", townHallLevel:51, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:176, building:"Range", level:"TG 4-1", townHallLevel:51, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:177, building:"Embassy", level:"TG 4-1", townHallLevel:51, stageGold:83, stageDays:9.2396, stagesInTier:1},
+  {order:178, building:"Town Center", level:"TG 4-2", townHallLevel:52, stageGold:335, stageDays:14.0, stagesInTier:1},
+  {order:179, building:"Barracks", level:"TG 4-2", townHallLevel:52, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:180, building:"Stable", level:"TG 4-2", townHallLevel:52, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:181, building:"Range", level:"TG 4-2", townHallLevel:52, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:182, building:"Embassy", level:"TG 4-2", townHallLevel:52, stageGold:83, stageDays:9.2396, stagesInTier:1},
+  {order:183, building:"Town Center", level:"TG 4-3", townHallLevel:53, stageGold:335, stageDays:14.0, stagesInTier:1},
+  {order:184, building:"Barracks", level:"TG 4-3", townHallLevel:53, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:185, building:"Stable", level:"TG 4-3", townHallLevel:53, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:186, building:"Range", level:"TG 4-3", townHallLevel:53, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:187, building:"Embassy", level:"TG 4-3", townHallLevel:53, stageGold:83, stageDays:9.2396, stagesInTier:1},
+  {order:188, building:"Town Center", level:"TG 4-4", townHallLevel:54, stageGold:335, stageDays:14.0, stagesInTier:1},
+  {order:189, building:"Barracks", level:"TG 4-4", townHallLevel:54, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:190, building:"Stable", level:"TG 4-4", townHallLevel:54, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:191, building:"Range", level:"TG 4-4", townHallLevel:54, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:192, building:"Embassy", level:"TG 4-4", townHallLevel:54, stageGold:83, stageDays:9.2396, stagesInTier:1},
+  {order:193, building:"Town Center", level:"TG 5", townHallLevel:55, stageGold:335, stageDays:14.0, stagesInTier:1},
+  {order:194, building:"Barracks", level:"TG 5", townHallLevel:55, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:195, building:"Stable", level:"TG 5", townHallLevel:55, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:196, building:"Range", level:"TG 5", townHallLevel:55, stageGold:150, stageDays:2.1, stagesInTier:1},
+  {order:197, building:"Embassy", level:"TG 5", townHallLevel:55, stageGold:83, stageDays:9.2396, stagesInTier:1},
+  {order:198, building:"Command Center", level:"TG 3-1", townHallLevel:46, stageGold:56, stageDays:1.4396, stagesInTier:1},
+  {order:199, building:"Command Center", level:"TG 3-2", townHallLevel:47, stageGold:56, stageDays:1.4396, stagesInTier:1},
+  {order:200, building:"Command Center", level:"TG 3-3", townHallLevel:48, stageGold:56, stageDays:1.4396, stagesInTier:1},
+  {order:201, building:"Command Center", level:"TG 3-4", townHallLevel:49, stageGold:56, stageDays:1.4396, stagesInTier:1},
+  {order:202, building:"Command Center", level:"TG 4", townHallLevel:50, stageGold:56, stageDays:1.4396, stagesInTier:1},
+  {order:203, building:"Command Center", level:"TG 4-1", townHallLevel:51, stageGold:67, stageDays:1.6799, stagesInTier:1},
+  {order:204, building:"Command Center", level:"TG 4-2", townHallLevel:52, stageGold:67, stageDays:1.6799, stagesInTier:1},
+  {order:205, building:"Command Center", level:"TG 4-3", townHallLevel:53, stageGold:67, stageDays:1.6799, stagesInTier:1},
+  {order:206, building:"Command Center", level:"TG 4-4", townHallLevel:54, stageGold:67, stageDays:1.6799, stagesInTier:1},
+  {order:207, building:"Command Center", level:"TG 5", townHallLevel:55, stageGold:67, stageDays:1.6799, stagesInTier:1},
+  {order:208, building:"Infirmary", level:"TG 3-1", townHallLevel:46, stageGold:56, stageDays:1.6799, stagesInTier:1},
+  {order:209, building:"Infirmary", level:"TG 3-2", townHallLevel:47, stageGold:56, stageDays:1.6799, stagesInTier:1},
+  {order:210, building:"Infirmary", level:"TG 3-3", townHallLevel:48, stageGold:56, stageDays:1.6799, stagesInTier:1},
+  {order:211, building:"Infirmary", level:"TG 3-4", townHallLevel:49, stageGold:56, stageDays:1.6799, stagesInTier:1},
+  {order:212, building:"Infirmary", level:"TG 4", townHallLevel:50, stageGold:56, stageDays:1.6799, stagesInTier:1},
+  {order:213, building:"Infirmary", level:"TG 4-1", townHallLevel:51, stageGold:67, stageDays:1.9597, stagesInTier:1},
+  {order:214, building:"Infirmary", level:"TG 4-2", townHallLevel:52, stageGold:67, stageDays:1.9597, stagesInTier:1},
+  {order:215, building:"Infirmary", level:"TG 4-3", townHallLevel:53, stageGold:67, stageDays:1.9597, stagesInTier:1},
+  {order:216, building:"Infirmary", level:"TG 4-4", townHallLevel:54, stageGold:67, stageDays:1.9597, stagesInTier:1},
+  {order:217, building:"Infirmary", level:"TG 5", townHallLevel:55, stageGold:67, stageDays:1.9597, stagesInTier:1}
 ];
 
-// Exact town_hall_level -> BASELINE_ORDER label mapping, confirmed against
-// real Jeabslist data. The API tracks Truegold sub-stages (e.g. "TC30-2",
-// "TG1-3") individually, but those almost certainly reflect Town Center's
-// own progress only — our BASELINE_ORDER assumes ALL FIVE gating buildings
-// (Town Center, Embassy, Stable, Barracks, Range) have finished a tier
-// together. Since we have no data on the other four buildings, every
-// sub-stage collapses conservatively to its parent tier's baseline (e.g.
-// "TC30-2" is treated the same as plain "TC30") rather than assuming
-// those other buildings are also mid-upgrade — this avoids overstating
-// what's actually been completed.
-var API_LEVEL_TO_LABEL = {};
-(function buildApiLevelMap(){
-  for(var i=1; i<=25; i++) API_LEVEL_TO_LABEL[i] = 'TC25'; // nothing before TC25 matters to this queue
-  API_LEVEL_TO_LABEL[26] = 'TC26';
-  API_LEVEL_TO_LABEL[27] = 'TC27';
-  API_LEVEL_TO_LABEL[28] = 'TC28';
-  API_LEVEL_TO_LABEL[29] = 'TC29';
-  API_LEVEL_TO_LABEL[30] = 'TC30';
-  API_LEVEL_TO_LABEL[31] = 'TC30'; // TC30-1
-  API_LEVEL_TO_LABEL[32] = 'TC30'; // TC30-2
-  API_LEVEL_TO_LABEL[33] = 'TC30'; // TC30-3
-  API_LEVEL_TO_LABEL[34] = 'TC30'; // TC30-4
-  API_LEVEL_TO_LABEL[35] = 'TG1';
-  API_LEVEL_TO_LABEL[36] = 'TG1'; // TG1-1
-  API_LEVEL_TO_LABEL[37] = 'TG1'; // TG1-2
-  API_LEVEL_TO_LABEL[38] = 'TG1'; // TG1-3
-  API_LEVEL_TO_LABEL[39] = 'TG1'; // TG1-4
-  API_LEVEL_TO_LABEL[40] = 'TG2';
-  API_LEVEL_TO_LABEL[41] = 'TG2'; // TG2-1
-  API_LEVEL_TO_LABEL[42] = 'TG2'; // TG2-2
-  API_LEVEL_TO_LABEL[43] = 'TG2'; // TG2-3
-  API_LEVEL_TO_LABEL[44] = 'TG2'; // TG2-4
-  API_LEVEL_TO_LABEL[45] = 'TG3';
-  API_LEVEL_TO_LABEL[46] = 'TG3'; // TG3-1
-  API_LEVEL_TO_LABEL[47] = 'TG3'; // TG3-2
-  API_LEVEL_TO_LABEL[48] = 'TG3'; // TG3-3
-  API_LEVEL_TO_LABEL[49] = 'TG3'; // TG3-4
-  API_LEVEL_TO_LABEL[50] = 'TG4';
-  API_LEVEL_TO_LABEL[51] = 'TG4'; // TG4-1
-  API_LEVEL_TO_LABEL[52] = 'TG4'; // TG4-2
-  API_LEVEL_TO_LABEL[53] = 'TG4'; // TG4-3
-  API_LEVEL_TO_LABEL[54] = 'TG4'; // TG4-4
-  API_LEVEL_TO_LABEL[55] = 'TG5';
+// GATING_BUILDINGS are the buildings assumed to always finish together as
+// a player's town_hall_level advances (Command Center and Infirmary are
+// treated as extras that may or may not be done yet — conservative, so
+// this never overstates what's actually been completed). For each
+// townHallLevel, LEVEL_BASELINE_ORDER records the order-number of the
+// last gating-building row at that level; everything up to and including
+// that order is treated as already paid for. Computed directly from
+// UPGRADE_QUEUE itself (not hand-maintained) so it can never drift out of
+// sync with the data above.
+var GATING_BUILDINGS = {"Town Center":true, "Embassy":true, "Stable":true, "Barracks":true, "Range":true};
+var LEVEL_BASELINE_ORDER = {};
+(function buildLevelBaselineOrder(){
+  for(var i=0; i<UPGRADE_QUEUE.length; i++){
+    var step = UPGRADE_QUEUE[i];
+    if(!GATING_BUILDINGS[step.building]) continue;
+    var lvl = step.townHallLevel;
+    if(!LEVEL_BASELINE_ORDER.hasOwnProperty(lvl) || step.order > LEVEL_BASELINE_ORDER[lvl]){
+      LEVEL_BASELINE_ORDER[lvl] = step.order;
+    }
+  }
 })();
 
-function msMapApiTcLevelToConstructionLabel(numericLevel){
-  var n = parseInt(numericLevel, 10);
-  if(isNaN(n)) return null;
-  return API_LEVEL_TO_LABEL[n] || null;
+// Looks up the baseline order for a raw numeric town_hall_level (as
+// reported by the Jeabslist API). Falls back to the highest defined level
+// at or below the given one — relevant only if a player's level ever
+// somehow falls outside the table's 25-55 range.
+function msBaselineOrderForLevel(townHallLevel){
+  var n = parseInt(townHallLevel, 10);
+  if(isNaN(n)) return 0;
+  if(LEVEL_BASELINE_ORDER.hasOwnProperty(n)) return LEVEL_BASELINE_ORDER[n];
+  var best = 0;
+  for(var lvl in LEVEL_BASELINE_ORDER){
+    var lvlNum = parseInt(lvl, 10);
+    if(lvlNum <= n && LEVEL_BASELINE_ORDER[lvl] > best) best = LEVEL_BASELINE_ORDER[lvl];
+  }
+  return best;
 }
 
-function msCalcConstructionPts(currentLevel, truegoldAvailable, speedupDaysAvailable){
+// Fixed alliance-default speed loadout applied uniformly to every
+// applicant, rather than asking each one for their own personal speed
+// stats. Two genuinely separate mechanics stack here:
+//   1) Additive "Construction Speed Up %" bonuses: Base 81.6% + Wolf Pet
+//      Skill 15% + Chief Minister appointment 10% + Ground Works 10% +
+//      KvK Bonus 5% = 121.6% total, applied as base time / (1 + 121.6%).
+//   2) Double Time Decree is a SEPARATE flat -20% time reduction (not an
+//      additive "Speed Up %" — the source tool labels it differently and
+//      excludes it from the 121.6% figure), applied as a second,
+//      independent multiplier on top of (1).
+// Standard game formula for (1): actual time = base time / (1 + total%).
+// This only affects TIME — Saul's skill also reduces Truegold/RSS cost,
+// which is a separate mechanic UPGRADE_QUEUE's stageGold doesn't model,
+// so that portion is intentionally left out here.
+var CONSTRUCTION_SPEED_BONUS_PCT = 121.6;
+var CONSTRUCTION_SPEED_DIVISOR = 1 + (CONSTRUCTION_SPEED_BONUS_PCT / 100);
+var DOUBLE_TIME_DECREE_MULTIPLIER = 0.8; // -20% Construction Time Reduction
+
+function msCalcConstructionPts(townHallLevel, truegoldAvailable, speedupDaysAvailable){
   var EPS = 1e-9;
-  var startOrder = BASELINE_ORDER.hasOwnProperty(currentLevel) ? BASELINE_ORDER[currentLevel] : 0;
+  var startOrder = msBaselineOrderForLevel(townHallLevel);
   var remainingGold = Math.max(0, parseFloat(truegoldAvailable) || 0);
   var remainingDays = Math.max(0, parseFloat(speedupDaysAvailable) || 0);
   var totalGoldSpent = 0, totalDaysSpent = 0;
@@ -2522,7 +2706,12 @@ function msCalcConstructionPts(currentLevel, truegoldAvailable, speedupDaysAvail
 
     var stagesInTier = step.stagesInTier;
     var stageGold = step.stageGold;
-    var stageDays = step.stageDays;
+    // Raw CSV-sourced build time, reduced by the additive speed-up pool
+    // and then by Double Time Decree's separate flat reduction, to
+    // reflect the real-world time (and therefore real speedup-days)
+    // this stage actually costs.
+    var stageDays = (step.stageDays / CONSTRUCTION_SPEED_DIVISOR) * DOUBLE_TIME_DECREE_MULTIPLIER;
+
 
     var maxByGold = (stageGold > 0) ? Math.floor((remainingGold + EPS) / stageGold) : stagesInTier;
     var maxByDays = (stageDays > 0) ? Math.floor((remainingDays + EPS) / stageDays) : stagesInTier;
@@ -3198,13 +3387,14 @@ function msSubmitApplication(){
   };
 
   if(key === 'd1'){
-    // Level comes from the Jeabslist lookup instead of a manual picker.
-    // See API_LEVEL_TO_LABEL above for the confirmed town_hall_level mapping.
-    var currentLevel = lookup ? msMapApiTcLevelToConstructionLabel(lookup.tcLevel) : null;
-    if(!currentLevel) currentLevel = 'TC25'; // conservative fallback if level is unknown
+    // Level comes straight from the Jeabslist lookup's town_hall_level —
+    // it maps directly onto UPGRADE_QUEUE's townHallLevel field, no
+    // string-label collapsing needed.
+    var currentLevel = (lookup && lookup.tcLevel) ? parseInt(lookup.tcLevel, 10) : 0;
+    if(isNaN(currentLevel)) currentLevel = 0; // conservative fallback if level is unknown
     p.sp = sp + 'd';
     p.currentLevel = currentLevel;
-    p.levelSource = (lookup && msMapApiTcLevelToConstructionLabel(lookup.tcLevel)) ? 'api' : 'unknown-fallback';
+    p.levelSource = (lookup && lookup.tcLevel) ? 'api' : 'unknown-fallback';
     p.pts = msCalcConstructionPts(currentLevel, tg, sp);
   } else if(key === 'd4'){
     // Noble Advisor — T11 isn't unlocked yet, so always pass t10:0, t11:false.
