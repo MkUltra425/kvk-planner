@@ -373,6 +373,14 @@
   }
   .ms-row:hover .ms-del{opacity:1;}
   .ms-del:hover{color:var(--crimson);}
+  .ms-tc-retry{
+    min-width:48px;padding:4px 7px;border:1px solid rgba(232,163,61,.45);border-radius:7px;
+    background:rgba(232,163,61,.1);color:var(--amber);font:inherit;font-size:10px;font-weight:700;
+    line-height:1.1;cursor:pointer;touch-action:manipulation;
+  }
+  .ms-tc-retry:hover{background:rgba(232,163,61,.18);border-color:var(--amber);}
+  .ms-tc-retry:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+  .ms-tc-retry:disabled{cursor:wait;opacity:.65;}
   .ms-list{border:1px solid var(--glass-border);border-radius:10px;}
   .ms-actions{display:flex;gap:8px;margin-top:10px;}
 
@@ -556,6 +564,16 @@
   .opp-gear-enhance{position:absolute;top:2px;right:3px;z-index:1;color:#fff7da;font:800 12px 'Rajdhani',sans-serif;line-height:1;text-shadow:0 1px 2px #000;}
   .opp-gear-forge{position:absolute;left:2px;right:2px;bottom:2px;z-index:1;color:#fff2a8;font:800 11px 'Rajdhani',sans-serif;line-height:1;text-align:center;text-shadow:0 1px 2px #000;}
   .opp-gear-status{padding:20px 12px;text-align:center;color:var(--text-dim);font-size:11px;line-height:1.45;}
+  .opp-gear-retry{
+    display:block;margin:10px auto 0;padding:7px 14px;border:1px solid rgba(139,124,246,.5);
+    border-radius:8px;background:rgba(139,124,246,.12);color:#b8abff;font:inherit;font-size:11px;font-weight:700;line-height:1;
+    cursor:pointer;touch-action:manipulation;
+  }
+  .opp-gear-retry:hover{background:rgba(139,124,246,.2);border-color:#8b7cf6;}
+  .opp-gear-retry:focus-visible{outline:2px solid #b8abff;outline-offset:2px;}
+  .opp-section-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+  .opp-section-toolbar .opp-section-note{margin:0;}
+  .opp-missing-retry{flex:0 0 auto;margin:0;white-space:nowrap;}
   .ms-apply-idcheck.loading{color:var(--text-dim);}
   .ms-apply-idcheck.found{color:var(--green);}
   .ms-apply-idcheck.notfound{color:var(--crimson);}
@@ -933,6 +951,8 @@
     .ms-val, .ms-pts{ font-size:9.5px; }
     .ms-actions{ flex-wrap:wrap; }
     .ms-btn{ font-size:10.5px; padding:6px 10px; flex:1 1 auto; }
+    .opp-section-toolbar{align-items:flex-start;flex-direction:column;}
+    .opp-missing-retry{width:100%;min-height:38px;}
     .opp-versus{gap:8px;}
     .opp-kingdom{font-size:21px;}
     .opp-side-meta{font-size:9.5px;}
@@ -3060,6 +3080,43 @@ var JEABSLIST_API_TOKEN = "jp_f05159a41aae673e635088bb9531ce84db663a0e";
 
 var msApplyLookupResult = null; // { name, tcLevel, allianceName, allianceAbbr, avatarUrl } once confirmed
 var msApplyLookupSeq = 0;       // guards against a stale response overwriting a newer one
+var msTcRetrying = {};
+
+function msFindSchedulerPlayer(pid){
+  var found=null;
+  ['d1','d4','d4cm'].some(function(key){
+    found=(msPlayers[key]||[]).find(function(p){return String(p.id)===String(pid);})||null;
+    return !!found;
+  });
+  return found;
+}
+
+function msRetrySchedulerTc(key,pid,rerender){
+  if(!EDIT_MODE||msTcRetrying[pid])return;
+  var p=msFindSchedulerPlayer(pid);
+  if(!p||!p.kingshotId)return;
+  msTcRetrying[pid]=true;rerender();
+  jeabslistFetch('/players/'+encodeURIComponent(p.kingshotId)).then(function(data){
+    var tc=parseInt(data&&data.town_hall_level,10);
+    if(isNaN(tc)||tc<=0)throw new Error('TC level unavailable');
+    p.tcLevel=tc;p.currentLevel=tc;p.levelSource='api-retry';
+    if(data.avatar_url)p.avatarUrl=data.avatar_url;
+    if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,parseFloat(p.sp)||0);
+    delete msTcRetrying[pid];
+    msRecalcAll();msSyncAndSave();rerender();
+    flag('TC level updated for '+p.name+'.');
+  }).catch(function(){
+    delete msTcRetrying[pid];rerender();
+    flag('TC level is still unavailable. Tap Retry TC to try again.');
+  });
+}
+
+function msWireTcRetryButtons(root,key,rerender){
+  if(!EDIT_MODE||!root)return;
+  root.querySelectorAll('[data-ms-tc-retry]').forEach(function(btn){
+    btn.addEventListener('click',function(){msRetrySchedulerTc(key,btn.getAttribute('data-ms-tc-retry'),rerender);});
+  });
+}
 
 function msLookupKingshotId(id){
   var check = document.getElementById('msApplyIdCheck');
@@ -3190,6 +3247,25 @@ function msFetchOpponentKingdom(kid){
     opponentCache = { kid: kid, summary: null, kvk: null, mysticTop: null, standings: {}, avatars: {}, loading: false, error: 'Could not load kingdom ' + kid + ' \u2014 check the ID and try again.' };
     renderOpponentView();
   });
+}
+function opponentRetryHeroGear(pid){
+  if(pid==null||!opponentCache.heroGear)return;
+  var mySeq=opponentFetchSeq;
+  opponentCache.heroGear[pid]=undefined;
+  renderOpponentView();
+  opponentOptional('/players/'+encodeURIComponent(pid)+'/hero-gear').then(function(data){
+    if(mySeq!==opponentFetchSeq)return;
+    opponentCache.heroGear[pid]=data||null;
+    renderOpponentView();
+  });
+}
+function wireOpponentHeroGearRetry(){
+  var body=document.getElementById('opponentViewBody');if(!body)return;
+  body.querySelectorAll('[data-opp-hero-retry]').forEach(function(btn){
+    btn.addEventListener('click',function(){opponentRetryHeroGear(btn.getAttribute('data-opp-hero-retry'));});
+  });
+  var missingBtn=body.querySelector('[data-opp-missing-retry]');
+  if(missingBtn)missingBtn.addEventListener('click',opponentRetryMissingThreatData);
 }
 
 function msSetOpponentKingdom(kid){
@@ -3424,21 +3500,28 @@ function wireOpponentInput(){
 // alliance depth, combat efficiency and KvK history. The deterministic
 // assessment keeps every conclusion traceable to a displayed metric.
 var OUR_KINGDOM_ID = 1884;
-opponentCache = { kid:null, us:null, them:null, profiles:{}, standings:{}, heroGear:{}, loading:false, error:null };
+opponentCache = { kid:null, us:null, them:null, profiles:{}, standings:{}, heroGear:{}, loading:false, threatRetrying:false, error:null };
 
-function opponentOptional(path){ return jeabslistFetch(path).catch(function(){ return null; }); }
+function opponentOptional(path,retries){
+  retries=retries==null?1:retries;
+  return jeabslistFetch(path).catch(function(){
+    if(retries<=0)return null;
+    return new Promise(function(resolve){setTimeout(resolve,650);}).then(function(){return opponentOptional(path,retries-1);});
+  });
+}
 function opponentEntries(board){
   var rows=board&&Array.isArray(board.entries)?board.entries.slice():[];
   return rows.sort(function(a,b){return (a.rank||9999)-(b.rank||9999);});
 }
 function opponentEntryValue(e){
   if(!e)return 0;
-  var v=e.value;if(v==null)v=e.points;if(v==null)v=e.power;
+  var v=e.value;if(v==null)v=e.points;if(v==null)v=e.score;if(v==null)v=e.power;
   return Number(v)||0;
 }
 function opponentMysticScore(e){
   if(!e)return 0;
-  return Number(e.value!=null?e.value:e.points)||0;
+  var v=e.value;if(v==null)v=e.points;if(v==null)v=e.score;
+  return Number(v)||0;
 }
 function opponentAllianceStats(a){
   var members=a&&Array.isArray(a.members)?a.members.slice():[];
@@ -3447,39 +3530,46 @@ function opponentAllianceStats(a){
   var median=0;if(powers.length){var mid=Math.floor(powers.length/2);median=powers.length%2?powers[mid]:(powers[mid-1]+powers[mid])/2;}
   return {memberCount:members.length||(a&&a.member_count)||0,median:median,top5:avg(5),top10:avg(10),top20:avg(20),top50:avg(50)};
 }
-function opponentFetchIntel(kid){
+function opponentFetchIntel(kid,includeThreatBoards){
   var root='/kingdoms/'+encodeURIComponent(kid);
-  return Promise.all([
+  var requests=[
     opponentOptional(root),opponentOptional(root+'/kvk'),
     opponentOptional(root+'/leaderboards/3?cached=1'),
     opponentOptional(root+'/leaderboards/20?cached=1')
-  ]).then(function(parts){
+  ];
+  if(includeThreatBoards){
+    requests.push(opponentOptional(root+'/leaderboards/5?cached=1'));
+    requests.push(opponentOptional(root+'/leaderboards/7?cached=1'));
+    requests.push(opponentOptional(root+'/leaderboards/8?cached=1'));
+  }
+  return Promise.all(requests).then(function(parts){
     var summary=parts[0];if(!summary)throw new Error('kingdom unavailable');
     var alliances=Array.isArray(summary.alliances)?summary.alliances.slice(0,5):[];
     return Promise.all(alliances.map(function(a){
       return a.id?opponentOptional('/alliances/'+encodeURIComponent(a.id)+'?kid='+encodeURIComponent(kid)):Promise.resolve(null);
     })).then(function(details){
       alliances.forEach(function(a,i){a.detail=details[i]||null;a.depth=opponentAllianceStats(details[i]||a);});
-      return {kid:kid,summary:summary,kvk:parts[1],power:opponentEntries(parts[2]),mystic:opponentEntries(parts[3]),alliances:alliances};
+      return {kid:kid,summary:summary,kvk:parts[1],power:opponentEntries(parts[2]),mystic:opponentEntries(parts[3]),tc:opponentEntries(parts[4]),heroPower:opponentEntries(parts[5]),heroTotalPower:opponentEntries(parts[6]),alliances:alliances};
     });
   });
 }
 function msFetchOpponentKingdom(kid){
   var mySeq=++opponentFetchSeq;
-  opponentCache={kid:kid,us:null,them:null,profiles:{},standings:{},heroGear:{},loading:true,error:null};
+  opponentCache={kid:kid,us:null,them:null,profiles:{},standings:{},heroGear:{},loading:true,threatRetrying:false,error:null};
   renderOpponentView();
-  Promise.all([opponentFetchIntel(OUR_KINGDOM_ID),opponentFetchIntel(kid)]).then(function(intel){
+  Promise.all([opponentFetchIntel(OUR_KINGDOM_ID,false),opponentFetchIntel(kid,true)]).then(function(intel){
     if(mySeq!==opponentFetchSeq)return;
-    opponentCache={kid:kid,us:intel[0],them:intel[1],profiles:{},standings:{},heroGear:{},loading:false,error:null};
+    opponentCache={kid:kid,us:intel[0],them:intel[1],profiles:{},standings:{},heroGear:{},loading:false,threatRetrying:false,error:null};
     renderOpponentView();
     intel[1].mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,5).forEach(function(e,index){
       var pid=e.player_id;if(!pid)return;
       opponentCache.profiles[pid]=undefined;
-      opponentCache.standings[pid]=undefined;
+      var needsStandingsFallback=opponentLeaderboardValue(intel[1].tc,pid)==null||opponentLeaderboardValue(intel[1].heroPower,pid)==null||opponentLeaderboardValue(intel[1].heroTotalPower,pid)==null;
+      opponentCache.standings[pid]=needsStandingsFallback?undefined:null;
       if(index<3)opponentCache.heroGear[pid]=undefined;
       Promise.all([
         opponentOptional('/players/'+encodeURIComponent(pid)),
-        opponentOptional('/players/'+encodeURIComponent(pid)+'/standings?cached=1'),
+        needsStandingsFallback?opponentOptional('/players/'+encodeURIComponent(pid)+'/standings?cached=1'):Promise.resolve(null),
         index<3?opponentOptional('/players/'+encodeURIComponent(pid)+'/hero-gear'):Promise.resolve(undefined)
       ]).then(function(parts){
         if(mySeq!==opponentFetchSeq)return;
@@ -3492,7 +3582,7 @@ function msFetchOpponentKingdom(kid){
     });
   }).catch(function(){
     if(mySeq!==opponentFetchSeq)return;
-    opponentCache={kid:kid,us:null,them:null,profiles:{},standings:{},heroGear:{},loading:false,error:'Could not build the matchup for kingdom '+kid+'. Check the kingdom ID and API access, then try again.'};
+    opponentCache={kid:kid,us:null,them:null,profiles:{},standings:{},heroGear:{},loading:false,threatRetrying:false,error:'Could not build the matchup for kingdom '+kid+'. Check the kingdom ID and API access, then try again.'};
     renderOpponentView();
   });
 }
@@ -3577,13 +3667,43 @@ function opponentStandingPower(value){
   if(value===null)return '—';
   return msFmtPower(value);
 }
+function opponentLeaderboardValue(rows,pid){
+  var row=(rows||[]).find(function(e){return String(e.player_id)===String(pid);});
+  return row?opponentEntryValue(row):null;
+}
+function opponentThreatDataValue(them,standingsMap,pid,boardType,key){
+  var leaderboardValue=opponentLeaderboardValue(them&&them[key],pid);
+  return leaderboardValue!=null?leaderboardValue:opponentStandingValue(standingsMap,pid,boardType);
+}
+function opponentThreatHasMissing(them,profiles,standingsMap){
+  return them.mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,5).some(function(e){
+    var pid=e.player_id,p=profiles[pid];
+    return p===null||opponentThreatDataValue(them,standingsMap,pid,5,'tc')===null||opponentThreatDataValue(them,standingsMap,pid,7,'heroPower')===null||opponentThreatDataValue(them,standingsMap,pid,8,'heroTotalPower')===null;
+  });
+}
+function opponentRetryMissingThreatData(){
+  if(opponentCache.threatRetrying||!opponentCache.them)return;
+  var mySeq=opponentFetchSeq,them=opponentCache.them,top=them.mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,5),tasks=[];
+  opponentCache.threatRetrying=true;renderOpponentView();
+  [['tc',5],['heroPower',7],['heroTotalPower',8]].forEach(function(spec){
+    var key=spec[0],boardType=spec[1],missing=top.some(function(e){return opponentThreatDataValue(them,opponentCache.standings,e.player_id,boardType,key)===null;});
+    if(missing)tasks.push(opponentOptional('/kingdoms/'+encodeURIComponent(them.kid)+'/leaderboards/'+boardType+'?cached=1').then(function(board){if(board)them[key]=opponentEntries(board);}));
+  });
+  top.forEach(function(e){
+    var pid=e.player_id;if(!pid)return;
+    if(opponentCache.profiles[pid]===null)tasks.push(opponentOptional('/players/'+encodeURIComponent(pid)).then(function(data){opponentCache.profiles[pid]=data||null;}));
+    var missingStanding=opponentThreatDataValue(them,opponentCache.standings,pid,5,'tc')===null||opponentThreatDataValue(them,opponentCache.standings,pid,7,'heroPower')===null||opponentThreatDataValue(them,opponentCache.standings,pid,8,'heroTotalPower')===null;
+    if(missingStanding)tasks.push(opponentOptional('/players/'+encodeURIComponent(pid)+'/standings?cached=1').then(function(data){opponentCache.standings[pid]=Array.isArray(data)?data:(data&&Array.isArray(data.standings)?data.standings:null);}));
+  });
+  Promise.all(tasks).then(function(){if(mySeq!==opponentFetchSeq)return;opponentCache.threatRetrying=false;renderOpponentView();});
+}
 function opponentThreatHtml(them,profiles,standingsMap){
   var powerMap={};them.power.forEach(function(e){if(e.player_id)powerMap[e.player_id]=e;});
   var desktop='<div class="opp-desktop-only opp-table-wrap"><table class="opp-table"><thead><tr><th>#</th><th>Player</th><th class="num">Power</th><th class="ctr">Mystic Trials</th><th class="ctr">TC</th><th class="num">Hero Power</th><th class="num">Hero\'s Total Power</th><th class="ctr">Efficiency</th><th class="ctr">Threat</th></tr></thead><tbody>',mobile='<div class="opp-mobile-only"><div class="opp-mobile-list">';
   them.mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,5).forEach(function(m,index){
     var e=powerMap[m.player_id]||m,p=profiles[m.player_id],mr=Number(m.rank)||999,pr=powerMap[m.player_id]?(Number(powerMap[m.player_id].rank)||999):null,eff=pr?pr-mr:null,score=opponentThreatScore(pr||101,mr),level=score>=93?'extreme':score>=84?'high':'watch',label=score>=93?'Extreme':score>=84?'High':'Watch';
     var alliance=m.alliance||m.alliance_abbr||e.alliance||e.alliance_abbr||(p&&p.alliance&&p.alliance.abbr)||'',avatar=p&&p.avatar_url?'<img class="ms-avatar" src="'+msEsc(p.avatar_url)+'" alt="" loading="lazy">':'<span class="ms-avatar-fallback"></span>';
-    var playerName=m.name||e.name||'—',power=Number(m.power)||(powerMap[m.player_id]?opponentEntryValue(powerMap[m.player_id]):0),tc=m.town_hall_level||e.town_hall_level||(p&&p.town_hall_level)||'—',heroPower=opponentStandingPower(opponentStandingValue(standingsMap,m.player_id,7)),heroTotalPower=opponentStandingPower(opponentStandingValue(standingsMap,m.player_id,8)),effHtml=eff==null?'—':'<span class="opp-delta '+(eff>0?'pos':eff<0?'neg':'neutral')+'">'+(eff>0?'+':'')+eff+' ranks</span>';
+    var playerName=m.name||e.name||'—',power=Number(m.power)||(powerMap[m.player_id]?opponentEntryValue(powerMap[m.player_id]):0),tc=opponentThreatDataValue(them,standingsMap,m.player_id,5,'tc');if(tc==null)tc=m.town_hall_level||e.town_hall_level||(p&&p.town_hall_level)||'—';var heroPower=opponentStandingPower(opponentThreatDataValue(them,standingsMap,m.player_id,7,'heroPower')),heroTotalPower=opponentStandingPower(opponentThreatDataValue(them,standingsMap,m.player_id,8,'heroTotalPower')),effHtml=eff==null?'—':'<span class="opp-delta '+(eff>0?'pos':eff<0?'neg':'neutral')+'">'+(eff>0?'+':'')+eff+' ranks</span>';
     desktop+='<tr><td class="primary">#'+(index+1)+'</td><td><div class="opp-player">'+avatar+'<div><div class="opp-player-name notranslate" translate="no">'+msEsc(playerName)+'</div><div class="opp-player-alliance notranslate" translate="no">'+(alliance?'['+msEsc(alliance)+']':'Unaffiliated')+'</div></div></div></td><td class="num">'+(power?msFmtPower(power):'—')+'</td><td class="ctr">#'+mr+'</td><td class="ctr">'+tc+'</td><td class="num">'+heroPower+'</td><td class="num">'+heroTotalPower+'</td><td class="ctr">'+effHtml+'</td><td class="ctr"><span class="opp-threat '+level+'">'+label+' '+score+'</span></td></tr>';
     mobile+='<div class="opp-mobile-card"><div class="opp-mobile-card-head"><div class="opp-player">'+avatar+'<div><div class="opp-player-name notranslate" translate="no">#'+(index+1)+' '+msEsc(playerName)+'</div><div class="opp-player-alliance notranslate" translate="no">'+(alliance?'['+msEsc(alliance)+']':'Unaffiliated')+'</div></div></div><span class="opp-threat '+level+'">'+label+' '+score+'</span></div><div class="opp-mobile-metrics"><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">Power</div><div class="opp-mobile-metric-value">'+(power?msFmtPower(power):'—')+'</div></div><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">Mystic Trials</div><div class="opp-mobile-metric-value">#'+mr+'</div></div><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">TC / Hero Power</div><div class="opp-mobile-metric-value">'+tc+' / '+heroPower+'</div></div><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">Hero\'s Total Power</div><div class="opp-mobile-metric-value">'+heroTotalPower+'</div></div></div><div class="opp-mobile-inline" style="margin-top:9px;"><span>Combat efficiency</span><strong>'+effHtml+'</strong></div></div>';
   });return desktop+'</tbody></table></div>'+mobile+'</div></div>';
@@ -3624,7 +3744,7 @@ function opponentHeroGearHtml(them,profiles,heroGearMap){
     html+='<div class="opp-gear-player"><div class="opp-gear-player-head"><div class="opp-player">'+avatar+'<div><div class="opp-player-name notranslate" translate="no">'+msEsc(entry.name||'—')+'</div><div class="opp-player-alliance notranslate" translate="no">'+(alliance?'['+msEsc(alliance)+']':'Unaffiliated')+'</div></div></div><span class="opp-gear-rank">Mystic #'+(index+1)+'</span></div>';
     if(data===undefined){html+='<div class="opp-gear-status">Loading hero gear…</div></div>';return;}
     var heroes=data&&Array.isArray(data.heroes)?data.heroes.slice():[];
-    if(!heroes.length){html+='<div class="opp-gear-status">Hero gear snapshot unavailable.</div></div>';return;}
+    if(!heroes.length){html+='<div class="opp-gear-status">Hero gear snapshot unavailable.<button type="button" class="opp-gear-retry" data-opp-hero-retry="'+msEsc(String(pid))+'" aria-label="Retry hero gear for '+msEsc(entry.name||'this player')+'">Retry</button></div></div>';return;}
     heroes.sort(function(a,b){
       return opponentHeroForgeScore(b)-opponentHeroForgeScore(a) ||
         opponentHeroEnhancementScore(b)-opponentHeroEnhancementScore(a) ||
@@ -3685,10 +3805,11 @@ function renderOpponentView(){
   html+=opponentHeroHtml(us,them);
   html+='<div class="opp-grid-2"><div class="panel"><div class="panel-head"><div class="panel-icn">100</div><div class="panel-title">Kingdom Power Curve</div></div><div class="opp-section-note">Player rank 1–100. The higher line indicates the stronger roster at that depth.</div>'+opponentPowerCurveHtml(us,them)+'</div><div class="panel"><div class="panel-head"><div class="panel-icn">Σ</div><div class="panel-title">Top-N Power</div></div>'+opponentTopNHtml(us,them)+'</div></div>';
   html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">A</div><div class="panel-title">Alliance Strength & Depth</div></div><div class="opp-section-note">Rank-matched comparison. Top 10 average is calculated from each alliance roster.</div>'+opponentAllianceTableHtml(us,them)+'</div>';
-  html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">!</div><div class="panel-title">Opponent Top 5 Threats</div></div><div class="opp-section-note">Selected and ordered strictly by Mystic Trial score. Power is shown only as a reference.</div>'+opponentThreatHtml(them,opponentCache.profiles,opponentCache.standings)+'</div>';
+  var threatRetry=opponentThreatHasMissing(them,opponentCache.profiles,opponentCache.standings)?'<button type="button" class="opp-gear-retry opp-missing-retry" data-opp-missing-retry'+(opponentCache.threatRetrying?' disabled':'')+'>'+(opponentCache.threatRetrying?'Retrying…':'Retry missing data')+'</button>':'';
+  html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">!</div><div class="panel-title">Opponent Top 5 Threats</div></div><div class="opp-section-toolbar"><div class="opp-section-note">Selected and ordered strictly by Mystic Trial score. Power is shown only as a reference.</div>'+threatRetry+'</div>'+opponentThreatHtml(them,opponentCache.profiles,opponentCache.standings)+'</div>';
   html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">HG</div><div class="panel-title">Opponent Top 3 Hero Gear</div></div><div class="opp-section-note">Top three players by Mystic Trial score. Each player shows their three strongest heroes, ranked by combined Forge level across all four gear pieces.</div>'+opponentHeroGearHtml(them,opponentCache.profiles,opponentCache.heroGear)+'</div>';
   html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">M</div><div class="panel-title">Opponent Match History</div></div>'+opponentMatchRowsHtml(them.kvk)+'</div>';
-  body.innerHTML=html;if(EDIT_MODE)wireOpponentInput();
+  body.innerHTML=html;wireOpponentHeroGearRetry();if(EDIT_MODE)wireOpponentInput();
 }
 
 // --- Availability drag-select timeline -----------------------------------
@@ -4338,14 +4459,21 @@ function msGridStyle(key){
   }).join(' ') + delCol;
 }
 
+function msTcValueHtml(p){
+  if(p.tcLevel)return msEsc(p.tcLevel);
+  if(!EDIT_MODE||!p.kingshotId)return '—';
+  var loading=!!msTcRetrying[p.id];
+  return '<button type="button" class="ms-tc-retry" data-ms-tc-retry="'+msEsc(String(p.id))+'" aria-label="Retry TC level for '+msEsc(p.name||'this player')+'"'+(loading?' disabled':'')+'>'+(loading?'Retrying…':'Retry TC')+'</button>';
+}
+
 function msRowValues(key, p){
   if(key === 'd1'){
-    return [msEsc(p.tcLevel || '\u2014'), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+    return [msTcValueHtml(p), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
   }
   if(key === 'd4'){
-    return [msEsc(p.tcLevel || '\u2014'), msFmtNum(p.t9 || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+    return [msTcValueHtml(p), msFmtNum(p.t9 || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
   }
-  var common = [msEsc(p.tcLevel || '\u2014'), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+  var common = [msTcValueHtml(p), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
   return [msFmtNum(p.t9||0), msFmtNum(p.t10||0), p.t11 ? 'Y' : 'N'].concat(common);
 }
 
@@ -4468,6 +4596,7 @@ function msRenderBody(key){
     '</div>';
 
   body.innerHTML = html;
+  msWireTcRetryButtons(body,key,function(){if(msCurrentRenderedKey===key)msRenderBody(key);});
 
   body.querySelectorAll('.ms-stat[data-msf]').forEach(function(el){
     el.addEventListener('click', function(){
@@ -5067,6 +5196,7 @@ function renderKingApptView(){
   html += '</div>';
 
   body.innerHTML = html;
+  msWireTcRetryButtons(body,key,function(){if(kaCurrentRenderedKey===key)renderKingApptView();});
 
   body.querySelectorAll('.ms-stat[data-kaf]').forEach(function(el){
     el.addEventListener('click', function(){
