@@ -526,6 +526,36 @@
   .opp-mobile-side-name{font:700 13px 'Rajdhani',sans-serif;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:7px;}
   .opp-mobile-inline{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--text-mid);margin-top:4px;}
   .opp-mobile-inline strong{color:var(--text-hi);font-weight:600;}
+  .opp-gear-players{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px;align-items:start;}
+  .opp-gear-player{min-width:0;border:1px solid var(--glass-border);border-radius:16px;background:rgba(11,15,21,.72);overflow:hidden;}
+  .opp-gear-player-head{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:14px;border-bottom:1px solid var(--glass-border);background:rgba(255,255,255,.025);}
+  .opp-gear-player-head .opp-player{min-width:0;}
+  .opp-gear-player-head .opp-player>div{min-width:0;}
+  .opp-gear-rank{flex:0 0 auto;border-radius:7px;padding:4px 7px;background:rgba(155,140,240,.13);color:var(--violet);font:700 9px 'JetBrains Mono',monospace;letter-spacing:.05em;text-transform:uppercase;}
+  .opp-gear-heroes{display:grid;gap:16px;padding:12px;}
+  .opp-gear-hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 60px;gap:9px;min-width:0;padding:10px;border:1px solid rgba(155,140,240,.22);border-radius:15px;background:rgba(255,255,255,.025);box-shadow:0 8px 18px rgba(0,0,0,.18);}
+  .opp-gear-hero:before{content:'';position:absolute;left:-1px;top:16px;bottom:16px;width:3px;border-radius:0 3px 3px 0;background:linear-gradient(180deg,var(--violet),var(--teal));opacity:.8;}
+  .opp-hero-portrait{position:relative;height:262px;min-width:0;overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:13px;background:linear-gradient(165deg,#9a6a12,#4a3206);}
+  .opp-hero-portrait.rare{background:linear-gradient(165deg,#2c4f7c,#152437);border-color:rgba(96,165,250,.5);}
+  .opp-hero-portrait.epic{background:linear-gradient(165deg,#553184,#2a1745);border-color:rgba(192,132,252,.5);}
+  .opp-hero-portrait.mythic{background:linear-gradient(165deg,#9a6a12,#4a3206);border-color:rgba(251,191,36,.55);}
+  .opp-hero-bust{display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 8px 8px rgba(0,0,0,.28));}
+  .opp-hero-level{position:absolute;top:8px;left:8px;z-index:1;border:1px solid rgba(255,255,255,.28);border-radius:8px;padding:4px 7px;background:rgba(13,14,12,.82);color:#fff6bf;font:700 12px 'Rajdhani',sans-serif;}
+  .opp-hero-stars{position:absolute;left:8px;right:8px;bottom:7px;display:flex;justify-content:center;gap:1px;padding:4px 6px;border-radius:8px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.6),transparent);font-size:17px;line-height:1;text-shadow:0 1px 2px #000;}
+  .opp-hero-star{color:rgba(255,255,255,.23);}
+  .opp-hero-star.full{color:#ffe37a;}
+  .opp-hero-star.partial{color:transparent;background:linear-gradient(90deg,#ffe37a var(--fill),rgba(255,255,255,.23) var(--fill));-webkit-background-clip:text;background-clip:text;}
+  .opp-gear-column{display:grid;grid-template-rows:repeat(4,minmax(0,1fr));gap:7px;min-width:0;height:262px;align-self:start;}
+  .opp-gear-tile{position:relative;min-width:0;min-height:0;overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:10px;background:linear-gradient(160deg,#3a6b46,#1d3a27);}
+  .opp-gear-tile.tier-2{background:linear-gradient(160deg,#2c4f7c,#16273f);}
+  .opp-gear-tile.tier-3{background:linear-gradient(160deg,#553184,#2c1a47);}
+  .opp-gear-tile.tier-4{background:linear-gradient(160deg,#8a5a16,#4a300d);}
+  .opp-gear-tile.tier-5{background:linear-gradient(160deg,#f1a343,#9a4e12);}
+  .opp-gear-tile.ascended{background:linear-gradient(160deg,#ea5b61,#8d2025);}
+  .opp-gear-icon{display:block;width:100%;height:100%;min-width:0;min-height:0;object-fit:contain;padding:7px;box-sizing:border-box;filter:drop-shadow(0 3px 3px rgba(0,0,0,.32));}
+  .opp-gear-enhance{position:absolute;top:2px;right:3px;z-index:1;color:#fff7da;font:800 12px 'Rajdhani',sans-serif;line-height:1;text-shadow:0 1px 2px #000;}
+  .opp-gear-forge{position:absolute;left:2px;right:2px;bottom:2px;z-index:1;color:#fff2a8;font:800 11px 'Rajdhani',sans-serif;line-height:1;text-align:center;text-shadow:0 1px 2px #000;}
+  .opp-gear-status{padding:20px 12px;text-align:center;color:var(--text-dim);font-size:11px;line-height:1.45;}
   .ms-apply-idcheck.loading{color:var(--text-dim);}
   .ms-apply-idcheck.found{color:var(--green);}
   .ms-apply-idcheck.notfound{color:var(--crimson);}
@@ -931,6 +961,14 @@
     .opp-table.compact{min-width:0;}
     .opp-table th{font-size:9px;padding:7px 6px;}
     .opp-table td{font-size:11px;padding:8px 6px;}
+    .opp-gear-players{grid-template-columns:1fr;gap:10px;}
+    .opp-gear-player-head{padding:12px;}
+    .opp-gear-heroes{padding:10px;gap:14px;}
+    .opp-gear-hero{grid-template-columns:minmax(0,1fr) 56px;gap:8px;padding:9px;}
+    .opp-hero-portrait{height:250px;}
+    .opp-gear-column{height:250px;gap:6px;}
+    .opp-gear-enhance{font-size:12px;}
+    .opp-gear-forge{font-size:11px;}
     #opponentView .ms-statbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-radius:9px;}
     #opponentView .ms-stat{border-bottom:1px solid var(--glass-border);padding:8px 4px;}
     #opponentView .ms-stat:nth-child(2n){border-right:none;}
@@ -3386,7 +3424,7 @@ function wireOpponentInput(){
 // alliance depth, combat efficiency and KvK history. The deterministic
 // assessment keeps every conclusion traceable to a displayed metric.
 var OUR_KINGDOM_ID = 1884;
-opponentCache = { kid:null, us:null, them:null, profiles:{}, loading:false, error:null };
+opponentCache = { kid:null, us:null, them:null, profiles:{}, standings:{}, heroGear:{}, loading:false, error:null };
 
 function opponentOptional(path){ return jeabslistFetch(path).catch(function(){ return null; }); }
 function opponentEntries(board){
@@ -3428,23 +3466,33 @@ function opponentFetchIntel(kid){
 }
 function msFetchOpponentKingdom(kid){
   var mySeq=++opponentFetchSeq;
-  opponentCache={kid:kid,us:null,them:null,profiles:{},loading:true,error:null};
+  opponentCache={kid:kid,us:null,them:null,profiles:{},standings:{},heroGear:{},loading:true,error:null};
   renderOpponentView();
   Promise.all([opponentFetchIntel(OUR_KINGDOM_ID),opponentFetchIntel(kid)]).then(function(intel){
     if(mySeq!==opponentFetchSeq)return;
-    opponentCache={kid:kid,us:intel[0],them:intel[1],profiles:{},loading:false,error:null};
+    opponentCache={kid:kid,us:intel[0],them:intel[1],profiles:{},standings:{},heroGear:{},loading:false,error:null};
     renderOpponentView();
-    intel[1].mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,10).forEach(function(e){
+    intel[1].mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,5).forEach(function(e,index){
       var pid=e.player_id;if(!pid)return;
       opponentCache.profiles[pid]=undefined;
-      opponentOptional('/players/'+encodeURIComponent(pid)).then(function(profile){
+      opponentCache.standings[pid]=undefined;
+      if(index<3)opponentCache.heroGear[pid]=undefined;
+      Promise.all([
+        opponentOptional('/players/'+encodeURIComponent(pid)),
+        opponentOptional('/players/'+encodeURIComponent(pid)+'/standings?cached=1'),
+        index<3?opponentOptional('/players/'+encodeURIComponent(pid)+'/hero-gear'):Promise.resolve(undefined)
+      ]).then(function(parts){
         if(mySeq!==opponentFetchSeq)return;
-        opponentCache.profiles[pid]=profile||null;renderOpponentView();
+        var standingsData=parts[1];
+        opponentCache.profiles[pid]=parts[0]||null;
+        opponentCache.standings[pid]=Array.isArray(standingsData)?standingsData:(standingsData&&Array.isArray(standingsData.standings)?standingsData.standings:null);
+        if(index<3)opponentCache.heroGear[pid]=parts[2]||null;
+        renderOpponentView();
       });
     });
   }).catch(function(){
     if(mySeq!==opponentFetchSeq)return;
-    opponentCache={kid:kid,us:null,them:null,profiles:{},loading:false,error:'Could not build the matchup for kingdom '+kid+'. Check the kingdom ID and API access, then try again.'};
+    opponentCache={kid:kid,us:null,them:null,profiles:{},standings:{},heroGear:{},loading:false,error:'Could not build the matchup for kingdom '+kid+'. Check the kingdom ID and API access, then try again.'};
     renderOpponentView();
   });
 }
@@ -3515,16 +3563,90 @@ function opponentAllianceTableHtml(us,them){
 }
 function opponentMysticMap(intel){var map={};intel.mystic.forEach(function(e){if(e.player_id)map[e.player_id]=e;});return map;}
 function opponentThreatScore(pr,mr){return Math.max(1,Math.min(99,Math.round(100-(pr-1)*.7-((mr||101)-1)*.3)));}
-function opponentThreatHtml(them,profiles){
+function opponentStandingValue(standingsMap,pid,boardType){
+  var rows=standingsMap?standingsMap[pid]:undefined;
+  if(rows===undefined)return undefined;
+  if(!Array.isArray(rows))return null;
+  var row=rows.find(function(s){return Number(s.board_type)===Number(boardType);});
+  if(!row)return null;
+  var value=row.points;if(value==null)value=row.value;if(value==null)value=row.score;
+  return Number(value)||0;
+}
+function opponentStandingPower(value){
+  if(value===undefined)return '…';
+  if(value===null)return '—';
+  return msFmtPower(value);
+}
+function opponentThreatHtml(them,profiles,standingsMap){
   var powerMap={};them.power.forEach(function(e){if(e.player_id)powerMap[e.player_id]=e;});
-  var desktop='<div class="opp-desktop-only opp-table-wrap"><table class="opp-table"><thead><tr><th>#</th><th>Player</th><th class="num">Power</th><th class="ctr">Mystic Trials</th><th class="ctr">TC</th><th class="ctr">VIP</th><th class="num">Kills</th><th class="ctr">Efficiency</th><th class="ctr">Threat</th></tr></thead><tbody>',mobile='<div class="opp-mobile-only"><div class="opp-mobile-list">';
-  them.mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,10).forEach(function(m,index){
+  var desktop='<div class="opp-desktop-only opp-table-wrap"><table class="opp-table"><thead><tr><th>#</th><th>Player</th><th class="num">Power</th><th class="ctr">Mystic Trials</th><th class="ctr">TC</th><th class="num">Hero Power</th><th class="num">Hero\'s Total Power</th><th class="ctr">Efficiency</th><th class="ctr">Threat</th></tr></thead><tbody>',mobile='<div class="opp-mobile-only"><div class="opp-mobile-list">';
+  them.mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,5).forEach(function(m,index){
     var e=powerMap[m.player_id]||m,p=profiles[m.player_id],mr=Number(m.rank)||999,pr=powerMap[m.player_id]?(Number(powerMap[m.player_id].rank)||999):null,eff=pr?pr-mr:null,score=opponentThreatScore(pr||101,mr),level=score>=93?'extreme':score>=84?'high':'watch',label=score>=93?'Extreme':score>=84?'High':'Watch';
     var alliance=m.alliance||m.alliance_abbr||e.alliance||e.alliance_abbr||(p&&p.alliance&&p.alliance.abbr)||'',avatar=p&&p.avatar_url?'<img class="ms-avatar" src="'+msEsc(p.avatar_url)+'" alt="" loading="lazy">':'<span class="ms-avatar-fallback"></span>';
-    var playerName=m.name||e.name||'—',power=Number(m.power)||(powerMap[m.player_id]?opponentEntryValue(powerMap[m.player_id]):0),tc=m.town_hall_level||e.town_hall_level||(p&&p.town_hall_level)||'—',vip=p===undefined?'…':(p&&p.vip!=null?p.vip:'—'),kills=p===undefined?'…':(p&&p.kills!=null?msFmtPower(p.kills):'—'),effHtml=eff==null?'—':'<span class="opp-delta '+(eff>0?'pos':eff<0?'neg':'neutral')+'">'+(eff>0?'+':'')+eff+' ranks</span>';
-    desktop+='<tr><td class="primary">#'+(index+1)+'</td><td><div class="opp-player">'+avatar+'<div><div class="opp-player-name notranslate" translate="no">'+msEsc(playerName)+'</div><div class="opp-player-alliance notranslate" translate="no">'+(alliance?'['+msEsc(alliance)+']':'Unaffiliated')+'</div></div></div></td><td class="num">'+(power?msFmtPower(power):'—')+'</td><td class="ctr">#'+mr+'</td><td class="ctr">'+tc+'</td><td class="ctr">'+vip+'</td><td class="num">'+kills+'</td><td class="ctr">'+effHtml+'</td><td class="ctr"><span class="opp-threat '+level+'">'+label+' '+score+'</span></td></tr>';
-    mobile+='<div class="opp-mobile-card"><div class="opp-mobile-card-head"><div class="opp-player">'+avatar+'<div><div class="opp-player-name notranslate" translate="no">#'+(index+1)+' '+msEsc(playerName)+'</div><div class="opp-player-alliance notranslate" translate="no">'+(alliance?'['+msEsc(alliance)+']':'Unaffiliated')+'</div></div></div><span class="opp-threat '+level+'">'+label+' '+score+'</span></div><div class="opp-mobile-metrics"><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">Power</div><div class="opp-mobile-metric-value">'+(power?msFmtPower(power):'—')+'</div></div><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">Mystic Trials</div><div class="opp-mobile-metric-value">#'+mr+'</div></div><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">TC / VIP</div><div class="opp-mobile-metric-value">'+tc+' / '+vip+'</div></div><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">Kills</div><div class="opp-mobile-metric-value">'+kills+'</div></div></div><div class="opp-mobile-inline" style="margin-top:9px;"><span>Combat efficiency</span><strong>'+effHtml+'</strong></div></div>';
+    var playerName=m.name||e.name||'—',power=Number(m.power)||(powerMap[m.player_id]?opponentEntryValue(powerMap[m.player_id]):0),tc=m.town_hall_level||e.town_hall_level||(p&&p.town_hall_level)||'—',heroPower=opponentStandingPower(opponentStandingValue(standingsMap,m.player_id,7)),heroTotalPower=opponentStandingPower(opponentStandingValue(standingsMap,m.player_id,8)),effHtml=eff==null?'—':'<span class="opp-delta '+(eff>0?'pos':eff<0?'neg':'neutral')+'">'+(eff>0?'+':'')+eff+' ranks</span>';
+    desktop+='<tr><td class="primary">#'+(index+1)+'</td><td><div class="opp-player">'+avatar+'<div><div class="opp-player-name notranslate" translate="no">'+msEsc(playerName)+'</div><div class="opp-player-alliance notranslate" translate="no">'+(alliance?'['+msEsc(alliance)+']':'Unaffiliated')+'</div></div></div></td><td class="num">'+(power?msFmtPower(power):'—')+'</td><td class="ctr">#'+mr+'</td><td class="ctr">'+tc+'</td><td class="num">'+heroPower+'</td><td class="num">'+heroTotalPower+'</td><td class="ctr">'+effHtml+'</td><td class="ctr"><span class="opp-threat '+level+'">'+label+' '+score+'</span></td></tr>';
+    mobile+='<div class="opp-mobile-card"><div class="opp-mobile-card-head"><div class="opp-player">'+avatar+'<div><div class="opp-player-name notranslate" translate="no">#'+(index+1)+' '+msEsc(playerName)+'</div><div class="opp-player-alliance notranslate" translate="no">'+(alliance?'['+msEsc(alliance)+']':'Unaffiliated')+'</div></div></div><span class="opp-threat '+level+'">'+label+' '+score+'</span></div><div class="opp-mobile-metrics"><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">Power</div><div class="opp-mobile-metric-value">'+(power?msFmtPower(power):'—')+'</div></div><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">Mystic Trials</div><div class="opp-mobile-metric-value">#'+mr+'</div></div><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">TC / Hero Power</div><div class="opp-mobile-metric-value">'+tc+' / '+heroPower+'</div></div><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">Hero\'s Total Power</div><div class="opp-mobile-metric-value">'+heroTotalPower+'</div></div></div><div class="opp-mobile-inline" style="margin-top:9px;"><span>Combat efficiency</span><strong>'+effHtml+'</strong></div></div>';
   });return desktop+'</tbody></table></div>'+mobile+'</div></div>';
+}
+function opponentAssetUrl(folder,id){return 'https://jeabslist.com/assets/'+folder+'/'+encodeURIComponent(id)+'.png';}
+function opponentHeroRarity(id){
+  var n=Number(id),rare=[50000,50001,50002,50003],epic=[50004,50005,50006,50007,50008,50027,50028,50029];
+  return rare.indexOf(n)>=0?'rare':epic.indexOf(n)>=0?'epic':'mythic';
+}
+function opponentHeroStarsHtml(value){
+  var raw=Math.max(0,Math.min(30,Number(value)||0)),html='';
+  for(var i=0;i<5;i++){
+    var filled=Math.max(0,Math.min(6,raw-(i*6))),cls=filled>=6?'full':filled>0?'partial':'',style=filled>0&&filled<6?' style="--fill:'+(filled/6*100).toFixed(0)+'%"':'';
+    html+='<span class="opp-hero-star '+cls+'"'+style+'>★</span>';
+  }
+  return html;
+}
+function opponentGearDisplay(piece){
+  if(!piece)return null;
+  var raw=Number(piece.slv)||0,ascended=raw>100,tier=Math.floor((Number(piece.eid)||0)/100)%10;
+  if(tier<1||tier>5)tier=1;
+  return {enhance:ascended?raw-100:raw,forge:Number(piece.rlv)||0,tier:tier,ascended:ascended};
+}
+function opponentHeroForgeScore(hero){
+  return (hero&&Array.isArray(hero.equipment)?hero.equipment:[]).reduce(function(total,piece){return total+(Number(piece&&piece.rlv)||0);},0);
+}
+function opponentHeroEnhancementScore(hero){
+  return (hero&&Array.isArray(hero.equipment)?hero.equipment:[]).reduce(function(total,piece){return total+(Number(piece&&piece.slv)||0);},0);
+}
+function opponentHeroGearHtml(them,profiles,heroGearMap){
+  var top=them.mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,3);
+  if(!top.length)return '<div class="opp-empty">No Mystic Trial leaders available.</div>';
+  var html='<div class="opp-gear-players">';
+  top.forEach(function(entry,index){
+    var pid=entry.player_id,p=profiles?profiles[pid]:null,data=heroGearMap?heroGearMap[pid]:undefined;
+    var alliance=entry.alliance||entry.alliance_abbr||(p&&p.alliance&&p.alliance.abbr)||'';
+    var avatar=p&&p.avatar_url?'<img class="ms-avatar" src="'+msEsc(p.avatar_url)+'" alt="" loading="lazy">':'<span class="ms-avatar-fallback"></span>';
+    html+='<div class="opp-gear-player"><div class="opp-gear-player-head"><div class="opp-player">'+avatar+'<div><div class="opp-player-name notranslate" translate="no">'+msEsc(entry.name||'—')+'</div><div class="opp-player-alliance notranslate" translate="no">'+(alliance?'['+msEsc(alliance)+']':'Unaffiliated')+'</div></div></div><span class="opp-gear-rank">Mystic #'+(index+1)+'</span></div>';
+    if(data===undefined){html+='<div class="opp-gear-status">Loading hero gear…</div></div>';return;}
+    var heroes=data&&Array.isArray(data.heroes)?data.heroes.slice():[];
+    if(!heroes.length){html+='<div class="opp-gear-status">Hero gear snapshot unavailable.</div></div>';return;}
+    heroes.sort(function(a,b){
+      return opponentHeroForgeScore(b)-opponentHeroForgeScore(a) ||
+        opponentHeroEnhancementScore(b)-opponentHeroEnhancementScore(a) ||
+        (Number(b.lv)||0)-(Number(a.lv)||0) ||
+        (Number(a.slot)||999)-(Number(b.slot)||999);
+    });
+    heroes=heroes.slice(0,3);
+    html+='<div class="opp-gear-heroes">';
+    heroes.forEach(function(hero){
+      var gearBySlot={};
+      (Array.isArray(hero.equipment)?hero.equipment:[]).forEach(function(piece){if(piece&&piece.sid!=null)gearBySlot[Number(piece.sid)]=piece;});
+      html+='<div class="opp-gear-hero"><div class="opp-hero-portrait '+opponentHeroRarity(hero.id)+'"><img class="opp-hero-bust" src="'+opponentAssetUrl('heroes_bust',hero.id)+'" alt="Hero '+msEsc(hero.id)+'" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span class="opp-hero-level">Lv '+msEsc(hero.lv!=null?hero.lv:'—')+'</span><div class="opp-hero-stars" title="Ascension '+msEsc(hero.star!=null?hero.star:0)+' of 30">'+opponentHeroStarsHtml(hero.star)+'</div></div><div class="opp-gear-column">';
+      for(var slot=1;slot<=4;slot++){
+        var piece=gearBySlot[slot],display=opponentGearDisplay(piece);
+        if(!piece||!display){html+='<div class="opp-gear-tile"><span class="opp-gear-enhance">—</span></div>';continue;}
+        html+='<div class="opp-gear-tile tier-'+display.tier+(display.ascended?' ascended':'')+'" title="Gear '+slot+' · +'+display.enhance+' · Forge '+display.forge+'"><span class="opp-gear-enhance">+'+display.enhance+'</span><img class="opp-gear-icon" src="'+opponentAssetUrl('hero_gear',piece.eid)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span class="opp-gear-forge">Lv '+display.forge+'</span></div>';
+      }
+      html+='</div></div>';
+    });
+    html+='</div></div>';
+  });
+  return html+'</div>';
 }
 function opponentOutliersHtml(them){
   var mm=opponentMysticMap(them),rows=them.power.map(function(e){var m=mm[e.player_id];return m?{e:e,m:m,eff:(e.rank||999)-(m.rank||999)}:null;}).filter(function(x){return x&&x.eff>0;}).sort(function(a,b){return b.eff-a.eff;}).slice(0,8);
@@ -3560,16 +3682,11 @@ function renderOpponentView(){
   if(opponentCache.loading){html+='<div class="score-empty">Building matchup with kingdom '+msEsc(savedKid)+'…</div>';body.innerHTML=html;if(EDIT_MODE)wireOpponentInput();return;}
   if(opponentCache.error){html+='<div class="score-empty">'+msEsc(opponentCache.error)+'</div>';body.innerHTML=html;if(EDIT_MODE)wireOpponentInput();return;}
   var us=opponentCache.us,them=opponentCache.them;
-  html+=opponentHeroHtml(us,them)+'<div class="opp-kpis">';
-  html+=opponentKpiHtml('Top alliance',us.alliances[0]?us.alliances[0].power:0,them.alliances[0]?them.alliances[0].power:0);
-  html+=opponentKpiHtml('Top 3 alliances',opponentAllianceTotal(us,3),opponentAllianceTotal(them,3));
-  html+=opponentKpiHtml('Top 10 avg',opponentAvgTop(us.power,10),opponentAvgTop(them.power,10));
-  html+=opponentKpiHtml('Top 100 avg',opponentAvgTop(us.power,100),opponentAvgTop(them.power,100));
-  html+=opponentKpiHtml('Battle win rate',opponentWinRate(us.kvk,'battle'),opponentWinRate(them.kvk,'battle'),opponentPct)+'</div>';
+  html+=opponentHeroHtml(us,them);
   html+='<div class="opp-grid-2"><div class="panel"><div class="panel-head"><div class="panel-icn">100</div><div class="panel-title">Kingdom Power Curve</div></div><div class="opp-section-note">Player rank 1–100. The higher line indicates the stronger roster at that depth.</div>'+opponentPowerCurveHtml(us,them)+'</div><div class="panel"><div class="panel-head"><div class="panel-icn">Σ</div><div class="panel-title">Top-N Power</div></div>'+opponentTopNHtml(us,them)+'</div></div>';
   html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">A</div><div class="panel-title">Alliance Strength & Depth</div></div><div class="opp-section-note">Rank-matched comparison. Top 10 average is calculated from each alliance roster.</div>'+opponentAllianceTableHtml(us,them)+'</div>';
-  html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">!</div><div class="panel-title">Opponent Top 10 Threats</div></div><div class="opp-section-note">Selected and ordered strictly by Mystic Trial score. Power is shown only as a reference.</div>'+opponentThreatHtml(them,opponentCache.profiles)+'</div>';
-  html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">KvK</div><div class="panel-title">Record Comparison</div></div><div class="opp-kicker" style="margin-bottom:6px;">Kingdom '+OUR_KINGDOM_ID+'</div>'+opponentRecordHtml(us)+'<div class="opp-kicker" style="margin:12px 0 6px;">Kingdom '+msEsc(them.kid)+'</div>'+opponentRecordHtml(them)+'</div>';
+  html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">!</div><div class="panel-title">Opponent Top 5 Threats</div></div><div class="opp-section-note">Selected and ordered strictly by Mystic Trial score. Power is shown only as a reference.</div>'+opponentThreatHtml(them,opponentCache.profiles,opponentCache.standings)+'</div>';
+  html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">HG</div><div class="panel-title">Opponent Top 3 Hero Gear</div></div><div class="opp-section-note">Top three players by Mystic Trial score. Each player shows their three strongest heroes, ranked by combined Forge level across all four gear pieces.</div>'+opponentHeroGearHtml(them,opponentCache.profiles,opponentCache.heroGear)+'</div>';
   html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">M</div><div class="panel-title">Opponent Match History</div></div>'+opponentMatchRowsHtml(them.kvk)+'</div>';
   body.innerHTML=html;if(EDIT_MODE)wireOpponentInput();
 }
