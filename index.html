@@ -3091,16 +3091,54 @@ function msFindSchedulerPlayer(pid){
   return found;
 }
 
+function msSchedulerOptional(path,retries){
+  retries=retries==null?1:retries;
+  return jeabslistFetch(path).catch(function(){
+    if(retries<=0)return null;
+    return new Promise(function(resolve){setTimeout(resolve,700);}).then(function(){return msSchedulerOptional(path,retries-1);});
+  });
+}
+
+function msProfileTcLevel(data){
+  if(!data)return null;
+  var value=data.town_hall_level;
+  if(value==null)value=data.town_center_level;
+  if(value==null)value=data.tc_level;
+  var tc=parseInt(value,10);
+  return !isNaN(tc)&&tc>0?tc:null;
+}
+
+function msFetchSchedulerTc(governorId){
+  return msSchedulerOptional('/players/'+encodeURIComponent(governorId),1).then(function(profile){
+    var directTc=msProfileTcLevel(profile);
+    if(directTc)return {tc:directTc,profile:profile,source:'player'};
+    return msSchedulerOptional('/kingdoms/'+encodeURIComponent(OUR_KINGDOM_ID)+'/leaderboards/5?cached=1',1).then(function(board){
+      var rows=board&&Array.isArray(board.entries)?board.entries:[];
+      var row=rows.find(function(entry){return String(entry.player_id!=null?entry.player_id:entry.uid)===String(governorId);});
+      var value=row&&row.town_hall_level;
+      if(value==null&&row)value=row.score;
+      if(value==null&&row)value=row.value;
+      if(value==null&&row)value=row.points;
+      var fallbackTc=parseInt(value,10);
+      if(isNaN(fallbackTc)||fallbackTc<=0)throw new Error('TC level unavailable');
+      return {tc:fallbackTc,profile:profile,source:'leaderboard'};
+    });
+  });
+}
+
 function msRetrySchedulerTc(key,pid,rerender){
   if(!EDIT_MODE||msTcRetrying[pid])return;
   var p=msFindSchedulerPlayer(pid);
-  if(!p||!p.kingshotId)return;
+  if(!p||p.source!=='apply')return;
+  var entered=window.prompt('Governor ID for '+p.name,p.kingshotId||'');
+  if(entered===null)return;
+  var governorId=String(entered).trim();
+  if(!/^\d+$/.test(governorId)){flag('Enter a valid numeric Governor ID.');return;}
   msTcRetrying[pid]=true;rerender();
-  jeabslistFetch('/players/'+encodeURIComponent(p.kingshotId)).then(function(data){
-    var tc=parseInt(data&&data.town_hall_level,10);
-    if(isNaN(tc)||tc<=0)throw new Error('TC level unavailable');
-    p.tcLevel=tc;p.currentLevel=tc;p.levelSource='api-retry';
-    if(data.avatar_url)p.avatarUrl=data.avatar_url;
+  msFetchSchedulerTc(governorId).then(function(result){
+    var tc=result.tc,data=result.profile;
+    p.kingshotId=governorId;p.tcLevel=tc;p.currentLevel=tc;p.levelSource='api-retry-'+result.source;
+    if(data&&data.avatar_url)p.avatarUrl=data.avatar_url;
     if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,parseFloat(p.sp)||0);
     delete msTcRetrying[pid];
     msRecalcAll();msSyncAndSave();rerender();
@@ -4461,7 +4499,7 @@ function msGridStyle(key){
 
 function msTcValueHtml(p){
   if(p.tcLevel)return msEsc(p.tcLevel);
-  if(!EDIT_MODE||!p.kingshotId)return '—';
+  if(!EDIT_MODE||p.source!=='apply')return '—';
   var loading=!!msTcRetrying[p.id];
   return '<button type="button" class="ms-tc-retry" data-ms-tc-retry="'+msEsc(String(p.id))+'" aria-label="Retry TC level for '+msEsc(p.name||'this player')+'"'+(loading?' disabled':'')+'>'+(loading?'Retrying…':'Retry TC')+'</button>';
 }
