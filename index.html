@@ -323,7 +323,23 @@
   /* Keep all opponent scouting tables on the same row rhythm. */
   .opp-equal-row{height:62px;box-sizing:border-box;}
   .ms-row.em{opacity:0.45;}
-  .ms-row.noslot{background:rgba(227,91,86,0.06);border-left:2px solid rgba(227,91,86,0.4);}
+  .ms-row.noslot{background:rgba(227,91,86,0.06);border-left:2px solid rgba(227,91,86,0.4);cursor:pointer;touch-action:manipulation;}
+  .ms-row.noslot:hover{background:rgba(227,91,86,0.1);}
+  .ms-row.noslot:focus-visible{outline:2px solid var(--crimson);outline-offset:-2px;}
+  .ms-row.noslot.ms-noslot-selected{background:rgba(227,91,86,0.16);box-shadow:inset 0 0 0 1px rgba(227,91,86,.55);}
+  @keyframes ms-slot-candidate-pulse{
+    0%,100%{background:rgba(79,209,197,.09);box-shadow:inset 3px 0 0 rgba(79,209,197,.65),inset 0 0 0 1px rgba(79,209,197,.18);}
+    50%{background:rgba(79,209,197,.19);box-shadow:inset 3px 0 0 var(--teal),inset 0 0 0 1px rgba(79,209,197,.52),0 0 12px rgba(79,209,197,.12);}
+  }
+  .ms-row.ms-slot-candidate{opacity:1;animation:ms-slot-candidate-pulse 1.45s ease-in-out infinite;}
+  .ms-choose-cell{display:flex;align-items:center;justify-content:center;min-width:0;}
+  .ms-choose-btn{
+    width:100%;min-height:28px;padding:5px 4px;border:1px solid rgba(79,209,197,.55);border-radius:7px;
+    background:rgba(79,209,197,.14);color:var(--teal);font:inherit;font-size:9px;font-weight:700;
+    line-height:1;cursor:pointer;touch-action:manipulation;
+  }
+  .ms-choose-btn:hover{background:rgba(79,209,197,.24);border-color:var(--teal);}
+  .ms-choose-btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
   .ms-row.current{background:rgba(95,191,122,0.14);border-left:2px solid var(--green);}
   .ms-row.current .ms-time{color:var(--green);font-weight:700;}
   .ms-time{font-family:'JetBrains Mono',monospace;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:clip;}
@@ -335,6 +351,7 @@
   .ms-avatar-lg{width:34px;height:34px;}
   .ms-avatar-fallback-lg{width:34px;height:34px;}
   .ms-val{text-align:center;color:var(--text-mid);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ms-requested{display:block;white-space:normal;overflow-wrap:anywhere;font-size:9.5px;line-height:1.35;color:var(--text-mid);}
   .ms-pts{text-align:center;font-weight:600;color:var(--amber);}
 
   .ms-current-card{
@@ -374,15 +391,21 @@
   .ms-row:hover .ms-del{opacity:1;}
   .ms-del:hover{color:var(--crimson);}
   .ms-tc-retry{
-    min-width:48px;padding:4px 7px;border:1px solid rgba(232,163,61,.45);border-radius:7px;
-    background:rgba(232,163,61,.1);color:var(--amber);font:inherit;font-size:10px;font-weight:700;
+    padding:3px 5px;border:1px solid rgba(232,163,61,.45);border-radius:6px;
+    background:rgba(232,163,61,.1);color:var(--amber);font:inherit;font-size:9px;font-weight:700;
     line-height:1.1;cursor:pointer;touch-action:manipulation;
   }
+  .ms-tc-missing{display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;}
+  .ms-tc-missing.failed{flex-wrap:wrap;}
+  .ms-tc-error{width:100%;color:var(--crimson);font-size:8px;font-weight:700;line-height:1.1;text-align:center;}
+  .ms-tc-manual{border-color:rgba(79,209,197,.45);background:rgba(79,209,197,.1);color:var(--teal);}
+  .ms-tc-manual:hover{background:rgba(79,209,197,.18);border-color:var(--teal);}
   .ms-tc-retry:hover{background:rgba(232,163,61,.18);border-color:var(--amber);}
   .ms-tc-retry:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
   .ms-tc-retry:disabled{cursor:wait;opacity:.65;}
   .ms-list{border:1px solid var(--glass-border);border-radius:10px;}
   .ms-actions{display:flex;gap:8px;margin-top:10px;}
+  @media (prefers-reduced-motion:reduce){.ms-row.ms-slot-candidate{animation:none;background:rgba(79,209,197,.16);box-shadow:inset 3px 0 0 var(--teal),inset 0 0 0 1px rgba(79,209,197,.4);}}
 
   .ms-apply-btn{
     display:block;width:100%;margin-bottom:14px;padding:10px 14px;border-radius:10px;
@@ -434,6 +457,13 @@
   }
   .ms-apply-field input[type="text"]:focus{border-color:var(--teal);}
   .ms-apply-idcheck{font-size:11.5px;margin-top:6px;min-height:14px;line-height:1.4;}
+  .ms-apply-manual{
+    margin:-4px 0 14px;padding:11px;border:1px solid rgba(232,163,61,.35);border-radius:9px;
+    background:rgba(232,163,61,.07);
+  }
+  .ms-apply-manual-note{font-size:11.5px;line-height:1.4;color:var(--amber);margin-bottom:10px;}
+  .ms-apply-manual-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(90px,.7fr);gap:10px;}
+  .ms-apply-manual .ms-apply-field{margin-bottom:0;}
 
   .opp-panel{margin-bottom:14px;}
   .opp-input-panel{max-width:560px;}
@@ -571,6 +601,7 @@
   }
   .opp-gear-retry:hover{background:rgba(139,124,246,.2);border-color:#8b7cf6;}
   .opp-gear-retry:focus-visible{outline:2px solid #b8abff;outline-offset:2px;}
+  .opp-load-retry{display:block;margin:12px auto 0;min-width:88px;min-height:36px;}
   .opp-section-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
   .opp-section-toolbar .opp-section-note{margin:0;}
   .opp-missing-retry{flex:0 0 auto;margin:0;white-space:nowrap;}
@@ -1088,6 +1119,20 @@
             <label>Kingshot ID *</label>
             <input type="text" id="msApplyName" placeholder="Enter your Kingshot ID" spellcheck="false">
             <div class="ms-apply-idcheck" id="msApplyIdCheck"></div>
+          </div>
+
+          <div class="ms-apply-manual" id="msApplyManualWrap" style="display:none;">
+            <div class="ms-apply-manual-note">Neither player-data service could return the details. Enter them manually to continue.</div>
+            <div class="ms-apply-manual-grid">
+              <div class="ms-apply-field">
+                <label>Player Name *</label>
+                <input type="text" id="msApplyManualName" placeholder="In-game name" spellcheck="false">
+              </div>
+              <div class="ms-apply-field">
+                <label>TC Level *</label>
+                <input type="text" inputmode="numeric" id="msApplyManualTc" placeholder="e.g. 37">
+              </div>
+            </div>
           </div>
 
           <div class="ms-apply-field">
@@ -2991,7 +3036,12 @@ function msCalcD4Pts(sp, t9, t10, t11, speedPct){
   }
 }
 
-function msAvail(p, i){
+function msAvail(p, i, key){
+  var forcedApplies=p.forcedSlot !== null && p.forcedSlot !== undefined &&
+    (!p.forcedSlotKey || p.forcedSlotKey===key);
+  if(forcedApplies){
+    return Number(p.forcedSlot) === Number(i);
+  }
   var s = i*30, e = s+30;
   function ov(ws, we){
     if(ws===null || we===null) return false;
@@ -3001,20 +3051,20 @@ function msAvail(p, i){
   return ov(p.s1, p.e1) || (p.s2!==null && p.e2!==null && ov(p.s2, p.e2));
 }
 
-function msAssign(q){
+function msAssign(q,key){
   var sc = new Array(MS_SLOTS).fill(null);
   var used = new Set();
   var rest = q.slice().sort(function(a,b){ return b.pts - a.pts || a.entryOrder - b.entryOrder; });
   rest.forEach(function(p){
     for(var i=0; i<MS_SLOTS; i++){
-      if(!sc[i] && msAvail(p, i)){ sc[i] = p; used.add(p.id); break; }
+      if(!sc[i] && msAvail(p, i, key)){ sc[i] = p; used.add(p.id); break; }
     }
     p.noSlot = !used.has(p.id);
   });
   return sc;
 }
 
-function msDirectPlaceBySlot(players){
+function msDirectPlaceBySlot(players,key){
   // Hybrid model: CSV-sourced rows are a fully precomputed schedule from
   // the kingdom's own sheet — each row already states its exact time slot,
   // so those get placed first and are authoritative. Any player-submitted
@@ -3026,8 +3076,22 @@ function msDirectPlaceBySlot(players){
   var csvPlayers = players.filter(function(p){ return p.source !== 'apply'; });
   var applyPlayers = players.filter(function(p){ return p.source === 'apply'; });
 
+  // A viewer's explicit Choose action is the one exception to imported-slot
+  // precedence: place forced players first so they can replace a lower
+  // scoring occupant selected through the comparison UI.
+  var forcedPlayers = players.filter(function(p){
+    return p.forcedSlot !== null && p.forcedSlot !== undefined &&
+      (!p.forcedSlotKey || p.forcedSlotKey===key) &&
+      Number(p.forcedSlot) >= 0 && Number(p.forcedSlot) < MS_SLOTS;
+  }).sort(function(a,b){ return (b.pts||0)-(a.pts||0) || a.entryOrder-b.entryOrder; });
+  forcedPlayers.forEach(function(p){
+    var slot = Number(p.forcedSlot);
+    if(!sc[slot]) sc[slot] = p;
+  });
+
   csvPlayers.forEach(function(p){
-    if(p.slotIndex !== null && p.slotIndex !== undefined && p.slotIndex >= 0 && p.slotIndex < MS_SLOTS && !sc[p.slotIndex]){
+    var isForced=p.forcedSlot!==null&&p.forcedSlot!==undefined&&(!p.forcedSlotKey||p.forcedSlotKey===key);
+    if(!isForced&&p.slotIndex !== null && p.slotIndex !== undefined && p.slotIndex >= 0 && p.slotIndex < MS_SLOTS && !sc[p.slotIndex]){
       sc[p.slotIndex] = p;
     }
   });
@@ -3036,7 +3100,7 @@ function msDirectPlaceBySlot(players){
   var restApply = applyPlayers.slice().sort(function(a,b){ return (b.pts||0)-(a.pts||0) || a.entryOrder-b.entryOrder; });
   restApply.forEach(function(p){
     for(var i=0; i<MS_SLOTS; i++){
-      if(!sc[i] && msAvail(p, i)){ sc[i] = p; used.add(p.id); break; }
+      if(!sc[i] && msAvail(p, i, key)){ sc[i] = p; used.add(p.id); break; }
     }
     p.noSlot = !used.has(p.id);
   });
@@ -3060,9 +3124,9 @@ function msBuildD4cmQ(){
 }
 
 function msRecalcAll(){
-  msSchedule.d1 = msDirectPlaceBySlot(msPlayers.d1);
-  msSchedule.d4 = msDirectPlaceBySlot(msPlayers.d4);
-  msSchedule.d4cm = msAssign(msBuildD4cmQ());
+  msSchedule.d1 = msDirectPlaceBySlot(msPlayers.d1,'d1');
+  msSchedule.d4 = msDirectPlaceBySlot(msPlayers.d4,'d4');
+  msSchedule.d4cm = msAssign(msBuildD4cmQ(),'d4cm');
 }
 
 function msSyncAndSave(){
@@ -3077,10 +3141,14 @@ function msSyncAndSave(){
 // dashboard is shared with the alliance. Flagging this loudly on purpose.
 var JEABSLIST_API_BASE = "https://jeabslist.com/api/v1";
 var JEABSLIST_API_TOKEN = "jp_f05159a41aae673e635088bb9531ce84db663a0e";
+var MIGHTPULSE_API_BASE = "https://api.mightpulse.com/v1";
+var MIGHTPULSE_API_TOKEN = "kss_V3NLfiWb1737zdnmLecSHNBqEtwZ0mu_l-L0XimK2xc";
 
 var msApplyLookupResult = null; // { name, tcLevel, allianceName, allianceAbbr, avatarUrl } once confirmed
 var msApplyLookupSeq = 0;       // guards against a stale response overwriting a newer one
+var msApplyManualForId = null;  // set only when Jeabslist cannot return complete player details
 var msTcRetrying = {};
+var msTcRetryErrors = {};
 
 function msFindSchedulerPlayer(pid){
   var found=null;
@@ -3108,52 +3176,150 @@ function msProfileTcLevel(data){
   return !isNaN(tc)&&tc>0?tc:null;
 }
 
-function msFetchSchedulerTc(governorId){
-  return msSchedulerOptional('/players/'+encodeURIComponent(governorId),1).then(function(profile){
-    var directTc=msProfileTcLevel(profile);
-    if(directTc)return {tc:directTc,profile:profile,source:'player'};
-    return msSchedulerOptional('/kingdoms/'+encodeURIComponent(OUR_KINGDOM_ID)+'/leaderboards/5?cached=1',1).then(function(board){
-      var rows=board&&Array.isArray(board.entries)?board.entries:[];
-      var row=rows.find(function(entry){return String(entry.player_id!=null?entry.player_id:entry.uid)===String(governorId);});
-      var value=row&&row.town_hall_level;
-      if(value==null&&row)value=row.score;
-      if(value==null&&row)value=row.value;
-      if(value==null&&row)value=row.points;
-      var fallbackTc=parseInt(value,10);
-      if(isNaN(fallbackTc)||fallbackTc<=0)throw new Error('TC level unavailable');
-      return {tc:fallbackTc,profile:profile,source:'leaderboard'};
+function msJeabsPlayerFetch(governorId){
+  var controller=typeof AbortController!=='undefined'?new AbortController():null;
+  var timer=controller?setTimeout(function(){controller.abort();},10000):null;
+  return fetch(JEABSLIST_API_BASE+'/players/'+encodeURIComponent(governorId),{
+    headers:{'Authorization':'Bearer '+JEABSLIST_API_TOKEN},
+    signal:controller?controller.signal:undefined
+  }).then(function(res){
+    if(!res.ok)throw new Error('Jeabslist status '+res.status);
+    return res.json();
+  }).finally(function(){if(timer)clearTimeout(timer);});
+}
+
+function msMightPulsePlayerFetch(governorId){
+  return fetch(MIGHTPULSE_API_BASE+'/players/'+encodeURIComponent(governorId)+'?include=base',{
+    headers:{'Authorization':'Bearer '+MIGHTPULSE_API_TOKEN}
+  }).then(function(res){
+    if(!res.ok)throw new Error('MightPulse status '+res.status);
+    return res.json();
+  }).then(function(payload){
+    var source=payload&&payload.player;
+    if(!source)throw new Error('MightPulse player unavailable');
+    return {
+      name:source.nick_name||String(governorId),
+      town_hall_level:source.town_center_level||null,
+      avatar_url:source.avatar_url||null,
+      alliance:source.alliance?{name:source.alliance.name||'',abbr:source.alliance.abbr||''}:null
+    };
+  });
+}
+
+function msFetchPlayerProfileWithFallback(governorId){
+  return msJeabsPlayerFetch(governorId).then(function(profile){
+    if(!msProfileTcLevel(profile))throw new Error('Jeabslist TC level unavailable');
+    return {profile:profile,source:'jeabslist'};
+  }).catch(function(primaryError){
+    return msMightPulsePlayerFetch(governorId).then(function(profile){
+      if(!msProfileTcLevel(profile))throw new Error('MightPulse TC level unavailable');
+      return {profile:profile,source:'mightpulse'};
+    }).catch(function(fallbackError){
+      var combined=new Error('Jeabslist and MightPulse both failed');
+      combined.primaryError=primaryError;
+      combined.fallbackError=fallbackError;
+      throw combined;
     });
   });
 }
 
-function msRetrySchedulerTc(key,pid,rerender){
-  if(!EDIT_MODE||msTcRetrying[pid])return;
-  var p=msFindSchedulerPlayer(pid);
-  if(!p||p.source!=='apply')return;
-  var entered=window.prompt('Governor ID for '+p.name,p.kingshotId||'');
-  if(entered===null)return;
-  var governorId=String(entered).trim();
-  if(!/^\d+$/.test(governorId)){flag('Enter a valid numeric Governor ID.');return;}
-  msTcRetrying[pid]=true;rerender();
-  msFetchSchedulerTc(governorId).then(function(result){
-    var tc=result.tc,data=result.profile;
-    p.kingshotId=governorId;p.tcLevel=tc;p.currentLevel=tc;p.levelSource='api-retry-'+result.source;
-    if(data&&data.avatar_url)p.avatarUrl=data.avatar_url;
-    if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,parseFloat(p.sp)||0);
-    delete msTcRetrying[pid];
-    msRecalcAll();msSyncAndSave();rerender();
-    flag('TC level updated for '+p.name+'.');
-  }).catch(function(){
-    delete msTcRetrying[pid];rerender();
-    flag('TC level is still unavailable. Tap Retry TC to try again.');
+function msFetchSchedulerTc(governorId){
+  return msFetchPlayerProfileWithFallback(governorId).then(function(result){
+    var profile=result.profile;
+    var tc=msProfileTcLevel(profile);
+    if(!tc)throw new Error('TC level unavailable');
+    return {tc:tc,profile:profile,source:result.source};
   });
 }
 
-function msWireTcRetryButtons(root,key,rerender){
-  if(!EDIT_MODE||!root)return;
-  root.querySelectorAll('[data-ms-tc-retry]').forEach(function(btn){
-    btn.addEventListener('click',function(){msRetrySchedulerTc(key,btn.getAttribute('data-ms-tc-retry'),rerender);});
+function msRetrySchedulerTc(key,pid,rerender){
+  if(msTcRetrying[pid])return;
+  var p=msFindSchedulerPlayer(pid);
+  if(!p||p.source!=='apply'||!p.kingshotId)return;
+  var governorId=String(p.kingshotId).trim();
+  if(!/^\d+$/.test(governorId)){flag('The stored Kingshot ID is invalid.');return;}
+  delete msTcRetryErrors[pid];
+  msTcRetrying[pid]=true;rerender();
+  msFetchSchedulerTc(governorId).then(function(result){
+    var tc=result.tc,data=result.profile;
+    var allianceName='';
+    if(data&&data.alliance&&data.alliance.name)allianceName=data.alliance.name;
+    else if(data&&data.alliance_name)allianceName=data.alliance_name;
+    p.tcLevel=tc;p.currentLevel=tc;p.levelSource='api-retry-'+result.source;
+    p.avatarUrl=data&&data.avatar_url?data.avatar_url:null;
+    p.allianceName=allianceName;
+    if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,parseFloat(p.sp)||0);
+    delete msTcRetrying[pid];delete msTcRetryErrors[pid];
+    msRecalcAll();msSyncAndSave();rerender();
+    flag('TC level updated for '+p.name+'.');
+  }).catch(function(){
+    delete msTcRetrying[pid];msTcRetryErrors[pid]='Both APIs failed';rerender();
+    flag('Both player APIs failed for '+p.name+'.');
   });
+}
+
+function msManualSchedulerPlayer(pid,rerender){
+  var p=msFindSchedulerPlayer(pid);
+  if(!p||p.source!=='apply')return;
+  var enteredName=window.prompt('Player name',p.name||'');
+  if(enteredName===null)return;
+  enteredName=String(enteredName).trim();
+  if(!enteredName){flag('Enter a player name.');return;}
+  var enteredTc=window.prompt('TC level',p.tcLevel||'');
+  if(enteredTc===null)return;
+  enteredTc=String(enteredTc).trim();
+  if(!/^\d+$/.test(enteredTc)||parseInt(enteredTc,10)<=0){flag('Enter a valid TC level.');return;}
+  var tc=parseInt(enteredTc,10);
+  p.name=enteredName;p.tcLevel=tc;p.currentLevel=tc;p.levelSource='manual';
+  if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,parseFloat(p.sp)||0);
+  delete msTcRetryErrors[pid];
+  msRecalcAll();msSyncAndSave();rerender();
+  flag('Player details updated manually.');
+}
+
+function msWireTcRetryButtons(root,key,rerender){
+  if(!root)return;
+  root.querySelectorAll('[data-ms-tc-retry]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      msRetrySchedulerTc(key,btn.getAttribute('data-ms-tc-retry'),function(){
+        var refreshed=false;
+        if(document.getElementById('msBody')&&typeof msCurrentRenderedKey!=='undefined'&&msCurrentRenderedKey){msRenderBody(msCurrentRenderedKey);refreshed=true;}
+        if(document.getElementById('kingApptViewBody')&&typeof kaCurrentRenderedKey!=='undefined'&&kaCurrentRenderedKey){renderKingApptView();refreshed=true;}
+        if(!refreshed&&rerender)rerender();
+      });
+    });
+  });
+  root.querySelectorAll('[data-ms-tc-manual]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      msManualSchedulerPlayer(btn.getAttribute('data-ms-tc-manual'),rerender);
+    });
+  });
+}
+
+function msShowManualPlayerFallback(id,suggestedName){
+  var wrap=document.getElementById('msApplyManualWrap');
+  var name=document.getElementById('msApplyManualName');
+  var tc=document.getElementById('msApplyManualTc');
+  msApplyManualForId=id||null;
+  if(name&&suggestedName&&!name.value.trim())name.value=suggestedName;
+  if(wrap)wrap.style.display=id?'block':'none';
+  if(!id){if(name)name.value='';if(tc)tc.value='';}
+}
+
+function msManualPlayerData(id){
+  if(!id||msApplyManualForId!==id)return null;
+  var nameEl=document.getElementById('msApplyManualName');
+  var tcEl=document.getElementById('msApplyManualTc');
+  var tcRaw=tcEl?tcEl.value.trim():'';
+  return {name:nameEl?nameEl.value.trim():'',tcRaw:tcRaw,tcLevel:parseInt(tcRaw,10)};
+}
+
+function msManualPlayerError(id){
+  var manual=msManualPlayerData(id);
+  if(!manual)return '';
+  if(!manual.name)return 'Please enter your in-game Player Name.';
+  if(!/^\d+$/.test(manual.tcRaw)||isNaN(manual.tcLevel)||manual.tcLevel<=0)return 'Please enter a valid TC Level.';
+  return '';
 }
 
 function msLookupKingshotId(id){
@@ -3163,42 +3329,50 @@ function msLookupKingshotId(id){
 
   if(!id){
     if(check){ check.textContent = ''; check.className = 'ms-apply-idcheck'; }
+    msShowManualPlayerFallback(null);
     return;
   }
 
+  if(msApplyManualForId!==id)msShowManualPlayerFallback(null);
+  else {var manualWrap=document.getElementById('msApplyManualWrap');if(manualWrap)manualWrap.style.display='none';}
   if(check){ check.textContent = 'Looking up ID\u2026'; check.className = 'ms-apply-idcheck loading'; }
 
-  fetch(JEABSLIST_API_BASE + '/players/' + encodeURIComponent(id), {
-    headers: { 'Authorization': 'Bearer ' + JEABSLIST_API_TOKEN }
-  })
-    .then(function(res){
-      if(!res.ok) throw new Error('status ' + res.status);
-      return res.json();
-    })
-    .then(function(data){
+  msFetchPlayerProfileWithFallback(id)
+    .then(function(result){
       if(mySeq !== msApplyLookupSeq) return; // a newer lookup superseded this one
+      var data=result.profile;
       var allianceName = (data.alliance && data.alliance.name) ? data.alliance.name : '';
       var allianceAbbr = (data.alliance && data.alliance.abbr) ? data.alliance.abbr : '';
+      var tcLevel = msProfileTcLevel(data);
+      if(!tcLevel){
+        msApplyLookupResult=null;
+        msShowManualPlayerFallback(id,data.name||'');
+        if(check){check.textContent='\u2717 TC level was not returned \u2014 enter the player details below.';check.className='ms-apply-idcheck notfound';}
+        return;
+      }
       msApplyLookupResult = {
         forId: id,
         name: data.name || id,
-        tcLevel: data.town_hall_level || null,
+        tcLevel: tcLevel,
         allianceName: allianceName,
         allianceAbbr: allianceAbbr,
         avatarUrl: data.avatar_url || null
       };
+      msShowManualPlayerFallback(null);
       if(check){
         var bits = [msApplyLookupResult.name];
         if(msApplyLookupResult.tcLevel) bits.push('TC' + msApplyLookupResult.tcLevel);
         if(allianceAbbr) bits.push('[' + allianceAbbr + ']');
+        if(result.source==='mightpulse')bits.push('MightPulse fallback');
         check.textContent = '\u2713 ' + bits.join(' \u00b7 ');
         check.className = 'ms-apply-idcheck found';
       }
     })
     .catch(function(err){
       if(mySeq !== msApplyLookupSeq) return;
+      msShowManualPlayerFallback(id);
       if(check){
-        check.textContent = '\u2717 Could not verify this ID \u2014 you can still submit, but double-check it\u2019s correct.';
+        check.textContent = '\u2717 Could not verify this ID \u2014 enter the player details below.';
         check.className = 'ms-apply-idcheck notfound';
       }
     });
@@ -3830,6 +4004,14 @@ function opponentAssessmentHtml(us,them){
   var plan=t10>u10&&u100>=t100?'Treat this as a whale-versus-depth matchup: absorb or disrupt their primary rallies, then use broader participation and sustained reinforcement waves.':t10<=u10&&u100>=t100?'1884 leads at both the top and depth. Preserve coordination, avoid isolated trades, and convert the roster advantage into continuous occupation pressure.':'The opponent owns more of the power curve. Concentrate rally leadership, protect reinforcement lanes, and prioritize efficient defensive trades over scattered fights.';
   return '<div class="opp-assessment"><div class="opp-intel us"><div class="opp-intel-title">Where 1884 is stronger</div><p>'+msEsc(ours)+' Top-alliance concentration: '+opponentPct(uc)+'.</p></div><div class="opp-intel them"><div class="opp-intel-title">Primary opponent edge</div><p>'+msEsc(theirs)+'</p></div><div class="opp-intel plan"><div class="opp-intel-title">Planning implication</div><p>'+msEsc(plan)+'</p></div></div>';
 }
+function wireOpponentKingdomRetry(){
+  var btn=document.querySelector('#opponentViewBody [data-opp-kingdom-retry]');
+  if(!btn)return;
+  btn.addEventListener('click',function(){
+    var kid=btn.getAttribute('data-opp-kingdom-retry');
+    if(kid)msFetchOpponentKingdom(kid);
+  });
+}
 function renderOpponentView(){
   var body=document.getElementById('opponentViewBody');if(!body)return;
   var savedKid=state.opponentKingdom&&state.opponentKingdom.kid?state.opponentKingdom.kid:null;
@@ -3838,7 +4020,14 @@ function renderOpponentView(){
   if(savedKid==null){html+='<div class="score-empty">No opponent kingdom set yet'+(EDIT_MODE?' — enter an ID above.':'.')+'</div>';body.innerHTML=html;if(EDIT_MODE)wireOpponentInput();return;}
   if(opponentCache.kid!==savedKid&&!opponentCache.loading){msFetchOpponentKingdom(savedKid);html+='<div class="score-empty">Building matchup with kingdom '+msEsc(savedKid)+'…</div>';body.innerHTML=html;if(EDIT_MODE)wireOpponentInput();return;}
   if(opponentCache.loading){html+='<div class="score-empty">Building matchup with kingdom '+msEsc(savedKid)+'…</div>';body.innerHTML=html;if(EDIT_MODE)wireOpponentInput();return;}
-  if(opponentCache.error){html+='<div class="score-empty">'+msEsc(opponentCache.error)+'</div>';body.innerHTML=html;if(EDIT_MODE)wireOpponentInput();return;}
+  if(opponentCache.error){
+    var failedKid=opponentCache.kid!=null?opponentCache.kid:savedKid;
+    html+='<div class="score-empty">'+msEsc(opponentCache.error)+'<button type="button" class="opp-gear-retry opp-load-retry" data-opp-kingdom-retry="'+msEsc(String(failedKid))+'">Retry</button></div>';
+    body.innerHTML=html;
+    wireOpponentKingdomRetry();
+    if(EDIT_MODE)wireOpponentInput();
+    return;
+  }
   var us=opponentCache.us,them=opponentCache.them;
   html+=opponentHeroHtml(us,them);
   html+='<div class="opp-grid-2"><div class="panel"><div class="panel-head"><div class="panel-icn">100</div><div class="panel-title">Kingdom Power Curve</div></div><div class="opp-section-note">Player rank 1–100. The higher line indicates the stronger roster at that depth.</div>'+opponentPowerCurveHtml(us,them)+'</div><div class="panel"><div class="panel-head"><div class="panel-icn">Σ</div><div class="panel-title">Top-N Power</div></div>'+opponentTopNHtml(us,them)+'</div></div>';
@@ -4128,6 +4317,9 @@ function msOpenApplyModal(key){
   msApplyTargetKey = key;
   document.getElementById('msApplyModalTitle').textContent = 'Apply for ' + MS_LABELS[key];
   document.getElementById('msApplyName').value = '';
+  document.getElementById('msApplyManualName').value = '';
+  document.getElementById('msApplyManualTc').value = '';
+  document.getElementById('msApplyManualWrap').style.display = 'none';
   document.getElementById('msApplySpeedups').value = '';
   document.getElementById('msApplyTruegold').value = '';
   document.getElementById('msApplyT9').value = '';
@@ -4143,6 +4335,7 @@ function msOpenApplyModal(key){
   var check = document.getElementById('msApplyIdCheck');
   if(check){ check.textContent = ''; check.className = 'ms-apply-idcheck'; }
   msApplyLookupResult = null;
+  msApplyManualForId = null;
   msApplyLookupSeq++;
   document.getElementById('msApplyModalBackdrop').classList.add('open');
   // Two-step flow (mobile-friendly — each step fits on screen without
@@ -4154,6 +4347,42 @@ function msOpenApplyModal(key){
 function msCloseApplyModal(){
   document.getElementById('msApplyModalBackdrop').classList.remove('open');
   msApplyTargetKey = null;
+}
+
+function msPrefillFromPriorApplication(kingshotId){
+  var key=msApplyTargetKey;
+  if(!key||!kingshotId||!msPlayers[key])return false;
+  var normalized=String(kingshotId).trim().toLowerCase();
+  var prior=msPlayers[key].find(function(p){
+    return p.source==='apply'&&p.kingshotId&&String(p.kingshotId).trim().toLowerCase()===normalized;
+  });
+  if(!prior)return false;
+
+  var changed=false;
+  function fillIfEmpty(id,value){
+    var input=document.getElementById(id);
+    if(!input||String(input.value).trim()!==''||value===null||value===undefined||value==='')return;
+    input.value=String(value);changed=true;
+  }
+
+  var speedupDays=parseFloat(prior.sp);
+  fillIfEmpty('msApplySpeedups',isNaN(speedupDays)?null:speedupDays);
+  fillIfEmpty('msApplyTruegold',prior.tg);
+  fillIfEmpty('msApplyT9',prior.t9);
+  fillIfEmpty('msApplySpeed',prior.trainingSpeedBasePct);
+
+  if(!msAvailRanges.length){
+    var ranges=[];
+    if(prior.s1!=null&&prior.e1!=null)ranges.push({start:Number(prior.s1),end:Number(prior.e1)});
+    if(prior.s2!=null&&prior.e2!=null)ranges.push({start:Number(prior.s2),end:Number(prior.e2)});
+    ranges=ranges.filter(function(r){return isFinite(r.start)&&isFinite(r.end)&&r.end>r.start;});
+    if(ranges.length){
+      msAvailRanges=ranges.slice(0,2);msAvailEditingIndex=null;msAvailDrag=null;msAvailRenderAll();changed=true;
+    }
+  }
+
+  if(changed)flag('Previous application details filled in.');
+  return changed;
 }
 
 function msApplyShowError(msg){
@@ -4221,6 +4450,10 @@ function msApplyGoToStep2(){
   var speedVisible = document.getElementById('msApplySpeedWrap').style.display !== 'none';
 
   if(!kingshotId){ msApplyShowError('Please enter your Kingshot ID.'); return; }
+  var lookupCheck=document.getElementById('msApplyIdCheck');
+  if(lookupCheck&&lookupCheck.classList.contains('loading')){msApplyShowError('Player lookup is still running. Please wait a moment.');return;}
+  var manualError=msManualPlayerError(kingshotId);
+  if(manualError){msApplyShowError(manualError);return;}
 
   if(!spRaw){ msApplyShowError('Please enter your Speedups (Days).'); return; }
   var sp = parseFloat(spRaw);
@@ -4267,6 +4500,8 @@ function msSubmitApplication(){
   var speedVisible = document.getElementById('msApplySpeedWrap').style.display !== 'none';
 
   if(!kingshotId){ msSetApplyStep(1); msApplyShowError('Please enter your Kingshot ID.'); return; }
+  var manualError=msManualPlayerError(kingshotId);
+  if(manualError){msSetApplyStep(1);msApplyShowError(manualError);return;}
 
   if(!spRaw){ msSetApplyStep(1); msApplyShowError('Please enter your Speedups (Days).'); return; }
   var sp = parseFloat(spRaw);
@@ -4307,7 +4542,9 @@ function msSubmitApplication(){
   // in the field (guards against a stale result if they edited the ID
   // after a successful lookup without leaving the field again).
   var lookup = (msApplyLookupResult && msApplyLookupResult.forId === kingshotId) ? msApplyLookupResult : null;
-  var resolvedName = lookup ? lookup.name : kingshotId;
+  var manual = lookup ? null : msManualPlayerData(kingshotId);
+  var resolvedName = lookup ? lookup.name : (manual ? manual.name : kingshotId);
+  var resolvedTc = lookup ? lookup.tcLevel : (manual ? manual.tcLevel : null);
   var allianceAbbr = lookup ? lookup.allianceAbbr : '';
   var displayName = allianceAbbr ? '[' + allianceAbbr + ']' + resolvedName : resolvedName;
 
@@ -4315,7 +4552,7 @@ function msSubmitApplication(){
     id: 'p' + Date.now() + (msEntryCounter++),
     name: displayName,
     kingshotId: kingshotId,
-    tcLevel: lookup ? lookup.tcLevel : null,
+    tcLevel: resolvedTc,
     allianceName: lookup ? lookup.allianceName : '',
     avatarUrl: lookup ? lookup.avatarUrl : null,
     tg: tg,
@@ -4329,11 +4566,11 @@ function msSubmitApplication(){
     // Level comes straight from the Jeabslist lookup's town_hall_level —
     // it maps directly onto UPGRADE_QUEUE's townHallLevel field, no
     // string-label collapsing needed.
-    var currentLevel = (lookup && lookup.tcLevel) ? parseInt(lookup.tcLevel, 10) : 0;
+    var currentLevel = resolvedTc ? parseInt(resolvedTc, 10) : 0;
     if(isNaN(currentLevel)) currentLevel = 0; // conservative fallback if level is unknown
     p.sp = sp + 'd';
     p.currentLevel = currentLevel;
-    p.levelSource = (lookup && lookup.tcLevel) ? 'api' : 'unknown-fallback';
+    p.levelSource = lookup ? 'api' : (manual ? 'manual' : 'unknown-fallback');
     p.pts = msCalcConstructionPts(currentLevel, tg, sp);
   } else if(key === 'd4'){
     // Noble Advisor — T11 isn't unlocked yet, so always pass t10:0, t11:false.
@@ -4374,11 +4611,12 @@ function renderApptChooserList(){
   if(!list) return;
   list.innerHTML = APPT_CHOOSER_KEYS.map(function(key){
     var status = msApplyStatusFor(key);
-    var open = (status.state === 'open' || status.state === 'no-deadline');
+    var open = (status.state === 'open' || status.state === 'no-deadline' || status.state === 'editor-open');
     var statusText;
     if(status.state === 'open') statusText = 'Closes in ' + msFmtCountdown(status.at - Date.now());
     else if(status.state === 'not-yet-open') statusText = 'Opens in ' + msFmtCountdown(status.at - Date.now());
     else if(status.state === 'closed') statusText = 'Applications closed';
+    else if(status.state === 'editor-open') statusText = 'Deadline passed · editor access';
     else statusText = 'Open';
     return '<button class="appt-chooser-item' + (open ? '' : ' closed') + '" data-key="' + key + '"' + (open ? '' : ' disabled') + '>' +
       '<span class="appt-chooser-item-label">' + msEsc(MS_LABELS[key]) + '</span>' +
@@ -4408,8 +4646,8 @@ function msReserveButtonTargetKey(){
   // until its deadline passes, at which point Noble Advisor (now open)
   // becomes the target automatically. If neither is currently open, fall
   // through to null so the caller can show the full chooser instead.
-  if(msApplyIsOpen('d1')) return 'd1';
-  if(msApplyIsOpen('d4')) return 'd4';
+  if(msApplyPublicIsOpen('d1')) return 'd1';
+  if(msApplyPublicIsOpen('d4')) return 'd4';
   return null;
 }
 
@@ -4418,6 +4656,7 @@ function msReserveButtonTargetKey(){
   var closeBtn = document.getElementById('apptChooserClose');
   var backdrop = document.getElementById('apptChooserBackdrop');
   if(btn) btn.addEventListener('click', function(){
+    if(EDIT_MODE){openApptChooser();return;}
     var target = msReserveButtonTargetKey();
     if(target){
       msOpenApplyModal(target);
@@ -4449,7 +4688,9 @@ function msReserveButtonTargetKey(){
     if(e.target === backdrop) msCloseApplyModal();
   });
   if(idField) idField.addEventListener('blur', function(){
-    msLookupKingshotId(idField.value.trim());
+    var kingshotId=idField.value.trim();
+    msPrefillFromPriorApplication(kingshotId);
+    msLookupKingshotId(kingshotId);
   });
 })();
 
@@ -4479,40 +4720,58 @@ function msColsFor(key){
   var narrow = msIsNarrow();
   var timeW = narrow ? '38px' : '62px';
   var playerW = narrow ? '100px' : '160px';
-  if(key === 'd1') return [
+  var cols;
+  if(key === 'd1') cols = [
     {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'TC', w:'1fr'}, {h:'TG', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
   ];
-  if(key === 'd4') return [
+  else if(key === 'd4') cols = [
     {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'TC', w:'1fr'}, {h:'T9 Count', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
   ];
-  return [
+  else cols = [
     {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'T9', w:'1fr'}, {h:'T10', w:'1fr'}, {h:'T11', w:'1fr'}, {h:'TC', w:'1fr'}, {h:'TG', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
   ];
+  if(EDIT_MODE)cols.splice(2,0,{h:'Requested',w:narrow?'1.25fr':'1.4fr'});
+  return cols;
 }
 
 function msGridStyle(key){
   var delCol = EDIT_MODE ? (msIsNarrow() ? ' 18px' : ' 22px') : '';
+  var chooseCol = msIsNarrow() ? '52px' : '62px';
   return msColsFor(key).map(function(c){
     return c.w.indexOf('fr') !== -1 ? 'minmax(0,' + c.w + ')' : c.w;
-  }).join(' ') + delCol;
+  }).join(' ') + ' ' + chooseCol + delCol;
 }
 
 function msTcValueHtml(p){
   if(p.tcLevel)return msEsc(p.tcLevel);
-  if(!EDIT_MODE||p.source!=='apply')return '—';
+  if(p.source!=='apply'||!p.kingshotId)return '—';
   var loading=!!msTcRetrying[p.id];
-  return '<button type="button" class="ms-tc-retry" data-ms-tc-retry="'+msEsc(String(p.id))+'" aria-label="Retry TC level for '+msEsc(p.name||'this player')+'"'+(loading?' disabled':'')+'>'+(loading?'Retrying…':'Retry TC')+'</button>';
+  var failed=msTcRetryErrors[p.id];
+  return '<span class="ms-tc-missing'+(failed?' failed':'')+'">— <button type="button" class="ms-tc-retry" data-ms-tc-retry="'+msEsc(String(p.id))+'" aria-label="Retry TC level for '+msEsc(p.name||'this player')+'"'+(loading?' disabled':'')+'>'+(loading?'↻ retrying':'↻ retry')+'</button>'+(failed?'<button type="button" class="ms-tc-retry ms-tc-manual" data-ms-tc-manual="'+msEsc(String(p.id))+'">manual</button><span class="ms-tc-error">'+msEsc(failed)+'</span>':'')+'</span>';
+}
+
+function msRequestedHtml(p,key){
+  var ranges=[];
+  if(p.s1!=null&&p.e1!=null)ranges.push(msMinToTime(p.s1)+'–'+msMinToTime(p.e1));
+  if(p.s2!=null&&p.e2!=null)ranges.push(msMinToTime(p.s2)+'–'+msMinToTime(p.e2));
+  var text=ranges.length?ranges.join(', '):'—';
+  var forced=Number(p.forcedSlot);
+  if(p.forcedSlot!==null&&p.forcedSlot!==undefined&&(!p.forcedSlotKey||p.forcedSlotKey===key)&&isFinite(forced)&&forced>=0&&forced<MS_SLOTS){
+    text+=' (forced → '+msSlotLabelShort(forced)+')';
+  }
+  return '<span class="ms-requested" title="'+msEsc(text)+'">'+msEsc(text)+'</span>';
 }
 
 function msRowValues(key, p){
+  var requested=EDIT_MODE?[msRequestedHtml(p,key)]:[];
   if(key === 'd1'){
-    return [msTcValueHtml(p), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+    return requested.concat([msTcValueHtml(p), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)]);
   }
   if(key === 'd4'){
-    return [msTcValueHtml(p), msFmtNum(p.t9 || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+    return requested.concat([msTcValueHtml(p), msFmtNum(p.t9 || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)]);
   }
   var common = [msTcValueHtml(p), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
-  return [msFmtNum(p.t9||0), msFmtNum(p.t10||0), p.t11 ? 'Y' : 'N'].concat(common);
+  return requested.concat([msFmtNum(p.t9||0), msFmtNum(p.t10||0), p.t11 ? 'Y' : 'N']).concat(common);
 }
 
 function msRenderMsPanel(){
@@ -4551,6 +4810,108 @@ function msRenderMsPanel(){
 }
 
 var msCurrentRenderedKey = null;
+var msNoSlotHighlightByKey = {};
+
+function msSafePts(value){
+  var pts=Number(value);
+  return isFinite(pts)?pts:0;
+}
+
+function msApplyNoSlotHighlights(root,key){
+  if(!root)return;
+  var selected=msNoSlotHighlightByKey[key]||null;
+  root.querySelectorAll('.ms-row[data-slot]').forEach(function(row){
+    var hasLowerPotential=!!selected&&msSafePts(row.getAttribute('data-pts'))<selected.pts;
+    // The visual recommendation always remains score-based. Editors may
+    // still override that recommendation by choosing any real slot.
+    var canChoose=!!selected&&(hasLowerPotential||EDIT_MODE);
+    row.classList.toggle('ms-slot-candidate',hasLowerPotential);
+    var chooseCell=row.querySelector('.ms-choose-cell');
+    if(chooseCell){
+      chooseCell.innerHTML=canChoose
+        ? '<button type="button" class="ms-choose-btn" data-ms-choose-key="'+msEsc(key)+'" data-ms-choose-slot="'+msEsc(row.getAttribute('data-slot'))+'">Choose</button>'
+        : '';
+    }
+  });
+  root.querySelectorAll('.ms-row.noslot[data-pid]').forEach(function(row){
+    var active=!!selected&&String(row.getAttribute('data-pid'))===String(selected.pid);
+    row.classList.toggle('ms-noslot-selected',active);
+    row.setAttribute('aria-pressed',active?'true':'false');
+  });
+}
+
+function msStoredPlayerForForcedSlot(key,pid){
+  function find(list){
+    return (list||[]).find(function(p){return String(p.id)===String(pid);})||null;
+  }
+  if(key==='d4cm')return find(msPlayers.d4)||find(msPlayers.d4cm);
+  return find(msPlayers[key]);
+}
+
+function msRerenderSchedulerViews(key){
+  if(msCurrentRenderedKey===key&&document.getElementById('msBody'))msRenderBody(key);
+  if(typeof kaCurrentRenderedKey!=='undefined'&&kaCurrentRenderedKey===key)renderKingApptView();
+}
+
+function msChooseForcedSlot(key,slot){
+  var selected=msNoSlotHighlightByKey[key];
+  slot=Number(slot);
+  if(!selected||!isFinite(slot)||slot<0||slot>=MS_SLOTS){
+    flag('That slot is no longer available to choose.');
+    return;
+  }
+  var player=msStoredPlayerForForcedSlot(key,selected.pid);
+  if(!player){
+    flag('Could not find that player record.');
+    return;
+  }
+  player.forcedSlot=slot;
+  player.forcedSlotKey=key;
+  msNoSlotHighlightByKey[key]=null;
+  msRecalcAll();
+  msSyncAndSave();
+  msRerenderSchedulerViews(key);
+  flag((player.name||'Player')+' assigned to '+msSlotLabelShort(slot)+' UTC.');
+}
+
+function msRefreshNoSlotHighlights(key){
+  if(msCurrentRenderedKey===key)msApplyNoSlotHighlights(document.getElementById('msBody'),key);
+  if(typeof kaCurrentRenderedKey!=='undefined'&&kaCurrentRenderedKey===key)msApplyNoSlotHighlights(document.getElementById('kingApptViewBody'),key);
+}
+
+function msWireNoSlotHighlights(root,key){
+  if(!root)return;
+  if(!root._msChooseListener){
+    root.addEventListener('click',function(event){
+      var btn=event.target&&event.target.closest?event.target.closest('[data-ms-choose-slot]'):null;
+      if(!btn)return;
+      event.stopPropagation();
+      msChooseForcedSlot(btn.getAttribute('data-ms-choose-key'),btn.getAttribute('data-ms-choose-slot'));
+    });
+    root._msChooseListener=true;
+  }
+  root.querySelectorAll('.ms-row.noslot[data-pid]').forEach(function(row){
+    function toggleSelection(event){
+      if(event&&event.target&&event.target.closest&&event.target.closest('button'))return;
+      var pid=row.getAttribute('data-pid'),pts=msSafePts(row.getAttribute('data-pts'));
+      var current=msNoSlotHighlightByKey[key];
+      var selecting=!(current&&String(current.pid)===String(pid));
+      msNoSlotHighlightByKey[key]=selecting?{pid:pid,pts:pts}:null;
+      if(selecting&&root.id==='msBody'&&msFilters[key]==='ns'){
+        msFilters[key]='all';msRenderBody(key);return;
+      }
+      if(selecting&&root.id==='kingApptViewBody'&&kaFilter==='ns'){
+        kaFilter='all';renderKingApptView();return;
+      }
+      msRefreshNoSlotHighlights(key);
+    }
+    row.addEventListener('click',toggleSelection);
+    row.addEventListener('keydown',function(event){
+      if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSelection(event);}
+    });
+  });
+  msApplyNoSlotHighlights(root,key);
+}
 
 function msRenderBody(key){
   msCurrentRenderedKey = key;
@@ -4601,6 +4962,7 @@ function msRenderBody(key){
   html += '<div class="ms-list">';
   html += '<div class="ms-head-row" style="grid-template-columns:' + gridStyle + '">';
   cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:center"':'') + '>' + c.h + '</span>'; });
+  html += '<span aria-hidden="true"></span>';
   if(EDIT_MODE) html += '<span></span>';
   html += '</div>';
 
@@ -4613,9 +4975,10 @@ function msRenderBody(key){
       if(f==='open' || f==='ns') continue;
       rows += msRowHtml(key, gridStyle, t, p, false, i, isCurrent);
     } else if(f==='all' || f==='open'){
-      rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" style="grid-template-columns:' + gridStyle + '">' +
+      rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" data-pts="0" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time notranslate" translate="no">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
         cols.slice(2).map(function(){ return '<span></span>'; }).join('') +
+        '<span class="ms-choose-cell"></span>' +
         (EDIT_MODE ? '<span></span>' : '') + '</div>';
     }
   }
@@ -4634,6 +4997,7 @@ function msRenderBody(key){
     '</div>';
 
   body.innerHTML = html;
+  msWireNoSlotHighlights(body,key);
   msWireTcRetryButtons(body,key,function(){if(msCurrentRenderedKey===key)msRenderBody(key);});
 
   body.querySelectorAll('.ms-stat[data-msf]').forEach(function(el){
@@ -4822,7 +5186,7 @@ function msFmtCountdown(msRemaining){
   return m + "m";
 }
 
-function msApplyIsOpen(key){
+function msApplyPublicIsOpen(key){
   var now = Date.now();
   var opensAt = msOpensAtFor(key);
   if(opensAt !== null && now < opensAt) return false;
@@ -4830,7 +5194,13 @@ function msApplyIsOpen(key){
   return (deadline === null) || (now < deadline);
 }
 
-// Returns one of: 'open' | 'not-yet-open' | 'closed' | 'no-deadline',
+function msApplyIsOpen(key){
+  if(msApplyPublicIsOpen(key))return true;
+  var opensAt=msOpensAtFor(key);
+  return !!EDIT_MODE&&(opensAt===null||Date.now()>=opensAt);
+}
+
+// Returns one of: 'open' | 'not-yet-open' | 'closed' | 'editor-open' | 'no-deadline',
 // plus whichever timestamp is relevant to that state.
 function msApplyStatusFor(key){
   var now = Date.now();
@@ -4838,7 +5208,7 @@ function msApplyStatusFor(key){
   if(opensAt !== null && now < opensAt) return { state:'not-yet-open', at:opensAt };
   var deadline = msDeadlineMsFor(key);
   if(deadline === null) return { state:'no-deadline', at:null };
-  if(now >= deadline) return { state:'closed', at:deadline };
+  if(now >= deadline) return { state:EDIT_MODE?'editor-open':'closed', at:deadline };
   return { state:'open', at:deadline };
 }
 
@@ -4850,6 +5220,9 @@ function msApplySlotHtml(key){
   }
   if(status.state === 'closed'){
     return '<div class="ms-apply-closed">Applications are closed for this appointment \u2014 the deadline (23:00 UTC the day before) has passed.</div>';
+  }
+  if(status.state === 'editor-open'){
+    return '<button class="ms-apply-btn" id="ms-apply-btn-' + key + '">+ Add Application</button><div class="ms-apply-deadline">Deadline passed \u2014 editor access remains open.</div>';
   }
   var countdownHtml = (status.state === 'open')
     ? '<div class="ms-apply-deadline">Applications close in <span class="notranslate" translate="no">' + msFmtCountdown(status.at - Date.now()) + '</span> (23:00 UTC the day before)</div>'
@@ -4900,11 +5273,14 @@ function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var timeInner = isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : ('<span class="notranslate" translate="no">' + timeLabel + '</span>');
   var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' + msNameCellHtml(p);
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
+  cellsHtml += '<span class="ms-choose-cell"></span>';
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '" data-carried="' + (p.carried ? '1' : '0') + '">\u00d7</button>';
   }
   var slotAttr = (slotIdx !== undefined && slotIdx !== null) ? ' data-slot="' + slotIdx + '"' : '';
-  return '<div class="ms-row' + (isNoSlot ? ' noslot' : '') + (isCurrent ? ' current' : '') + '"' + slotAttr + ' style="grid-template-columns:' + gridStyle + '">' + cellsHtml + '</div>';
+  var compareAttrs=' data-pts="'+msSafePts(p.pts)+'"';
+  if(isNoSlot)compareAttrs+=' data-pid="'+msEsc(String(p.id))+'" role="button" tabindex="0" aria-pressed="false" aria-label="Show slots '+msEsc(p.name||'this player')+' could take"';
+  return '<div class="ms-row' + (isNoSlot ? ' noslot' : '') + (isCurrent ? ' current' : '') + '"' + slotAttr + compareAttrs + ' style="grid-template-columns:' + gridStyle + '">' + cellsHtml + '</div>';
 }
 
 function msSetStatus(key, msg, isErr){
@@ -5092,6 +5468,7 @@ function checkUrlAutoUnlock(){
 function renderReserveButtonLabel(){
   var btn = document.getElementById('reserveApptBtn');
   if(!btn) return;
+  if(EDIT_MODE){btn.textContent='\uD83D\uDC51 Manage Appointments';return;}
   var target = msReserveButtonTargetKey();
   btn.textContent = target
     ? '\uD83D\uDC51 Reserve: ' + MS_LABELS[target]
@@ -5135,14 +5512,15 @@ var kaCurrentRenderedKey = null;
 var kaFilter = 'all';
 
 function kaActiveKey(){
-  return msApplyIsOpen('d1') ? 'd1' : 'd4';
+  return msApplyPublicIsOpen('d1') ? 'd1' : 'd4';
 }
 
 function kaGridStyle(key){
   var delCol = EDIT_MODE ? (msIsNarrow() ? ' 18px' : ' 22px') : '';
+  var chooseCol = msIsNarrow() ? '52px' : '62px';
   return msColsFor(key).map(function(c){
     return c.w.indexOf('fr') !== -1 ? 'minmax(0,' + c.w + ')' : c.w;
-  }).join(' ') + delCol;
+  }).join(' ') + ' ' + chooseCol + delCol;
 }
 
 function kaApplySlotHtml(key){
@@ -5153,6 +5531,9 @@ function kaApplySlotHtml(key){
   }
   if(status.state === 'closed'){
     return '<div class="ms-apply-closed">Applications are closed for this appointment \u2014 the deadline (23:00 UTC the day before) has passed.</div>';
+  }
+  if(status.state === 'editor-open'){
+    return '<button class="ms-apply-btn" id="ka-apply-btn-' + key + '">+ Add Application</button><div class="ms-apply-deadline">Deadline passed \u2014 editor access remains open.</div>';
   }
   var countdownHtml = (status.state === 'open')
     ? '<div class="ms-apply-deadline">Applications close in <span class="notranslate" translate="no">' + msFmtCountdown(status.at - Date.now()) + '</span> (23:00 UTC the day before)</div>'
@@ -5165,11 +5546,14 @@ function kaRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var timeInner = isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : ('<span class="notranslate" translate="no">' + timeLabel + '</span>');
   var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' + msNameCellHtml(p);
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
+  cellsHtml += '<span class="ms-choose-cell"></span>';
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '">\u00d7</button>';
   }
   var slotAttr = (slotIdx !== undefined && slotIdx !== null) ? ' data-slot="' + slotIdx + '"' : '';
-  return '<div class="ms-row' + (isNoSlot ? ' noslot' : '') + (isCurrent ? ' current' : '') + '"' + slotAttr + ' style="grid-template-columns:' + gridStyle + '">' + cellsHtml + '</div>';
+  var compareAttrs=' data-pts="'+msSafePts(p.pts)+'"';
+  if(isNoSlot)compareAttrs+=' data-pid="'+msEsc(String(p.id))+'" role="button" tabindex="0" aria-pressed="false" aria-label="Show slots '+msEsc(p.name||'this player')+' could take"';
+  return '<div class="ms-row' + (isNoSlot ? ' noslot' : '') + (isCurrent ? ' current' : '') + '"' + slotAttr + compareAttrs + ' style="grid-template-columns:' + gridStyle + '">' + cellsHtml + '</div>';
 }
 
 function renderKingApptView(){
@@ -5204,6 +5588,7 @@ function renderKingApptView(){
   html += '<div class="ms-list">';
   html += '<div class="ms-head-row" style="grid-template-columns:' + gridStyle + '">';
   cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:center"':'') + '>' + c.h + '</span>'; });
+  html += '<span aria-hidden="true"></span>';
   if(EDIT_MODE) html += '<span></span>';
   html += '</div>';
 
@@ -5216,9 +5601,10 @@ function renderKingApptView(){
       if(kaFilter==='open' || kaFilter==='ns') continue;
       rows += kaRowHtml(key, gridStyle, t, p, false, i, isCurrent);
     } else if(kaFilter==='all' || kaFilter==='open'){
-      rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" style="grid-template-columns:' + gridStyle + '">' +
+      rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" data-pts="0" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time notranslate" translate="no">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
         cols.slice(2).map(function(){ return '<span></span>'; }).join('') +
+        '<span class="ms-choose-cell"></span>' +
         (EDIT_MODE ? '<span></span>' : '') + '</div>';
     }
   }
@@ -5234,6 +5620,7 @@ function renderKingApptView(){
   html += '</div>';
 
   body.innerHTML = html;
+  msWireNoSlotHighlights(body,key);
   msWireTcRetryButtons(body,key,function(){if(kaCurrentRenderedKey===key)renderKingApptView();});
 
   body.querySelectorAll('.ms-stat[data-kaf]').forEach(function(el){
