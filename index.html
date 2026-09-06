@@ -281,6 +281,14 @@
     border-radius:9px;cursor:pointer;
   }
   .ms-tab.active{border-color:var(--teal);color:var(--teal);background:rgba(79,209,197,0.08);}
+  .ka-tabbar{margin:12px 0 0;}
+  .ka-tabbar .ms-tab{flex:1;min-height:38px;}
+  .ka-tab-state{
+    display:inline-block;margin-left:5px;padding:2px 5px;border-radius:5px;
+    background:rgba(255,255,255,.06);color:var(--text-dim);font-family:'JetBrains Mono',monospace;
+    font-size:8px;letter-spacing:.06em;text-transform:uppercase;vertical-align:1px;
+  }
+  .ka-tabbar .ms-tab.active .ka-tab-state{background:rgba(79,209,197,.1);color:var(--teal);}
   .ms-sub{font-size:11.5px;color:var(--text-dim);margin-bottom:12px;}
 
   .ms-csv-zone{
@@ -355,9 +363,11 @@
   .ms-pts{text-align:center;font-weight:600;color:var(--amber);}
 
   .ms-current-card{
-    position:relative;overflow:hidden;border-radius:14px;padding:18px 20px;margin-bottom:16px;
-    background:linear-gradient(135deg, rgba(95,191,122,0.10), rgba(255,255,255,0.03));
-    border:1px solid rgba(95,191,122,0.35);
+    position:relative;overflow:hidden;border-radius:16px;padding:16px;margin-bottom:16px;
+    background:
+      radial-gradient(circle at 8% 12%,rgba(79,209,197,.16),transparent 31%),
+      linear-gradient(135deg,rgba(18,28,35,.98),rgba(25,24,35,.98));
+    border:1px solid rgba(79,209,197,.38);box-shadow:0 14px 34px rgba(0,0,0,.22);
   }
   .ms-current-card.empty{
     background:var(--glass);border:1px solid var(--glass-border);
@@ -365,7 +375,7 @@
   .ms-current-badge{
     display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;
     font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
-    color:var(--green);margin-bottom:10px;
+    color:var(--green);margin-bottom:12px;
   }
   .ms-current-card.empty .ms-current-badge{color:var(--text-dim);}
   .ms-current-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);flex:0 0 auto;}
@@ -375,15 +385,44 @@
     line-height:1;letter-spacing:0.01em;
   }
   .ms-current-sub{font-size:12px;color:var(--text-mid);margin-top:4px;}
+  .ms-current-profile{display:grid;grid-template-columns:108px minmax(0,1fr);gap:16px;align-items:stretch;}
+  .ms-current-photo-wrap{
+    position:relative;min-height:108px;border-radius:13px;overflow:hidden;
+    border:1px solid rgba(231,168,76,.48);background:linear-gradient(145deg,rgba(231,168,76,.22),rgba(79,209,197,.12));
+    box-shadow:inset 0 0 0 3px rgba(0,0,0,.18);
+  }
+  .ms-current-photo{width:100%;height:100%;min-height:108px;object-fit:cover;display:block;}
+  .ms-current-photo-fallback{
+    width:100%;height:100%;min-height:108px;display:flex;align-items:center;justify-content:center;
+    font-family:'Rajdhani',sans-serif;font-size:42px;font-weight:700;color:var(--amber);
+    background:linear-gradient(145deg,rgba(231,168,76,.16),rgba(79,209,197,.09));
+  }
+  .ms-current-info{min-width:0;display:flex;flex-direction:column;justify-content:center;}
+  .ms-current-alliance{font-size:11px;color:var(--teal);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ms-current-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:12px;}
+  .ms-current-stat{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:7px 8px;min-width:0;}
+  .ms-current-stat-label{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ms-current-stat-value{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--text-hi);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .ms-current-fact-box{
-    margin-top:14px;background:rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.08);
-    border-radius:10px;padding:12px 14px;
+    margin-top:12px;background:linear-gradient(135deg,rgba(231,168,76,.13),rgba(231,168,76,.06));
+    border:1px solid rgba(231,168,76,.25);border-radius:11px;padding:11px 13px;
   }
   .ms-current-fact-label{
     font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.1em;
     text-transform:uppercase;color:var(--amber);margin-bottom:5px;
   }
   .ms-current-fact-text{font-size:13px;color:var(--text-hi);line-height:1.5;font-style:italic;}
+  @media(max-width:600px){
+    .ms-current-card{padding:13px;}
+    .ms-current-profile{grid-template-columns:86px minmax(0,1fr);gap:11px;}
+    .ms-current-photo-wrap,.ms-current-photo,.ms-current-photo-fallback{min-height:104px;}
+    .ms-current-name{font-size:23px;}
+    .ms-current-sub{font-size:10.5px;}
+    .ms-current-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:9px;}
+    .ms-current-stat{padding:5px 6px;}
+    .ms-current-stat-value{font-size:15px;}
+    .ms-current-fact-box{margin-top:10px;padding:10px 11px;}
+  }
   .ms-noslot-tag{color:var(--crimson);font-size:9.5px;font-family:'JetBrains Mono',monospace;}
   .ms-del{
     opacity:0;background:transparent;border:none;color:var(--text-dim);cursor:pointer;font-size:13px;
@@ -5230,6 +5269,19 @@ function msApplySlotHtml(key){
   return '<button class="ms-apply-btn" id="ms-apply-btn-' + key + '">+ Apply for this Appointment</button>' + countdownHtml;
 }
 
+function msCurrentStatHtml(label,value){
+  return '<div class="ms-current-stat"><div class="ms-current-stat-label">'+msEsc(label)+'</div><div class="ms-current-stat-value">'+msEsc(value)+'</div></div>';
+}
+
+function msCurrentPhotoHtml(p){
+  var name=String(p.name||'?').trim();
+  var initial=Array.from(name)[0]||'?';
+  if(p.avatarUrl){
+    return '<div class="ms-current-photo-wrap"><img class="ms-current-photo" src="'+msEsc(p.avatarUrl)+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';"><span class="ms-current-photo-fallback" style="display:none;">'+msEsc(initial)+'</span></div>';
+  }
+  return '<div class="ms-current-photo-wrap"><span class="ms-current-photo-fallback">'+msEsc(initial)+'</span></div>';
+}
+
 function msCurrentAppointedHtml(key){
   var idx = msCurrentSlotIndexFor(key);
   if(idx < 0) return msCurrentAppointedEmptyHtml('Not currently active');
@@ -5241,12 +5293,24 @@ function msCurrentAppointedHtml(key){
   var q = key === 'd4cm' ? msBuildD4cmQ() : msPlayers[key];
   var factMap = msFunFactsForList(q.map(function(pp){ return pp.name; }));
   var fact = factMap[p.name] || '';
+  var alliance=p.allianceName||p.allianceAbbr||'';
+  var tc=p.tcLevel||p.currentLevel||'—';
+  var resourceLabel=key==='d1'?'Truegold':'T9 Count';
+  var resourceValue=key==='d1'?msFmtNum(p.tg||0):msFmtNum(p.t9||0);
+  var stats=msCurrentStatHtml('TC',String(tc))+
+    msCurrentStatHtml(resourceLabel,resourceValue)+
+    msCurrentStatHtml('Speedups',String(p.sp||'—'))+
+    msCurrentStatHtml('KvK Potential',msFmtPts(p.pts||0));
 
   return '<div class="ms-current-card" id="msCurrentCardInner">' +
     '<div class="ms-current-badge"><span class="ms-current-dot"></span>Currently Appointed \u00b7 ' + msSlotLabelShort(idx) + ' UTC</div>' +
-    '<div class="ms-current-name notranslate" translate="no">' + msEsc(p.name) + '</div>' +
-    '<div class="ms-current-sub">' + msEsc(MS_LABELS[key]) + '</div>' +
-    '<div class="ms-current-fact-box"><div class="ms-current-fact-label">Fun Fact</div><div class="ms-current-fact-text">' + msEsc(fact) + '</div></div>' +
+    '<div class="ms-current-profile">'+msCurrentPhotoHtml(p)+'<div class="ms-current-info">'+
+      '<div class="ms-current-name notranslate" translate="no">' + msEsc(p.name) + '</div>' +
+      '<div class="ms-current-sub">' + msEsc(MS_LABELS[key]) + '</div>' +
+      (alliance?'<div class="ms-current-alliance notranslate" translate="no">'+msEsc(alliance)+'</div>':'')+
+      '<div class="ms-current-stats">'+stats+'</div>'+
+    '</div></div>'+
+    '<div class="ms-current-fact-box"><div class="ms-current-fact-label">Random Fun Fact</div><div class="ms-current-fact-text">' + msEsc(fact) + '</div></div>' +
     '</div>';
 }
 
@@ -5510,9 +5574,12 @@ function msRefreshCurrentSlotHighlight(){
 
 var kaCurrentRenderedKey = null;
 var kaFilter = 'all';
+var kaSelectedKey = null;
 
 function kaActiveKey(){
-  return msApplyPublicIsOpen('d1') ? 'd1' : 'd4';
+  var chiefMinisterOpen=msApplyPublicIsOpen('d1');
+  if(!chiefMinisterOpen&&(kaSelectedKey==='d1'||kaSelectedKey==='d4'))return kaSelectedKey;
+  return chiefMinisterOpen?'d1':'d4';
 }
 
 function kaGridStyle(key){
@@ -5572,6 +5639,16 @@ function renderKingApptView(){
   var html = '<div class="today-hero"><div class="today-hero-phase">King Appointment Schedule</div>';
   html += '<div class="today-hero-sub">' + msEsc(MS_LABELS[key]) + '</div></div>';
 
+  // Once Chief Minister closes, keep both schedules available here. Noble
+  // Advisor remains the default, while Chief Minister becomes a public
+  // historical view instead of disappearing from the appointment tab.
+  if(!msApplyPublicIsOpen('d1')){
+    html += '<div class="ms-tabbar ka-tabbar" role="tablist" aria-label="Appointment schedules">'+
+      '<button type="button" class="ms-tab'+(key==='d4'?' active':'')+'" data-kakey="d4" role="tab" aria-selected="'+(key==='d4'?'true':'false')+'">Noble Advisor</button>'+
+      '<button type="button" class="ms-tab'+(key==='d1'?' active':'')+'" data-kakey="d1" role="tab" aria-selected="'+(key==='d1'?'true':'false')+'">Chief Minister <span class="ka-tab-state">Closed</span></button>'+
+    '</div>';
+  }
+
   html += '<div class="panel ms-panel">';
   html += '<div id="kaCurrentCardSlot">' + msCurrentAppointedHtml(key) + '</div>';
   html += '<div id="kaApplySlot">' + kaApplySlotHtml(key) + '</div>';
@@ -5622,6 +5699,14 @@ function renderKingApptView(){
   body.innerHTML = html;
   msWireNoSlotHighlights(body,key);
   msWireTcRetryButtons(body,key,function(){if(kaCurrentRenderedKey===key)renderKingApptView();});
+
+  body.querySelectorAll('[data-kakey]').forEach(function(tab){
+    tab.addEventListener('click',function(){
+      kaSelectedKey=tab.getAttribute('data-kakey');
+      kaFilter='all';
+      renderKingApptView();
+    });
+  });
 
   body.querySelectorAll('.ms-stat[data-kaf]').forEach(function(el){
     el.addEventListener('click', function(){
