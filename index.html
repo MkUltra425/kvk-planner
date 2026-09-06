@@ -320,10 +320,17 @@
   .ms-row:last-child{border-bottom:none;}
   .ms-row-tall{padding-top:14px;padding-bottom:14px;}
   .ms-head-row-tall{padding-top:9px;padding-bottom:9px;}
-  /* Keep all opponent scouting tables on the same row rhythm. */
-  .opp-equal-row{height:62px;box-sizing:border-box;}
   .ms-row.em{opacity:0.45;}
-  .ms-row.noslot{background:rgba(227,91,86,0.06);border-left:2px solid rgba(227,91,86,0.4);}
+  .ms-row.noslot{background:rgba(227,91,86,0.06);border-left:2px solid rgba(227,91,86,0.4);cursor:pointer;}
+  .ms-row.noslot.selected{background:rgba(79,209,197,0.10);border-left:2px solid var(--teal);}
+  .ms-row.ms-bump-highlight{
+    opacity:1;background:rgba(79,209,197,0.14);border-left:2px solid var(--teal);
+    border-radius:6px;animation:ms-bump-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes ms-bump-pulse{
+    0%,100%{background:rgba(79,209,197,0.14);}
+    50%{background:rgba(79,209,197,0.26);}
+  }
   .ms-row.current{background:rgba(95,191,122,0.14);border-left:2px solid var(--green);}
   .ms-row.current .ms-time{color:var(--green);font-weight:700;}
   .ms-time{font-family:'JetBrains Mono',monospace;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:clip;}
@@ -373,14 +380,6 @@
   }
   .ms-row:hover .ms-del{opacity:1;}
   .ms-del:hover{color:var(--crimson);}
-  .ms-tc-retry{
-    min-width:48px;padding:4px 7px;border:1px solid rgba(232,163,61,.45);border-radius:7px;
-    background:rgba(232,163,61,.1);color:var(--amber);font:inherit;font-size:10px;font-weight:700;
-    line-height:1.1;cursor:pointer;touch-action:manipulation;
-  }
-  .ms-tc-retry:hover{background:rgba(232,163,61,.18);border-color:var(--amber);}
-  .ms-tc-retry:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
-  .ms-tc-retry:disabled{cursor:wait;opacity:.65;}
   .ms-list{border:1px solid var(--glass-border);border-radius:10px;}
   .ms-actions{display:flex;gap:8px;margin-top:10px;}
 
@@ -436,7 +435,6 @@
   .ms-apply-idcheck{font-size:11.5px;margin-top:6px;min-height:14px;line-height:1.4;}
 
   .opp-panel{margin-bottom:14px;}
-  .opp-input-panel{max-width:560px;}
   .opp-input-row{display:flex;gap:8px;}
   .opp-kid-input{
     flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);
@@ -452,128 +450,6 @@
   .opp-tag.loss{background:var(--crimson-dim);color:var(--crimson);}
   .opp-tag.pending{background:rgba(255,255,255,0.06);color:var(--text-dim);}
   .opp-loading{color:var(--text-dim);font-style:italic;}
-  .opp-hero{
-    position:relative;overflow:hidden;border:1px solid rgba(79,209,197,0.24);border-radius:16px;
-    padding:20px;margin-bottom:14px;background:
-      linear-gradient(120deg,rgba(79,209,197,0.10),rgba(155,140,240,0.05) 48%,rgba(227,91,86,0.08));
-  }
-  .opp-hero:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.025),transparent);}
-  .opp-versus{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;position:relative;z-index:1;}
-  .opp-side:last-child{text-align:right;}
-  .opp-kicker{font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--text-dim);}
-  .opp-kingdom{font:700 28px 'Rajdhani',sans-serif;color:var(--text-hi);line-height:1.05;margin-top:3px;}
-  .opp-side-meta{font-size:11px;color:var(--text-mid);margin-top:3px;}
-  .opp-vs{font:700 14px 'JetBrains Mono',monospace;color:var(--text-dim);border:1px solid var(--glass-border);border-radius:999px;padding:7px 8px;}
-  .opp-verdict{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);position:relative;z-index:1;}
-  .opp-verdict-main{font:700 19px 'Rajdhani',sans-serif;color:var(--teal);}
-  .opp-verdict-copy{font-size:12px;color:var(--text-mid);line-height:1.5;max-width:780px;margin-top:3px;}
-  .opp-score{text-align:right;white-space:nowrap;}
-  .opp-score-v{font:700 24px 'Rajdhani',sans-serif;color:var(--text-hi);}
-  .opp-score-l{font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);}
-  .opp-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px;}
-  .opp-kpi{background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;padding:13px 14px;min-width:0;}
-  .opp-kpi-label{font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .opp-kpi-values{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:6px;margin-top:7px;}
-  .opp-kpi-num{font:700 17px 'Rajdhani',sans-serif;color:var(--text-hi);white-space:nowrap;}
-  .opp-kpi-num:last-child{text-align:right;}
-  .opp-kpi-sep{font-size:9px;color:var(--text-dim);padding-bottom:3px;}
-  .opp-kpi-edge{font:600 9px 'JetBrains Mono',monospace;margin-top:4px;color:var(--text-dim);}
-  .opp-kpi-edge.us{color:var(--teal);}.opp-kpi-edge.them{color:var(--crimson);}
-  .opp-grid-2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr);gap:14px;margin-bottom:14px;}
-  .opp-grid-equal{grid-template-columns:repeat(2,minmax(0,1fr));}
-  .opp-grid-2>.panel{margin-bottom:0;min-width:0;}
-  .opp-section-note{font-size:10.5px;color:var(--text-dim);margin:-5px 0 10px;}
-  .opp-table-wrap{overflow-x:auto;border:1px solid var(--glass-border);border-radius:10px;}
-  .opp-table{width:100%;border-collapse:collapse;font-size:11px;min-width:620px;}
-  .opp-table.compact{min-width:460px;}
-  .opp-table th{font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);white-space:nowrap;}
-  .opp-table td{padding:9px;border-bottom:1px solid var(--line);color:var(--text-mid);vertical-align:middle;white-space:nowrap;}
-  .opp-table tr:last-child td{border-bottom:none;}
-  .opp-table th.num,.opp-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
-  .opp-table th.ctr,.opp-table td.ctr{text-align:center;}
-  .opp-table .primary{color:var(--text-hi);font-weight:600;}
-  .opp-table .our-col{background:rgba(79,209,197,.035);}
-  .opp-table .their-col{background:rgba(227,91,86,.035);}
-  .opp-delta.pos{color:var(--teal);}.opp-delta.neg{color:var(--crimson);}.opp-delta.neutral{color:var(--text-dim);}
-  .opp-threat{display:inline-block;border-radius:6px;padding:3px 7px;font:700 8.5px 'JetBrains Mono',monospace;letter-spacing:.04em;text-transform:uppercase;}
-  .opp-threat.extreme{background:rgba(227,91,86,.15);color:var(--crimson);}.opp-threat.high{background:rgba(232,163,61,.14);color:var(--amber);}.opp-threat.watch{background:rgba(155,140,240,.13);color:var(--violet);}
-  .opp-player{display:flex;align-items:center;gap:8px;min-width:150px;}
-  .opp-player .ms-avatar,.opp-player .ms-avatar-fallback{width:28px;height:28px;}
-  .opp-player-name{color:var(--text-hi);font-weight:600;max-width:185px;overflow:hidden;text-overflow:ellipsis;}
-  .opp-player-alliance{font-size:9.5px;color:var(--text-dim);margin-top:1px;}
-  .opp-chart{width:100%;height:auto;display:block;overflow:visible;}
-  .opp-chart-grid{stroke:rgba(255,255,255,.07);stroke-width:1;}
-  .opp-chart-axis{font:9px 'JetBrains Mono',monospace;fill:var(--text-dim);}
-  .opp-chart-us{fill:none;stroke:var(--teal);stroke-width:3;vector-effect:non-scaling-stroke;}
-  .opp-chart-them{fill:none;stroke:var(--crimson);stroke-width:3;vector-effect:non-scaling-stroke;}
-  .opp-chart-fill-us{fill:url(#oppUsFill);}.opp-chart-fill-them{fill:url(#oppThemFill);}
-  .opp-legend{display:flex;gap:16px;align-items:center;font-size:10px;color:var(--text-mid);margin-top:6px;}
-  .opp-legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;}.opp-legend-dot.us{background:var(--teal);}.opp-legend-dot.them{background:var(--crimson);}
-  .opp-assessment{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
-  .opp-intel{border:1px solid var(--glass-border);border-radius:10px;padding:12px 13px;background:rgba(255,255,255,.025);}
-  .opp-intel-title{font:700 10px 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px;}
-  .opp-intel.us .opp-intel-title{color:var(--teal);}.opp-intel.them .opp-intel-title{color:var(--crimson);}.opp-intel.plan .opp-intel-title{color:var(--amber);}
-  .opp-intel p{font-size:11.5px;line-height:1.5;color:var(--text-mid);margin:0;}
-  .opp-empty{padding:20px;text-align:center;color:var(--text-dim);font-size:12px;border:1px dashed var(--glass-border);border-radius:10px;}
-  .opp-source{font-size:9.5px;color:var(--text-dim);text-align:right;margin-top:8px;}
-  .opp-mobile-only{display:none;}
-  .opp-mobile-list{display:grid;gap:9px;}
-  .opp-mobile-card{border:1px solid var(--glass-border);border-radius:11px;background:rgba(255,255,255,.025);padding:12px;}
-  .opp-mobile-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
-  .opp-mobile-card-title{font:700 14px 'Rajdhani',sans-serif;color:var(--text-hi);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .opp-mobile-rank{font:700 12px 'JetBrains Mono',monospace;color:var(--teal);flex:0 0 auto;}
-  .opp-mobile-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
-  .opp-mobile-metric{min-width:0;padding:8px 9px;border-radius:8px;background:rgba(0,0,0,.16);}
-  .opp-mobile-metric-label{font:600 9px 'JetBrains Mono',monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--text-dim);margin-bottom:3px;}
-  .opp-mobile-metric-value{font:700 14px 'Rajdhani',sans-serif;color:var(--text-hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .opp-mobile-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-  .opp-mobile-side{padding:10px;border-radius:9px;border:1px solid var(--glass-border);min-width:0;}
-  .opp-mobile-side.ours{background:rgba(79,209,197,.045);border-color:rgba(79,209,197,.16);}
-  .opp-mobile-side.theirs{background:rgba(227,91,86,.045);border-color:rgba(227,91,86,.14);}
-  .opp-mobile-side-label{font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px;}
-  .opp-mobile-side-name{font:700 13px 'Rajdhani',sans-serif;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:7px;}
-  .opp-mobile-inline{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--text-mid);margin-top:4px;}
-  .opp-mobile-inline strong{color:var(--text-hi);font-weight:600;}
-  .opp-gear-players{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px;align-items:start;}
-  .opp-gear-player{min-width:0;border:1px solid var(--glass-border);border-radius:16px;background:rgba(11,15,21,.72);overflow:hidden;}
-  .opp-gear-player-head{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:14px;border-bottom:1px solid var(--glass-border);background:rgba(255,255,255,.025);}
-  .opp-gear-player-head .opp-player{min-width:0;}
-  .opp-gear-player-head .opp-player>div{min-width:0;}
-  .opp-gear-rank{flex:0 0 auto;border-radius:7px;padding:4px 7px;background:rgba(155,140,240,.13);color:var(--violet);font:700 9px 'JetBrains Mono',monospace;letter-spacing:.05em;text-transform:uppercase;}
-  .opp-gear-heroes{display:grid;gap:16px;padding:12px;}
-  .opp-gear-hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 60px;gap:9px;min-width:0;padding:10px;border:1px solid rgba(155,140,240,.22);border-radius:15px;background:rgba(255,255,255,.025);box-shadow:0 8px 18px rgba(0,0,0,.18);}
-  .opp-gear-hero:before{content:'';position:absolute;left:-1px;top:16px;bottom:16px;width:3px;border-radius:0 3px 3px 0;background:linear-gradient(180deg,var(--violet),var(--teal));opacity:.8;}
-  .opp-hero-portrait{position:relative;height:262px;min-width:0;overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:13px;background:linear-gradient(165deg,#9a6a12,#4a3206);}
-  .opp-hero-portrait.rare{background:linear-gradient(165deg,#2c4f7c,#152437);border-color:rgba(96,165,250,.5);}
-  .opp-hero-portrait.epic{background:linear-gradient(165deg,#553184,#2a1745);border-color:rgba(192,132,252,.5);}
-  .opp-hero-portrait.mythic{background:linear-gradient(165deg,#9a6a12,#4a3206);border-color:rgba(251,191,36,.55);}
-  .opp-hero-bust{display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 8px 8px rgba(0,0,0,.28));}
-  .opp-hero-level{position:absolute;top:8px;left:8px;z-index:1;border:1px solid rgba(255,255,255,.28);border-radius:8px;padding:4px 7px;background:rgba(13,14,12,.82);color:#fff6bf;font:700 12px 'Rajdhani',sans-serif;}
-  .opp-hero-stars{position:absolute;left:8px;right:8px;bottom:7px;display:flex;justify-content:center;gap:1px;padding:4px 6px;border-radius:8px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.6),transparent);font-size:17px;line-height:1;text-shadow:0 1px 2px #000;}
-  .opp-hero-star{color:rgba(255,255,255,.23);}
-  .opp-hero-star.full{color:#ffe37a;}
-  .opp-hero-star.partial{color:transparent;background:linear-gradient(90deg,#ffe37a var(--fill),rgba(255,255,255,.23) var(--fill));-webkit-background-clip:text;background-clip:text;}
-  .opp-gear-column{display:grid;grid-template-rows:repeat(4,minmax(0,1fr));gap:7px;min-width:0;height:262px;align-self:start;}
-  .opp-gear-tile{position:relative;min-width:0;min-height:0;overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:10px;background:linear-gradient(160deg,#3a6b46,#1d3a27);}
-  .opp-gear-tile.tier-2{background:linear-gradient(160deg,#2c4f7c,#16273f);}
-  .opp-gear-tile.tier-3{background:linear-gradient(160deg,#553184,#2c1a47);}
-  .opp-gear-tile.tier-4{background:linear-gradient(160deg,#8a5a16,#4a300d);}
-  .opp-gear-tile.tier-5{background:linear-gradient(160deg,#f1a343,#9a4e12);}
-  .opp-gear-tile.ascended{background:linear-gradient(160deg,#ea5b61,#8d2025);}
-  .opp-gear-icon{display:block;width:100%;height:100%;min-width:0;min-height:0;object-fit:contain;padding:7px;box-sizing:border-box;filter:drop-shadow(0 3px 3px rgba(0,0,0,.32));}
-  .opp-gear-enhance{position:absolute;top:2px;right:3px;z-index:1;color:#fff7da;font:800 12px 'Rajdhani',sans-serif;line-height:1;text-shadow:0 1px 2px #000;}
-  .opp-gear-forge{position:absolute;left:2px;right:2px;bottom:2px;z-index:1;color:#fff2a8;font:800 11px 'Rajdhani',sans-serif;line-height:1;text-align:center;text-shadow:0 1px 2px #000;}
-  .opp-gear-status{padding:20px 12px;text-align:center;color:var(--text-dim);font-size:11px;line-height:1.45;}
-  .opp-gear-retry{
-    display:block;margin:10px auto 0;padding:7px 14px;border:1px solid rgba(139,124,246,.5);
-    border-radius:8px;background:rgba(139,124,246,.12);color:#b8abff;font:inherit;font-size:11px;font-weight:700;line-height:1;
-    cursor:pointer;touch-action:manipulation;
-  }
-  .opp-gear-retry:hover{background:rgba(139,124,246,.2);border-color:#8b7cf6;}
-  .opp-gear-retry:focus-visible{outline:2px solid #b8abff;outline-offset:2px;}
-  .opp-section-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
-  .opp-section-toolbar .opp-section-note{margin:0;}
-  .opp-missing-retry{flex:0 0 auto;margin:0;white-space:nowrap;}
   .ms-apply-idcheck.loading{color:var(--text-dim);}
   .ms-apply-idcheck.found{color:var(--green);}
   .ms-apply-idcheck.notfound{color:var(--crimson);}
@@ -951,50 +827,6 @@
     .ms-val, .ms-pts{ font-size:9.5px; }
     .ms-actions{ flex-wrap:wrap; }
     .ms-btn{ font-size:10.5px; padding:6px 10px; flex:1 1 auto; }
-    .opp-section-toolbar{align-items:flex-start;flex-direction:column;}
-    .opp-missing-retry{width:100%;min-height:38px;}
-    .opp-versus{gap:8px;}
-    .opp-kingdom{font-size:21px;}
-    .opp-side-meta{font-size:9.5px;}
-    .opp-verdict{display:block;}
-    .opp-score{text-align:left;margin-top:10px;}
-    .opp-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}
-    .opp-kpi:last-child{grid-column:1/-1;}
-    .opp-grid-2,.opp-grid-equal{grid-template-columns:1fr;}
-    .opp-assessment{grid-template-columns:1fr;}
-    .opp-input-row{flex-wrap:wrap;}
-    .opp-kid-input{min-width:180px;}
-    .opp-desktop-only{display:none !important;}
-    .opp-mobile-only{display:block;}
-    .opp-hero{padding:15px 13px;margin-bottom:10px;}
-    .opp-kicker{font-size:9px;}
-    .opp-verdict-main{font-size:18px;}
-    .opp-verdict-copy{font-size:12px;}
-    .opp-kpis{gap:8px;margin-bottom:10px;}
-    .opp-kpi{padding:11px 10px;}
-    .opp-kpi-label{font-size:9px;}
-    .opp-kpi-num{font-size:16px;}
-    .opp-kpi-edge{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .opp-grid-2{gap:10px;margin-bottom:10px;}
-    .opp-panel{margin-bottom:10px;}
-    .opp-section-note{font-size:11px;line-height:1.45;}
-    .opp-table.compact{min-width:0;}
-    .opp-table th{font-size:9px;padding:7px 6px;}
-    .opp-table td{font-size:11px;padding:8px 6px;}
-    .opp-gear-players{grid-template-columns:1fr;gap:10px;}
-    .opp-gear-player-head{padding:12px;}
-    .opp-gear-heroes{padding:10px;gap:14px;}
-    .opp-gear-hero{grid-template-columns:minmax(0,1fr) 56px;gap:8px;padding:9px;}
-    .opp-hero-portrait{height:250px;}
-    .opp-gear-column{height:250px;gap:6px;}
-    .opp-gear-enhance{font-size:12px;}
-    .opp-gear-forge{font-size:11px;}
-    #opponentView .ms-statbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-radius:9px;}
-    #opponentView .ms-stat{border-bottom:1px solid var(--glass-border);padding:8px 4px;}
-    #opponentView .ms-stat:nth-child(2n){border-right:none;}
-    #opponentView .ms-stat:nth-last-child(-n+2){border-bottom:none;}
-    #opponentView .ms-stat-v{font-size:16px;}
-    #opponentView .ms-stat-l{font-size:8.5px;}
   }
   #google_translate_element{ display:none; }
   .lang-select{
@@ -2555,16 +2387,6 @@ function msFmtNumFull(n){
   var s = String(Math.round(n || 0));
   return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
-// Compact power values with a consistent two-decimal suffix.
-function msFmtPower(n){
-  var value = Number(n) || 0;
-  var abs = Math.abs(value);
-  if(abs >= 1e12) return (value / 1e12).toFixed(2) + 'T';
-  if(abs >= 1e9) return (value / 1e9).toFixed(2) + 'B';
-  if(abs >= 1e6) return (value / 1e6).toFixed(2) + 'M';
-  if(abs >= 1e3) return (value / 1e3).toFixed(2) + 'K';
-  return String(Math.round(value));
-}
 function msEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // Lightweight formatting for the Daily Summary text: supports **bold**,
@@ -3080,80 +2902,57 @@ var JEABSLIST_API_TOKEN = "jp_f05159a41aae673e635088bb9531ce84db663a0e";
 
 var msApplyLookupResult = null; // { name, tcLevel, allianceName, allianceAbbr, avatarUrl } once confirmed
 var msApplyLookupSeq = 0;       // guards against a stale response overwriting a newer one
-var msTcRetrying = {};
 
-function msFindSchedulerPlayer(pid){
-  var found=null;
-  ['d1','d4','d4cm'].some(function(key){
-    found=(msPlayers[key]||[]).find(function(p){return String(p.id)===String(pid);})||null;
-    return !!found;
-  });
-  return found;
+function msFindPriorApplication(key, kingshotId){
+  if(!key || !kingshotId) return null;
+  var normalizedId = kingshotId.toLowerCase();
+  var list = msPlayers[key] || [];
+  for(var i=0; i<list.length; i++){
+    var p = list[i];
+    if(p.source === 'apply' && p.kingshotId && p.kingshotId.toLowerCase() === normalizedId) return p;
+  }
+  return null;
 }
 
-function msSchedulerOptional(path,retries){
-  retries=retries==null?1:retries;
-  return jeabslistFetch(path).catch(function(){
-    if(retries<=0)return null;
-    return new Promise(function(resolve){setTimeout(resolve,700);}).then(function(){return msSchedulerOptional(path,retries-1);});
-  });
-}
+// If this Kingshot ID already has an application on file for the position
+// being applied to, quietly pre-fill Speedups/Truegold/T9/Speed% and the
+// availability timeline from it — but only into fields the applicant
+// hasn't already touched, so re-checking an ID never clobbers something
+// they've already typed. Submitting still fully replaces the prior entry
+// (existing behavior below) — this just saves re-typing values that
+// likely haven't changed since last time.
+function msMaybePrefillFromPrior(key, kingshotId){
+  var prev = msFindPriorApplication(key, kingshotId);
+  if(!prev) return;
 
-function msProfileTcLevel(data){
-  if(!data)return null;
-  var value=data.town_hall_level;
-  if(value==null)value=data.town_center_level;
-  if(value==null)value=data.tc_level;
-  var tc=parseInt(value,10);
-  return !isNaN(tc)&&tc>0?tc:null;
-}
-
-function msFetchSchedulerTc(governorId){
-  return msSchedulerOptional('/players/'+encodeURIComponent(governorId),1).then(function(profile){
-    var directTc=msProfileTcLevel(profile);
-    if(directTc)return {tc:directTc,profile:profile,source:'player'};
-    return msSchedulerOptional('/kingdoms/'+encodeURIComponent(OUR_KINGDOM_ID)+'/leaderboards/5?cached=1',1).then(function(board){
-      var rows=board&&Array.isArray(board.entries)?board.entries:[];
-      var row=rows.find(function(entry){return String(entry.player_id!=null?entry.player_id:entry.uid)===String(governorId);});
-      var value=row&&row.town_hall_level;
-      if(value==null&&row)value=row.score;
-      if(value==null&&row)value=row.value;
-      if(value==null&&row)value=row.points;
-      var fallbackTc=parseInt(value,10);
-      if(isNaN(fallbackTc)||fallbackTc<=0)throw new Error('TC level unavailable');
-      return {tc:fallbackTc,profile:profile,source:'leaderboard'};
-    });
-  });
-}
-
-function msRetrySchedulerTc(key,pid,rerender){
-  if(!EDIT_MODE||msTcRetrying[pid])return;
-  var p=msFindSchedulerPlayer(pid);
-  if(!p||p.source!=='apply')return;
-  var entered=window.prompt('Governor ID for '+p.name,p.kingshotId||'');
-  if(entered===null)return;
-  var governorId=String(entered).trim();
-  if(!/^\d+$/.test(governorId)){flag('Enter a valid numeric Governor ID.');return;}
-  msTcRetrying[pid]=true;rerender();
-  msFetchSchedulerTc(governorId).then(function(result){
-    var tc=result.tc,data=result.profile;
-    p.kingshotId=governorId;p.tcLevel=tc;p.currentLevel=tc;p.levelSource='api-retry-'+result.source;
-    if(data&&data.avatar_url)p.avatarUrl=data.avatar_url;
-    if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,parseFloat(p.sp)||0);
-    delete msTcRetrying[pid];
-    msRecalcAll();msSyncAndSave();rerender();
-    flag('TC level updated for '+p.name+'.');
-  }).catch(function(){
-    delete msTcRetrying[pid];rerender();
-    flag('TC level is still unavailable. Tap Retry TC to try again.');
-  });
-}
-
-function msWireTcRetryButtons(root,key,rerender){
-  if(!EDIT_MODE||!root)return;
-  root.querySelectorAll('[data-ms-tc-retry]').forEach(function(btn){
-    btn.addEventListener('click',function(){msRetrySchedulerTc(key,btn.getAttribute('data-ms-tc-retry'),rerender);});
-  });
+  var spField = document.getElementById('msApplySpeedups');
+  if(spField && !spField.value.trim() && prev.sp != null){
+    var spNum = parseFloat(prev.sp);
+    if(!isNaN(spNum)) spField.value = spNum;
+  }
+  var tgField = document.getElementById('msApplyTruegold');
+  if(tgField && !tgField.value.trim() && prev.tg){
+    tgField.value = prev.tg;
+  }
+  var t9Field = document.getElementById('msApplyT9');
+  if(t9Field && !t9Field.value.trim() && prev.t9){
+    t9Field.value = prev.t9;
+  }
+  var speedField = document.getElementById('msApplySpeed');
+  if(speedField && !speedField.value.trim() && prev.trainingSpeedBasePct){
+    speedField.value = prev.trainingSpeedBasePct;
+  }
+  if(!msAvailRanges.length){
+    var ranges = [];
+    if(prev.s1 != null && prev.e1 != null) ranges.push({start: prev.s1, end: prev.e1});
+    if(prev.s2 != null && prev.e2 != null) ranges.push({start: prev.s2, end: prev.e2});
+    if(ranges.length){
+      msAvailRanges = ranges;
+      msAvailEditingIndex = null;
+      msAvailDrag = null;
+    }
+  }
+  flag('Pre-filled from your last application for this appointment \u2014 update anything that\u2019s changed.');
 }
 
 function msLookupKingshotId(id){
@@ -3165,6 +2964,8 @@ function msLookupKingshotId(id){
     if(check){ check.textContent = ''; check.className = 'ms-apply-idcheck'; }
     return;
   }
+
+  msMaybePrefillFromPrior(msApplyTargetKey, id);
 
   if(check){ check.textContent = 'Looking up ID\u2026'; check.className = 'ms-apply-idcheck loading'; }
 
@@ -3286,25 +3087,6 @@ function msFetchOpponentKingdom(kid){
     renderOpponentView();
   });
 }
-function opponentRetryHeroGear(pid){
-  if(pid==null||!opponentCache.heroGear)return;
-  var mySeq=opponentFetchSeq;
-  opponentCache.heroGear[pid]=undefined;
-  renderOpponentView();
-  opponentOptional('/players/'+encodeURIComponent(pid)+'/hero-gear').then(function(data){
-    if(mySeq!==opponentFetchSeq)return;
-    opponentCache.heroGear[pid]=data||null;
-    renderOpponentView();
-  });
-}
-function wireOpponentHeroGearRetry(){
-  var body=document.getElementById('opponentViewBody');if(!body)return;
-  body.querySelectorAll('[data-opp-hero-retry]').forEach(function(btn){
-    btn.addEventListener('click',function(){opponentRetryHeroGear(btn.getAttribute('data-opp-hero-retry'));});
-  });
-  var missingBtn=body.querySelector('[data-opp-missing-retry]');
-  if(missingBtn)missingBtn.addEventListener('click',opponentRetryMissingThreatData);
-}
 
 function msSetOpponentKingdom(kid){
   state.opponentKingdom = { kid: kid };
@@ -3349,19 +3131,19 @@ function findStanding(standings, boardType, labelRe){
   return found || null;
 }
 
-function opponentStandingCell(pStandings, boardType, labelRe, formatter){
+function opponentStandingCell(pStandings, boardType, labelRe){
   if(pStandings === undefined) return '<span class="ms-val opp-loading">\u2026</span>';
   var standing = findStanding(pStandings, boardType, labelRe);
-  return '<span class="ms-val">' + (standing ? (formatter || msFmtNumFull)(standing.points) : '\u2014') + '</span>';
+  return '<span class="ms-val">' + (standing ? msFmtNumFull(standing.points) : '\u2014') + '</span>';
 }
 
 function opponentPlayerRowsHtml(mysticTop, standingsMap, avatarsMap, tall){
   if(!mysticTop || !mysticTop.length) return '<div class="score-empty">No player data available.</div>';
-  var cols = '28px 1fr 90px 90px 90px 50px 90px';
+  var cols = '28px 1fr 60px 90px 90px 90px 50px 90px';
   var headClass = 'ms-head-row' + (tall ? ' ms-head-row-tall' : '');
-  var rowClass = 'ms-row opp-equal-row' + (tall ? ' ms-row-tall' : '');
+  var rowClass = 'ms-row' + (tall ? ' ms-row-tall' : '');
   var html = '<div class="ms-list"><div class="' + headClass + '" style="grid-template-columns:' + cols + ';">' +
-    '<span>#</span><span>Name</span>' +
+    '<span>#</span><span>Name</span><span style="text-align:center;">Alliance</span>' +
     '<span style="text-align:center;">Power</span><span style="text-align:center;">Hero Pwr</span>' +
     '<span style="text-align:center;">Hero Total</span><span style="text-align:center;">TC</span>' +
     '<span style="text-align:center;">Mystic Trial</span></div>';
@@ -3376,14 +3158,14 @@ function opponentPlayerRowsHtml(mysticTop, standingsMap, avatarsMap, tall){
     // with a label-text fallback for boards without a known number.
     var pStandings = standingsMap ? standingsMap[pid] : undefined;
     var avatarUrl = avatarsMap ? avatarsMap[pid] : undefined; // undefined = still loading, null = none/failed
-    var playerName = (entry.alliance ? '[' + entry.alliance + ']' : '') + (entry.name || '\u2014');
 
     html += '<div class="' + rowClass + '" style="grid-template-columns:' + cols + ';">' +
       '<span class="ms-val">' + (entry.rank != null ? entry.rank : '\u2014') + '</span>' +
-      opponentAvatarNameHtml(playerName, avatarUrl || null, true) +
-      opponentStandingCell(pStandings, 3, /^personal power$/i, msFmtPower) +
-      opponentStandingCell(pStandings, null, /^hero power$/i, msFmtPower) +
-      opponentStandingCell(pStandings, 8, /hero.*total.*power/i, msFmtPower) +
+      opponentAvatarNameHtml(entry.name, avatarUrl || null, true) +
+      '<span class="ms-val notranslate" translate="no">' + msEsc(entry.alliance || '\u2014') + '</span>' +
+      opponentStandingCell(pStandings, 3, /^personal power$/i) +
+      opponentStandingCell(pStandings, null, /^hero power$/i) +
+      opponentStandingCell(pStandings, 8, /hero.*total.*power/i) +
       opponentStandingCell(pStandings, 5, /town (center|hall)/i) +
       opponentStandingCell(pStandings, 20, /mystic trial/i) +
       '</div>';
@@ -3394,15 +3176,15 @@ function opponentPlayerRowsHtml(mysticTop, standingsMap, avatarsMap, tall){
 function opponentAllianceRowsHtml(alliances, tall){
   if(!alliances || !alliances.length) return '<div class="score-empty">No alliance data available.</div>';
   var headClass = 'ms-head-row' + (tall ? ' ms-head-row-tall' : '');
-  var rowClass = 'ms-row opp-equal-row' + (tall ? ' ms-row-tall' : '');
-  var html = '<div class="ms-list"><div class="' + headClass + '" style="grid-template-columns:28px 1fr 90px 70px;">' +
-    '<span>#</span><span>Name</span><span style="text-align:center;">Power</span><span style="text-align:center;">Members</span></div>';
+  var rowClass = 'ms-row' + (tall ? ' ms-row-tall' : '');
+  var html = '<div class="ms-list"><div class="' + headClass + '" style="grid-template-columns:28px 70px 1fr 90px 70px;">' +
+    '<span>#</span><span>Tag</span><span>Name</span><span style="text-align:center;">Power</span><span style="text-align:center;">Members</span></div>';
   alliances.slice(0,5).forEach(function(a, i){
-    var allianceName = (a.abbr ? '[' + a.abbr + ']' : '') + (a.name || '\u2014');
-    html += '<div class="' + rowClass + '" style="grid-template-columns:28px 1fr 90px 70px;">' +
+    html += '<div class="' + rowClass + '" style="grid-template-columns:28px 70px 1fr 90px 70px;">' +
       '<span class="ms-val">' + (i+1) + '</span>' +
-      '<span class="ms-name notranslate" translate="no"><span class="ms-name-text ms-name-text-lg">' + msEsc(allianceName) + '</span></span>' +
-      '<span class="ms-val">' + msFmtPower(a.power || 0) + '</span>' +
+      '<span class="ms-val notranslate" translate="no">[' + msEsc(a.abbr || '\u2014') + ']</span>' +
+      '<span class="ms-name notranslate" translate="no">' + msEsc(a.name || '\u2014') + '</span>' +
+      '<span class="ms-val">' + msFmtNumFull(a.power || 0) + '</span>' +
       '<span class="ms-val">' + (a.member_count != null ? a.member_count : '\u2014') + '</span></div>';
   });
   return html + '</div>';
@@ -3410,8 +3192,8 @@ function opponentAllianceRowsHtml(alliances, tall){
 
 function opponentMatchOutcomeTag(winnerId, loserId, kid, decided){
   if(winnerId == null) return '<span class="opp-tag pending">pending</span>';
-  if(Number(winnerId) === Number(kid)) return '<span class="opp-tag win">W</span>';
-  if(Number(loserId) === Number(kid)) return '<span class="opp-tag loss">L</span>';
+  if(winnerId === kid) return '<span class="opp-tag win">W</span>';
+  if(loserId === kid) return '<span class="opp-tag loss">L</span>';
   return '<span class="opp-tag pending">\u2014</span>';
 }
 
@@ -3420,15 +3202,18 @@ function opponentMatchRowsHtml(kvk){
   if(!matches.length) return '<div class="score-empty">No match history available.</div>';
   matches.sort(function(a,b){ return (b.ts||0) - (a.ts||0); }); // most recent first
   var kid = kvk.kingdom_id;
-  var html = '<div class="ms-list"><div class="ms-head-row ms-head-row-tall" style="grid-template-columns:90px 90px 60px 60px;">' +
-    '<span>Date</span><span>Opponent</span><span style="text-align:center;">Prep</span><span style="text-align:center;">Battle</span></div>';
+  var html = '<div class="ms-list"><div class="ms-head-row" style="grid-template-columns:90px 90px 60px 60px 1fr 70px;">' +
+    '<span>Date</span><span>Opponent</span><span style="text-align:center;">Prep</span><span style="text-align:center;">Battle</span><span>Castle</span><span style="text-align:center;">Source</span></div>';
   matches.forEach(function(m){
     var dateStr = m.date ? m.date.slice(0,10) : '\u2014';
-    html += '<div class="ms-row ms-row-tall opp-equal-row" style="grid-template-columns:90px 90px 60px 60px;">' +
+    var castleText = m.castle_taken_from ? ('taken from ' + m.castle_taken_from) : '\u2014';
+    html += '<div class="ms-row" style="grid-template-columns:90px 90px 60px 60px 1fr 70px;">' +
       '<span class="ms-val notranslate" translate="no">' + msEsc(dateStr) + '</span>' +
       '<span class="ms-val">' + (m.opponent_kingdom_id != null ? msEsc(m.opponent_kingdom_id) : '\u2014') + '</span>' +
       '<span class="ms-val">' + opponentMatchOutcomeTag(m.prep_winner, m.prep_loser, kid, m.decided) + '</span>' +
-      '<span class="ms-val">' + opponentMatchOutcomeTag(m.battle_winner, m.battle_loser, kid, m.decided) + '</span></div>';
+      '<span class="ms-val">' + opponentMatchOutcomeTag(m.battle_winner, m.battle_loser, kid, m.decided) + '</span>' +
+      '<span class="ms-val">' + msEsc(castleText) + '</span>' +
+      '<span class="ms-val">' + msEsc(m.source || '\u2014') + '</span></div>';
   });
   return html + '</div>';
 }
@@ -3505,7 +3290,7 @@ function renderOpponentView(){
   // Sourced from the Mystic Trial leaderboard (board_type 20), not the
   // kingdom summary's top_players — that list isn't ranked by Mystic
   // Trial, so it can't be used to answer "who's actually leading it".
-  html += '<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">TP</div><div class="panel-title">Top 5 Players</div></div>';
+  html += '<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">TP</div><div class="panel-title">Top 5 Players (by Mystic Trial)</div></div>';
   html += opponentPlayerRowsHtml(opponentCache.mysticTop, opponentCache.standings, opponentCache.avatars, true);
   html += '</div>';
 
@@ -3531,323 +3316,6 @@ function wireOpponentInput(){
   input.addEventListener('keydown', function(e){
     if(e.key === 'Enter') btn.click();
   });
-}
-
-// --- KvK strategic intelligence v2 ---------------------------------------
-// Compares kingdom 1884 with the selected opponent across player depth,
-// alliance depth, combat efficiency and KvK history. The deterministic
-// assessment keeps every conclusion traceable to a displayed metric.
-var OUR_KINGDOM_ID = 1884;
-opponentCache = { kid:null, us:null, them:null, profiles:{}, standings:{}, heroGear:{}, loading:false, threatRetrying:false, error:null };
-
-function opponentOptional(path,retries){
-  retries=retries==null?1:retries;
-  return jeabslistFetch(path).catch(function(){
-    if(retries<=0)return null;
-    return new Promise(function(resolve){setTimeout(resolve,650);}).then(function(){return opponentOptional(path,retries-1);});
-  });
-}
-function opponentEntries(board){
-  var rows=board&&Array.isArray(board.entries)?board.entries.slice():[];
-  return rows.sort(function(a,b){return (a.rank||9999)-(b.rank||9999);});
-}
-function opponentEntryValue(e){
-  if(!e)return 0;
-  var v=e.value;if(v==null)v=e.points;if(v==null)v=e.score;if(v==null)v=e.power;
-  return Number(v)||0;
-}
-function opponentMysticScore(e){
-  if(!e)return 0;
-  var v=e.value;if(v==null)v=e.points;if(v==null)v=e.score;
-  return Number(v)||0;
-}
-function opponentAllianceStats(a){
-  var members=a&&Array.isArray(a.members)?a.members.slice():[];
-  var powers=members.map(function(m){return Number(m.power)||0;}).filter(Boolean).sort(function(x,y){return y-x;});
-  function avg(n){var list=powers.slice(0,n);return list.length?list.reduce(function(s,v){return s+v;},0)/list.length:0;}
-  var median=0;if(powers.length){var mid=Math.floor(powers.length/2);median=powers.length%2?powers[mid]:(powers[mid-1]+powers[mid])/2;}
-  return {memberCount:members.length||(a&&a.member_count)||0,median:median,top5:avg(5),top10:avg(10),top20:avg(20),top50:avg(50)};
-}
-function opponentFetchIntel(kid,includeThreatBoards){
-  var root='/kingdoms/'+encodeURIComponent(kid);
-  var requests=[
-    opponentOptional(root),opponentOptional(root+'/kvk'),
-    opponentOptional(root+'/leaderboards/3?cached=1'),
-    opponentOptional(root+'/leaderboards/20?cached=1')
-  ];
-  if(includeThreatBoards){
-    requests.push(opponentOptional(root+'/leaderboards/5?cached=1'));
-    requests.push(opponentOptional(root+'/leaderboards/7?cached=1'));
-    requests.push(opponentOptional(root+'/leaderboards/8?cached=1'));
-  }
-  return Promise.all(requests).then(function(parts){
-    var summary=parts[0];if(!summary)throw new Error('kingdom unavailable');
-    var alliances=Array.isArray(summary.alliances)?summary.alliances.slice(0,5):[];
-    return Promise.all(alliances.map(function(a){
-      return a.id?opponentOptional('/alliances/'+encodeURIComponent(a.id)+'?kid='+encodeURIComponent(kid)):Promise.resolve(null);
-    })).then(function(details){
-      alliances.forEach(function(a,i){a.detail=details[i]||null;a.depth=opponentAllianceStats(details[i]||a);});
-      return {kid:kid,summary:summary,kvk:parts[1],power:opponentEntries(parts[2]),mystic:opponentEntries(parts[3]),tc:opponentEntries(parts[4]),heroPower:opponentEntries(parts[5]),heroTotalPower:opponentEntries(parts[6]),alliances:alliances};
-    });
-  });
-}
-function msFetchOpponentKingdom(kid){
-  var mySeq=++opponentFetchSeq;
-  opponentCache={kid:kid,us:null,them:null,profiles:{},standings:{},heroGear:{},loading:true,threatRetrying:false,error:null};
-  renderOpponentView();
-  Promise.all([opponentFetchIntel(OUR_KINGDOM_ID,false),opponentFetchIntel(kid,true)]).then(function(intel){
-    if(mySeq!==opponentFetchSeq)return;
-    opponentCache={kid:kid,us:intel[0],them:intel[1],profiles:{},standings:{},heroGear:{},loading:false,threatRetrying:false,error:null};
-    renderOpponentView();
-    intel[1].mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,5).forEach(function(e,index){
-      var pid=e.player_id;if(!pid)return;
-      opponentCache.profiles[pid]=undefined;
-      var needsStandingsFallback=opponentLeaderboardValue(intel[1].tc,pid)==null||opponentLeaderboardValue(intel[1].heroPower,pid)==null||opponentLeaderboardValue(intel[1].heroTotalPower,pid)==null;
-      opponentCache.standings[pid]=needsStandingsFallback?undefined:null;
-      if(index<3)opponentCache.heroGear[pid]=undefined;
-      Promise.all([
-        opponentOptional('/players/'+encodeURIComponent(pid)),
-        needsStandingsFallback?opponentOptional('/players/'+encodeURIComponent(pid)+'/standings?cached=1'):Promise.resolve(null),
-        index<3?opponentOptional('/players/'+encodeURIComponent(pid)+'/hero-gear'):Promise.resolve(undefined)
-      ]).then(function(parts){
-        if(mySeq!==opponentFetchSeq)return;
-        var standingsData=parts[1];
-        opponentCache.profiles[pid]=parts[0]||null;
-        opponentCache.standings[pid]=Array.isArray(standingsData)?standingsData:(standingsData&&Array.isArray(standingsData.standings)?standingsData.standings:null);
-        if(index<3)opponentCache.heroGear[pid]=parts[2]||null;
-        renderOpponentView();
-      });
-    });
-  }).catch(function(){
-    if(mySeq!==opponentFetchSeq)return;
-    opponentCache={kid:kid,us:null,them:null,profiles:{},standings:{},heroGear:{},loading:false,threatRetrying:false,error:'Could not build the matchup for kingdom '+kid+'. Check the kingdom ID and API access, then try again.'};
-    renderOpponentView();
-  });
-}
-function opponentPct(v){return isFinite(v)?(Math.round(v*10)/10).toFixed(1)+'%':'—';}
-function opponentWinRate(kvk,key){
-  var r=kvk&&kvk.record;if(!r)return 0;
-  var w=Number(r[key+'_wins'])||0,l=Number(r[key+'_losses'])||0;
-  return w+l?w/(w+l)*100:0;
-}
-function opponentSumTop(rows,n){return (rows||[]).slice(0,n).reduce(function(s,e){return s+opponentEntryValue(e);},0);}
-function opponentAvgTop(rows,n){var list=(rows||[]).slice(0,n);return list.length?opponentSumTop(list,n)/list.length:0;}
-function opponentAllianceTotal(intel,n){return (intel.alliances||[]).slice(0,n).reduce(function(s,a){return s+(Number(a.power)||0);},0);}
-function opponentDelta(us,them){return them?(us-them)/them*100:0;}
-function opponentDeltaHtml(us,them){
-  if(!us&&!them)return '<span class="opp-delta neutral">—</span>';
-  var d=opponentDelta(us,them),cls=d>.5?'pos':d<-.5?'neg':'neutral';
-  return '<span class="opp-delta '+cls+'">'+(d>0?'+':'')+opponentPct(d)+'</span>';
-}
-function opponentName(a){return (a&&a.abbr?'['+a.abbr+'] ':'')+(a&&a.name?a.name:'—');}
-function opponentOverall(us,them){
-  var pairs=[
-    [opponentAvgTop(us.power,10),opponentAvgTop(them.power,10),.24],
-    [opponentAvgTop(us.power,50),opponentAvgTop(them.power,50),.28],
-    [opponentAvgTop(us.power,100),opponentAvgTop(them.power,100),.22],
-    [opponentAllianceTotal(us,3),opponentAllianceTotal(them,3),.14],
-    [opponentWinRate(us.kvk,'battle'),opponentWinRate(them.kvk,'battle'),.12]
-  ];
-  var score=0,weight=0;pairs.forEach(function(p){if(p[0]||p[1]){score+=(p[0]/Math.max(1,p[0]+p[1]))*p[2];weight+=p[2];}});
-  var ours=weight?Math.round(score/weight*100):50;ours=Math.max(25,Math.min(75,ours));
-  var gap=ours-50,side=gap>=0?'Kingdom '+OUR_KINGDOM_ID:'Kingdom '+them.kid,level=Math.abs(gap)>=8?'Clear Advantage':Math.abs(gap)>=3?'Slight Advantage':'Even Matchup';
-  return {ours:ours,theirs:100-ours,title:level+(level==='Even Matchup'?'':' — '+side)};
-}
-function opponentHeroHtml(us,them){
-  return '<div class="opp-hero"><div class="opp-versus"><div class="opp-side"><div class="opp-kicker">Our kingdom</div><div class="opp-kingdom">Kingdom '+OUR_KINGDOM_ID+'</div><div class="opp-side-meta">'+(us.summary.tracked_players||0)+' tracked players</div></div><div class="opp-vs">VS</div><div class="opp-side"><div class="opp-kicker">KvK opponent</div><div class="opp-kingdom">Kingdom '+msEsc(them.kid)+'</div><div class="opp-side-meta">'+(them.summary.tracked_players||0)+' tracked players</div></div></div></div>';
-}
-function opponentKpiHtml(label,usVal,themVal,formatter){
-  formatter=formatter||msFmtPower;var d=opponentDelta(usVal,themVal),cls=d>.5?'us':d<-.5?'them':'',edge=Math.abs(d)<=.5?'Even':(d>0?'1884 ':'Opponent ')+(d>0?'+':'')+opponentPct(d);
-  return '<div class="opp-kpi"><div class="opp-kpi-label">'+msEsc(label)+'</div><div class="opp-kpi-values"><div class="opp-kpi-num">'+formatter(usVal)+'</div><div class="opp-kpi-sep">vs</div><div class="opp-kpi-num">'+formatter(themVal)+'</div></div><div class="opp-kpi-edge '+cls+'">'+msEsc(edge)+'</div></div>';
-}
-function opponentPowerCurveHtml(us,them){
-  var a=us.power.slice(0,100),b=them.power.slice(0,100),all=a.concat(b).map(opponentEntryValue),max=Math.max.apply(Math,all.concat([1]));
-  function chart(W,H,visibility){
-    var L=W<500?43:48,R=W<500?7:12,T=12,B=30,plotW=W-L-R,plotH=H-T-B;
-    function pts(rows){return rows.map(function(e,i){var x=L+(i/99)*plotW,y=T+(1-opponentEntryValue(e)/max)*plotH;return x.toFixed(1)+','+y.toFixed(1);}).join(' ');}
-    var grid='',labels='';for(var i=0;i<=4;i++){var y=T+(i/4)*plotH,val=max*(1-i/4);grid+='<line class="opp-chart-grid" x1="'+L+'" y1="'+y+'" x2="'+(W-R)+'" y2="'+y+'"/>';labels+='<text class="opp-chart-axis" x="'+(L-6)+'" y="'+(y+3)+'" text-anchor="end">'+msFmtPower(val)+'</text>';}
-    [1,25,50,75,100].forEach(function(rank){var x=L+((rank-1)/99)*plotW;labels+='<text class="opp-chart-axis" x="'+x+'" y="'+(H-8)+'" text-anchor="middle">'+rank+'</text>';});
-    return '<svg class="opp-chart '+visibility+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Top 100 player power comparison">'+grid+labels+'<polyline class="opp-chart-us" points="'+pts(a)+'"/><polyline class="opp-chart-them" points="'+pts(b)+'"/></svg>';
-  }
-  return chart(760,250,'opp-desktop-only')+chart(360,220,'opp-mobile-only')+'<div class="opp-legend"><span><i class="opp-legend-dot us"></i>Kingdom '+OUR_KINGDOM_ID+'</span><span><i class="opp-legend-dot them"></i>Kingdom '+msEsc(them.kid)+'</span></div>';
-}
-function opponentTopNHtml(us,them){
-  var desktop='<div class="opp-desktop-only opp-table-wrap"><table class="opp-table compact"><thead><tr><th>Group</th><th class="num our-col">1884 total</th><th class="num their-col">Opponent</th><th class="num">Difference</th></tr></thead><tbody>',mobile='<div class="opp-mobile-only"><div class="opp-mobile-list">';
-  [5,10,20,50,100].forEach(function(n){
-    var a=opponentSumTop(us.power,n),b=opponentSumTop(them.power,n),edge=opponentDeltaHtml(a,b);
-    desktop+='<tr><td class="primary">Top '+n+'</td><td class="num our-col">'+msFmtPower(a)+'</td><td class="num their-col">'+msFmtPower(b)+'</td><td class="num">'+edge+'</td></tr>';
-    mobile+='<div class="opp-mobile-card"><div class="opp-mobile-card-head"><div class="opp-mobile-card-title">Top '+n+' Players</div><div>'+edge+'</div></div><div class="opp-mobile-pair"><div class="opp-mobile-side ours"><div class="opp-mobile-side-label">Kingdom 1884</div><div class="opp-mobile-side-name">'+msFmtPower(a)+'</div></div><div class="opp-mobile-side theirs"><div class="opp-mobile-side-label">Opponent</div><div class="opp-mobile-side-name">'+msFmtPower(b)+'</div></div></div></div>';
-  });
-  return desktop+'</tbody></table></div>'+mobile+'</div></div>';
-}
-function opponentAllianceTableHtml(us,them){
-  var desktop='<div class="opp-desktop-only opp-table-wrap"><table class="opp-table"><thead><tr><th>#</th><th class="our-col">1884 alliance</th><th class="num our-col">Power</th><th class="num our-col">Top 10 avg</th><th class="their-col">Opponent alliance</th><th class="num their-col">Power</th><th class="num their-col">Top 10 avg</th><th class="num">Edge</th></tr></thead><tbody>',mobile='<div class="opp-mobile-only"><div class="opp-mobile-list">';
-  for(var i=0;i<5;i++){
-    var a=us.alliances[i]||{},b=them.alliances[i]||{},a10=a.depth?a.depth.top10:0,b10=b.depth?b.depth.top10:0;
-    desktop+='<tr><td>'+(i+1)+'</td><td class="primary our-col notranslate" translate="no">'+msEsc(opponentName(a))+'</td><td class="num our-col">'+msFmtPower(a.power||0)+'</td><td class="num our-col">'+msFmtPower(a10)+'</td><td class="primary their-col notranslate" translate="no">'+msEsc(opponentName(b))+'</td><td class="num their-col">'+msFmtPower(b.power||0)+'</td><td class="num their-col">'+msFmtPower(b10)+'</td><td class="num">'+opponentDeltaHtml(a.power||0,b.power||0)+'</td></tr>';
-    mobile+='<div class="opp-mobile-card"><div class="opp-mobile-card-head"><div class="opp-mobile-rank">ALLIANCE #'+(i+1)+'</div><div>'+opponentDeltaHtml(a.power||0,b.power||0)+'</div></div><div class="opp-mobile-pair"><div class="opp-mobile-side ours"><div class="opp-mobile-side-label">Kingdom 1884</div><div class="opp-mobile-side-name notranslate" translate="no">'+msEsc(opponentName(a))+'</div><div class="opp-mobile-inline"><span>Power</span><strong>'+msFmtPower(a.power||0)+'</strong></div><div class="opp-mobile-inline"><span>Top 10 avg</span><strong>'+msFmtPower(a10)+'</strong></div></div><div class="opp-mobile-side theirs"><div class="opp-mobile-side-label">Opponent</div><div class="opp-mobile-side-name notranslate" translate="no">'+msEsc(opponentName(b))+'</div><div class="opp-mobile-inline"><span>Power</span><strong>'+msFmtPower(b.power||0)+'</strong></div><div class="opp-mobile-inline"><span>Top 10 avg</span><strong>'+msFmtPower(b10)+'</strong></div></div></div></div>';
-  }
-  return desktop+'</tbody></table></div>'+mobile+'</div></div>';
-}
-function opponentMysticMap(intel){var map={};intel.mystic.forEach(function(e){if(e.player_id)map[e.player_id]=e;});return map;}
-function opponentThreatScore(pr,mr){return Math.max(1,Math.min(99,Math.round(100-(pr-1)*.7-((mr||101)-1)*.3)));}
-function opponentStandingValue(standingsMap,pid,boardType){
-  var rows=standingsMap?standingsMap[pid]:undefined;
-  if(rows===undefined)return undefined;
-  if(!Array.isArray(rows))return null;
-  var row=rows.find(function(s){return Number(s.board_type)===Number(boardType);});
-  if(!row)return null;
-  var value=row.points;if(value==null)value=row.value;if(value==null)value=row.score;
-  return Number(value)||0;
-}
-function opponentStandingPower(value){
-  if(value===undefined)return '…';
-  if(value===null)return '—';
-  return msFmtPower(value);
-}
-function opponentLeaderboardValue(rows,pid){
-  var row=(rows||[]).find(function(e){return String(e.player_id)===String(pid);});
-  return row?opponentEntryValue(row):null;
-}
-function opponentThreatDataValue(them,standingsMap,pid,boardType,key){
-  var leaderboardValue=opponentLeaderboardValue(them&&them[key],pid);
-  return leaderboardValue!=null?leaderboardValue:opponentStandingValue(standingsMap,pid,boardType);
-}
-function opponentThreatHasMissing(them,profiles,standingsMap){
-  return them.mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,5).some(function(e){
-    var pid=e.player_id,p=profiles[pid];
-    return p===null||opponentThreatDataValue(them,standingsMap,pid,5,'tc')===null||opponentThreatDataValue(them,standingsMap,pid,7,'heroPower')===null||opponentThreatDataValue(them,standingsMap,pid,8,'heroTotalPower')===null;
-  });
-}
-function opponentRetryMissingThreatData(){
-  if(opponentCache.threatRetrying||!opponentCache.them)return;
-  var mySeq=opponentFetchSeq,them=opponentCache.them,top=them.mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,5),tasks=[];
-  opponentCache.threatRetrying=true;renderOpponentView();
-  [['tc',5],['heroPower',7],['heroTotalPower',8]].forEach(function(spec){
-    var key=spec[0],boardType=spec[1],missing=top.some(function(e){return opponentThreatDataValue(them,opponentCache.standings,e.player_id,boardType,key)===null;});
-    if(missing)tasks.push(opponentOptional('/kingdoms/'+encodeURIComponent(them.kid)+'/leaderboards/'+boardType+'?cached=1').then(function(board){if(board)them[key]=opponentEntries(board);}));
-  });
-  top.forEach(function(e){
-    var pid=e.player_id;if(!pid)return;
-    if(opponentCache.profiles[pid]===null)tasks.push(opponentOptional('/players/'+encodeURIComponent(pid)).then(function(data){opponentCache.profiles[pid]=data||null;}));
-    var missingStanding=opponentThreatDataValue(them,opponentCache.standings,pid,5,'tc')===null||opponentThreatDataValue(them,opponentCache.standings,pid,7,'heroPower')===null||opponentThreatDataValue(them,opponentCache.standings,pid,8,'heroTotalPower')===null;
-    if(missingStanding)tasks.push(opponentOptional('/players/'+encodeURIComponent(pid)+'/standings?cached=1').then(function(data){opponentCache.standings[pid]=Array.isArray(data)?data:(data&&Array.isArray(data.standings)?data.standings:null);}));
-  });
-  Promise.all(tasks).then(function(){if(mySeq!==opponentFetchSeq)return;opponentCache.threatRetrying=false;renderOpponentView();});
-}
-function opponentThreatHtml(them,profiles,standingsMap){
-  var powerMap={};them.power.forEach(function(e){if(e.player_id)powerMap[e.player_id]=e;});
-  var desktop='<div class="opp-desktop-only opp-table-wrap"><table class="opp-table"><thead><tr><th>#</th><th>Player</th><th class="num">Power</th><th class="ctr">Mystic Trials</th><th class="ctr">TC</th><th class="num">Hero Power</th><th class="num">Hero\'s Total Power</th><th class="ctr">Efficiency</th><th class="ctr">Threat</th></tr></thead><tbody>',mobile='<div class="opp-mobile-only"><div class="opp-mobile-list">';
-  them.mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,5).forEach(function(m,index){
-    var e=powerMap[m.player_id]||m,p=profiles[m.player_id],mr=Number(m.rank)||999,pr=powerMap[m.player_id]?(Number(powerMap[m.player_id].rank)||999):null,eff=pr?pr-mr:null,score=opponentThreatScore(pr||101,mr),level=score>=93?'extreme':score>=84?'high':'watch',label=score>=93?'Extreme':score>=84?'High':'Watch';
-    var alliance=m.alliance||m.alliance_abbr||e.alliance||e.alliance_abbr||(p&&p.alliance&&p.alliance.abbr)||'',avatar=p&&p.avatar_url?'<img class="ms-avatar" src="'+msEsc(p.avatar_url)+'" alt="" loading="lazy">':'<span class="ms-avatar-fallback"></span>';
-    var playerName=m.name||e.name||'—',power=Number(m.power)||(powerMap[m.player_id]?opponentEntryValue(powerMap[m.player_id]):0),tc=opponentThreatDataValue(them,standingsMap,m.player_id,5,'tc');if(tc==null)tc=m.town_hall_level||e.town_hall_level||(p&&p.town_hall_level)||'—';var heroPower=opponentStandingPower(opponentThreatDataValue(them,standingsMap,m.player_id,7,'heroPower')),heroTotalPower=opponentStandingPower(opponentThreatDataValue(them,standingsMap,m.player_id,8,'heroTotalPower')),effHtml=eff==null?'—':'<span class="opp-delta '+(eff>0?'pos':eff<0?'neg':'neutral')+'">'+(eff>0?'+':'')+eff+' ranks</span>';
-    desktop+='<tr><td class="primary">#'+(index+1)+'</td><td><div class="opp-player">'+avatar+'<div><div class="opp-player-name notranslate" translate="no">'+msEsc(playerName)+'</div><div class="opp-player-alliance notranslate" translate="no">'+(alliance?'['+msEsc(alliance)+']':'Unaffiliated')+'</div></div></div></td><td class="num">'+(power?msFmtPower(power):'—')+'</td><td class="ctr">#'+mr+'</td><td class="ctr">'+tc+'</td><td class="num">'+heroPower+'</td><td class="num">'+heroTotalPower+'</td><td class="ctr">'+effHtml+'</td><td class="ctr"><span class="opp-threat '+level+'">'+label+' '+score+'</span></td></tr>';
-    mobile+='<div class="opp-mobile-card"><div class="opp-mobile-card-head"><div class="opp-player">'+avatar+'<div><div class="opp-player-name notranslate" translate="no">#'+(index+1)+' '+msEsc(playerName)+'</div><div class="opp-player-alliance notranslate" translate="no">'+(alliance?'['+msEsc(alliance)+']':'Unaffiliated')+'</div></div></div><span class="opp-threat '+level+'">'+label+' '+score+'</span></div><div class="opp-mobile-metrics"><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">Power</div><div class="opp-mobile-metric-value">'+(power?msFmtPower(power):'—')+'</div></div><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">Mystic Trials</div><div class="opp-mobile-metric-value">#'+mr+'</div></div><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">TC / Hero Power</div><div class="opp-mobile-metric-value">'+tc+' / '+heroPower+'</div></div><div class="opp-mobile-metric"><div class="opp-mobile-metric-label">Hero\'s Total Power</div><div class="opp-mobile-metric-value">'+heroTotalPower+'</div></div></div><div class="opp-mobile-inline" style="margin-top:9px;"><span>Combat efficiency</span><strong>'+effHtml+'</strong></div></div>';
-  });return desktop+'</tbody></table></div>'+mobile+'</div></div>';
-}
-function opponentAssetUrl(folder,id){return 'https://jeabslist.com/assets/'+folder+'/'+encodeURIComponent(id)+'.png';}
-function opponentHeroRarity(id){
-  var n=Number(id),rare=[50000,50001,50002,50003],epic=[50004,50005,50006,50007,50008,50027,50028,50029];
-  return rare.indexOf(n)>=0?'rare':epic.indexOf(n)>=0?'epic':'mythic';
-}
-function opponentHeroStarsHtml(value){
-  var raw=Math.max(0,Math.min(30,Number(value)||0)),html='';
-  for(var i=0;i<5;i++){
-    var filled=Math.max(0,Math.min(6,raw-(i*6))),cls=filled>=6?'full':filled>0?'partial':'',style=filled>0&&filled<6?' style="--fill:'+(filled/6*100).toFixed(0)+'%"':'';
-    html+='<span class="opp-hero-star '+cls+'"'+style+'>★</span>';
-  }
-  return html;
-}
-function opponentGearDisplay(piece){
-  if(!piece)return null;
-  var raw=Number(piece.slv)||0,ascended=raw>100,tier=Math.floor((Number(piece.eid)||0)/100)%10;
-  if(tier<1||tier>5)tier=1;
-  return {enhance:ascended?raw-100:raw,forge:Number(piece.rlv)||0,tier:tier,ascended:ascended};
-}
-function opponentHeroForgeScore(hero){
-  return (hero&&Array.isArray(hero.equipment)?hero.equipment:[]).reduce(function(total,piece){return total+(Number(piece&&piece.rlv)||0);},0);
-}
-function opponentHeroEnhancementScore(hero){
-  return (hero&&Array.isArray(hero.equipment)?hero.equipment:[]).reduce(function(total,piece){return total+(Number(piece&&piece.slv)||0);},0);
-}
-function opponentHeroGearHtml(them,profiles,heroGearMap){
-  var top=them.mystic.slice().sort(function(a,b){return opponentMysticScore(b)-opponentMysticScore(a);}).slice(0,3);
-  if(!top.length)return '<div class="opp-empty">No Mystic Trial leaders available.</div>';
-  var html='<div class="opp-gear-players">';
-  top.forEach(function(entry,index){
-    var pid=entry.player_id,p=profiles?profiles[pid]:null,data=heroGearMap?heroGearMap[pid]:undefined;
-    var alliance=entry.alliance||entry.alliance_abbr||(p&&p.alliance&&p.alliance.abbr)||'';
-    var avatar=p&&p.avatar_url?'<img class="ms-avatar" src="'+msEsc(p.avatar_url)+'" alt="" loading="lazy">':'<span class="ms-avatar-fallback"></span>';
-    html+='<div class="opp-gear-player"><div class="opp-gear-player-head"><div class="opp-player">'+avatar+'<div><div class="opp-player-name notranslate" translate="no">'+msEsc(entry.name||'—')+'</div><div class="opp-player-alliance notranslate" translate="no">'+(alliance?'['+msEsc(alliance)+']':'Unaffiliated')+'</div></div></div><span class="opp-gear-rank">Mystic #'+(index+1)+'</span></div>';
-    if(data===undefined){html+='<div class="opp-gear-status">Loading hero gear…</div></div>';return;}
-    var heroes=data&&Array.isArray(data.heroes)?data.heroes.slice():[];
-    if(!heroes.length){html+='<div class="opp-gear-status">Hero gear snapshot unavailable.<button type="button" class="opp-gear-retry" data-opp-hero-retry="'+msEsc(String(pid))+'" aria-label="Retry hero gear for '+msEsc(entry.name||'this player')+'">Retry</button></div></div>';return;}
-    heroes.sort(function(a,b){
-      return opponentHeroForgeScore(b)-opponentHeroForgeScore(a) ||
-        opponentHeroEnhancementScore(b)-opponentHeroEnhancementScore(a) ||
-        (Number(b.lv)||0)-(Number(a.lv)||0) ||
-        (Number(a.slot)||999)-(Number(b.slot)||999);
-    });
-    heroes=heroes.slice(0,3);
-    html+='<div class="opp-gear-heroes">';
-    heroes.forEach(function(hero){
-      var gearBySlot={};
-      (Array.isArray(hero.equipment)?hero.equipment:[]).forEach(function(piece){if(piece&&piece.sid!=null)gearBySlot[Number(piece.sid)]=piece;});
-      html+='<div class="opp-gear-hero"><div class="opp-hero-portrait '+opponentHeroRarity(hero.id)+'"><img class="opp-hero-bust" src="'+opponentAssetUrl('heroes_bust',hero.id)+'" alt="Hero '+msEsc(hero.id)+'" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span class="opp-hero-level">Lv '+msEsc(hero.lv!=null?hero.lv:'—')+'</span><div class="opp-hero-stars" title="Ascension '+msEsc(hero.star!=null?hero.star:0)+' of 30">'+opponentHeroStarsHtml(hero.star)+'</div></div><div class="opp-gear-column">';
-      for(var slot=1;slot<=4;slot++){
-        var piece=gearBySlot[slot],display=opponentGearDisplay(piece);
-        if(!piece||!display){html+='<div class="opp-gear-tile"><span class="opp-gear-enhance">—</span></div>';continue;}
-        html+='<div class="opp-gear-tile tier-'+display.tier+(display.ascended?' ascended':'')+'" title="Gear '+slot+' · +'+display.enhance+' · Forge '+display.forge+'"><span class="opp-gear-enhance">+'+display.enhance+'</span><img class="opp-gear-icon" src="'+opponentAssetUrl('hero_gear',piece.eid)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span class="opp-gear-forge">Lv '+display.forge+'</span></div>';
-      }
-      html+='</div></div>';
-    });
-    html+='</div></div>';
-  });
-  return html+'</div>';
-}
-function opponentOutliersHtml(them){
-  var mm=opponentMysticMap(them),rows=them.power.map(function(e){var m=mm[e.player_id];return m?{e:e,m:m,eff:(e.rank||999)-(m.rank||999)}:null;}).filter(function(x){return x&&x.eff>0;}).sort(function(a,b){return b.eff-a.eff;}).slice(0,8);
-  if(!rows.length)return '<div class="opp-empty">No cross-board outliers available.</div>';
-  var html='<div class="opp-table-wrap"><table class="opp-table compact"><thead><tr><th>Player</th><th class="ctr">Power rank</th><th class="ctr">Mystic rank</th><th class="num">Outperforms by</th></tr></thead><tbody>';
-  rows.forEach(function(x){html+='<tr><td class="primary notranslate" translate="no">'+msEsc((x.e.alliance?'['+x.e.alliance+'] ':'')+(x.e.name||'—'))+'</td><td class="ctr">#'+x.e.rank+'</td><td class="ctr">#'+x.m.rank+'</td><td class="num opp-delta pos">+'+x.eff+' ranks</td></tr>';});return html+'</tbody></table></div>';
-}
-function opponentMatchRowsHtml(kvk){
-  var matches=kvk&&Array.isArray(kvk.matches)?kvk.matches.slice():[];
-  if(!matches.length)return '<div class="opp-empty">No match history available.</div>';
-  matches.sort(function(a,b){return (b.ts||0)-(a.ts||0);});var kid=kvk.kingdom_id;
-  var html='<div class="opp-table-wrap"><table class="opp-table compact"><thead><tr><th>Date</th><th>Opponent</th><th class="ctr">Prep</th><th class="ctr">Battle</th></tr></thead><tbody>';
-  matches.slice(0,8).forEach(function(m){var date=m.date?m.date.slice(0,10):'—';html+='<tr><td>'+msEsc(date)+'</td><td>'+(m.opponent_kingdom_id!=null?msEsc(m.opponent_kingdom_id):'—')+'</td><td class="ctr">'+opponentMatchOutcomeTag(m.prep_winner,m.prep_loser,kid,m.decided)+'</td><td class="ctr">'+opponentMatchOutcomeTag(m.battle_winner,m.battle_loser,kid,m.decided)+'</td></tr>';});return html+'</tbody></table></div>';
-}
-function opponentRecordHtml(intel){
-  var r=intel.kvk&&intel.kvk.record;if(!r)return '<div class="opp-empty">No KvK record available.</div>';
-  return '<div class="ms-statbar"><div class="ms-stat"><div class="ms-stat-v">'+(r.engagements||0)+'</div><div class="ms-stat-l">Engagements</div></div><div class="ms-stat"><div class="ms-stat-v">'+opponentPct(opponentWinRate(intel.kvk,'prep'))+'</div><div class="ms-stat-l">Prep win rate</div></div><div class="ms-stat"><div class="ms-stat-v">'+opponentPct(opponentWinRate(intel.kvk,'battle'))+'</div><div class="ms-stat-l">Battle win rate</div></div><div class="ms-stat"><div class="ms-stat-v">'+(r.castles_taken||0)+'/'+(r.castles_lost||0)+'</div><div class="ms-stat-l">Castles +/-</div></div></div>';
-}
-function opponentAssessmentHtml(us,them){
-  var u10=opponentAvgTop(us.power,10),t10=opponentAvgTop(them.power,10),u100=opponentAvgTop(us.power,100),t100=opponentAvgTop(them.power,100),ua=opponentAllianceTotal(us,5),ta=opponentAllianceTotal(them,5),u1=us.alliances[0]?us.alliances[0].power:0,t1=them.alliances[0]?them.alliances[0].power:0,tc=ta?t1/ta*100:0,uc=ua?u1/ua*100:0;
-  var ours=u100>=t100?'Our Top 100 player pool is '+opponentPct(Math.abs(opponentDelta(u100,t100)))+' stronger on average.':'Our best comparative area is outside the raw Top 100 depth metric.';
-  var theirs=t10>=u10?'Their Top 10 averages '+opponentPct(Math.abs(opponentDelta(t10,u10)))+' more power than ours.':'Their top end trails 1884, but their strongest alliance still holds '+opponentPct(tc)+' of Top-5 alliance power.';
-  var plan=t10>u10&&u100>=t100?'Treat this as a whale-versus-depth matchup: absorb or disrupt their primary rallies, then use broader participation and sustained reinforcement waves.':t10<=u10&&u100>=t100?'1884 leads at both the top and depth. Preserve coordination, avoid isolated trades, and convert the roster advantage into continuous occupation pressure.':'The opponent owns more of the power curve. Concentrate rally leadership, protect reinforcement lanes, and prioritize efficient defensive trades over scattered fights.';
-  return '<div class="opp-assessment"><div class="opp-intel us"><div class="opp-intel-title">Where 1884 is stronger</div><p>'+msEsc(ours)+' Top-alliance concentration: '+opponentPct(uc)+'.</p></div><div class="opp-intel them"><div class="opp-intel-title">Primary opponent edge</div><p>'+msEsc(theirs)+'</p></div><div class="opp-intel plan"><div class="opp-intel-title">Planning implication</div><p>'+msEsc(plan)+'</p></div></div>';
-}
-function renderOpponentView(){
-  var body=document.getElementById('opponentViewBody');if(!body)return;
-  var savedKid=state.opponentKingdom&&state.opponentKingdom.kid?state.opponentKingdom.kid:null;
-  var html='<div class="today-hero"><div class="today-hero-phase">KvK Scouting & Strategic Intelligence</div><div class="today-hero-sub">Kingdom → alliance → player → combat strength</div></div>';
-  if(EDIT_MODE){html+='<div class="panel opp-input-panel opp-panel"><div class="panel-head"><div class="panel-icn">ID</div><div class="panel-title">Set opponent kingdom</div></div><div class="opp-input-row"><input type="number" class="opp-kid-input" id="oppKidInput" placeholder="Kingdom ID (e.g. 172)" value="'+(savedKid!=null?savedKid:'')+'"><button class="ms-btn" id="oppKidLoadBtn">Build matchup</button></div></div>';}
-  if(savedKid==null){html+='<div class="score-empty">No opponent kingdom set yet'+(EDIT_MODE?' — enter an ID above.':'.')+'</div>';body.innerHTML=html;if(EDIT_MODE)wireOpponentInput();return;}
-  if(opponentCache.kid!==savedKid&&!opponentCache.loading){msFetchOpponentKingdom(savedKid);html+='<div class="score-empty">Building matchup with kingdom '+msEsc(savedKid)+'…</div>';body.innerHTML=html;if(EDIT_MODE)wireOpponentInput();return;}
-  if(opponentCache.loading){html+='<div class="score-empty">Building matchup with kingdom '+msEsc(savedKid)+'…</div>';body.innerHTML=html;if(EDIT_MODE)wireOpponentInput();return;}
-  if(opponentCache.error){html+='<div class="score-empty">'+msEsc(opponentCache.error)+'</div>';body.innerHTML=html;if(EDIT_MODE)wireOpponentInput();return;}
-  var us=opponentCache.us,them=opponentCache.them;
-  html+=opponentHeroHtml(us,them);
-  html+='<div class="opp-grid-2"><div class="panel"><div class="panel-head"><div class="panel-icn">100</div><div class="panel-title">Kingdom Power Curve</div></div><div class="opp-section-note">Player rank 1–100. The higher line indicates the stronger roster at that depth.</div>'+opponentPowerCurveHtml(us,them)+'</div><div class="panel"><div class="panel-head"><div class="panel-icn">Σ</div><div class="panel-title">Top-N Power</div></div>'+opponentTopNHtml(us,them)+'</div></div>';
-  html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">A</div><div class="panel-title">Alliance Strength & Depth</div></div><div class="opp-section-note">Rank-matched comparison. Top 10 average is calculated from each alliance roster.</div>'+opponentAllianceTableHtml(us,them)+'</div>';
-  var threatRetry=opponentThreatHasMissing(them,opponentCache.profiles,opponentCache.standings)?'<button type="button" class="opp-gear-retry opp-missing-retry" data-opp-missing-retry'+(opponentCache.threatRetrying?' disabled':'')+'>'+(opponentCache.threatRetrying?'Retrying…':'Retry missing data')+'</button>':'';
-  html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">!</div><div class="panel-title">Opponent Top 5 Threats</div></div><div class="opp-section-toolbar"><div class="opp-section-note">Selected and ordered strictly by Mystic Trial score. Power is shown only as a reference.</div>'+threatRetry+'</div>'+opponentThreatHtml(them,opponentCache.profiles,opponentCache.standings)+'</div>';
-  html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">HG</div><div class="panel-title">Opponent Top 3 Hero Gear</div></div><div class="opp-section-note">Top three players by Mystic Trial score. Each player shows their three strongest heroes, ranked by combined Forge level across all four gear pieces.</div>'+opponentHeroGearHtml(them,opponentCache.profiles,opponentCache.heroGear)+'</div>';
-  html+='<div class="panel opp-panel"><div class="panel-head"><div class="panel-icn">M</div><div class="panel-title">Opponent Match History</div></div>'+opponentMatchRowsHtml(them.kvk)+'</div>';
-  body.innerHTML=html;wireOpponentHeroGearRetry();if(EDIT_MODE)wireOpponentInput();
 }
 
 // --- Availability drag-select timeline -----------------------------------
@@ -4479,15 +3947,16 @@ function msColsFor(key){
   var narrow = msIsNarrow();
   var timeW = narrow ? '38px' : '62px';
   var playerW = narrow ? '100px' : '160px';
+  var reqCol = EDIT_MODE ? [{h:'Requested', w: narrow ? '90px' : '130px'}] : [];
   if(key === 'd1') return [
     {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'TC', w:'1fr'}, {h:'TG', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
-  ];
+  ].concat(reqCol);
   if(key === 'd4') return [
     {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'TC', w:'1fr'}, {h:'T9 Count', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
-  ];
+  ].concat(reqCol);
   return [
     {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'T9', w:'1fr'}, {h:'T10', w:'1fr'}, {h:'T11', w:'1fr'}, {h:'TC', w:'1fr'}, {h:'TG', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
-  ];
+  ].concat(reqCol);
 }
 
 function msGridStyle(key){
@@ -4497,22 +3966,28 @@ function msGridStyle(key){
   }).join(' ') + delCol;
 }
 
-function msTcValueHtml(p){
-  if(p.tcLevel)return msEsc(p.tcLevel);
-  if(!EDIT_MODE||p.source!=='apply')return '—';
-  var loading=!!msTcRetrying[p.id];
-  return '<button type="button" class="ms-tc-retry" data-ms-tc-retry="'+msEsc(String(p.id))+'" aria-label="Retry TC level for '+msEsc(p.name||'this player')+'"'+(loading?' disabled':'')+'>'+(loading?'Retrying…':'Retry TC')+'</button>';
+// Formats a player's originally-requested availability window(s) — the
+// range(s) they marked on the apply-modal timeline — for the edit-mode
+// "Requested" column. This is independent of whatever slot they actually
+// got assigned, so admins can see at a glance how far off (or generous)
+// the assignment was versus what was asked for.
+function msRequestedRangeText(p){
+  var parts = [];
+  if(p.s1 != null && p.e1 != null) parts.push(msMinToTime(p.s1) + '\u2013' + msMinToTime(p.e1));
+  if(p.s2 != null && p.e2 != null) parts.push(msMinToTime(p.s2) + '\u2013' + msMinToTime(p.e2));
+  return parts.length ? parts.join(', ') : '\u2014';
 }
 
 function msRowValues(key, p){
+  var reqVal = EDIT_MODE ? [msRequestedRangeText(p)] : [];
   if(key === 'd1'){
-    return [msTcValueHtml(p), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+    return [msEsc(p.tcLevel || '\u2014'), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)].concat(reqVal);
   }
   if(key === 'd4'){
-    return [msTcValueHtml(p), msFmtNum(p.t9 || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+    return [msEsc(p.tcLevel || '\u2014'), msFmtNum(p.t9 || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)].concat(reqVal);
   }
-  var common = [msTcValueHtml(p), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
-  return [msFmtNum(p.t9||0), msFmtNum(p.t10||0), p.t11 ? 'Y' : 'N'].concat(common);
+  var common = [msEsc(p.tcLevel || '\u2014'), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)];
+  return [msFmtNum(p.t9||0), msFmtNum(p.t10||0), p.t11 ? 'Y' : 'N'].concat(common).concat(reqVal);
 }
 
 function msRenderMsPanel(){
@@ -4613,7 +4088,7 @@ function msRenderBody(key){
       if(f==='open' || f==='ns') continue;
       rows += msRowHtml(key, gridStyle, t, p, false, i, isCurrent);
     } else if(f==='all' || f==='open'){
-      rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" style="grid-template-columns:' + gridStyle + '">' +
+      rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" data-pts="0" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time notranslate" translate="no">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
         cols.slice(2).map(function(){ return '<span></span>'; }).join('') +
         (EDIT_MODE ? '<span></span>' : '') + '</div>';
@@ -4634,7 +4109,7 @@ function msRenderBody(key){
     '</div>';
 
   body.innerHTML = html;
-  msWireTcRetryButtons(body,key,function(){if(msCurrentRenderedKey===key)msRenderBody(key);});
+  wireNoSlotHighlight(body);
 
   body.querySelectorAll('.ms-stat[data-msf]').forEach(function(el){
     el.addEventListener('click', function(){
@@ -4877,6 +4352,32 @@ function msCurrentAppointedHtml(key){
     '</div>';
 }
 
+// Tapping a "no slot" player highlights every real time-slot row (open or
+// currently assigned) whose KvK potential is LOWER than the tapped
+// player's — i.e. every slot they'd legitimately outrank and could claim
+// if they widened their range to cover it, since assignment is strictly
+// points-priority (see msAssign/msDirectPlaceBySlot: higher pts always
+// gets first pick of any slot within its range). Tapping the same row
+// again clears the highlight; tapping a different one moves it.
+function wireNoSlotHighlight(bodyEl){
+  if(!bodyEl) return;
+  bodyEl.querySelectorAll('.ms-row.noslot[data-pid]').forEach(function(row){
+    row.addEventListener('click', function(e){
+      if(e.target.closest('.ms-del')) return; // don't fight the delete button's own click
+      var alreadySelected = row.classList.contains('selected');
+      bodyEl.querySelectorAll('.ms-row.noslot.selected').forEach(function(r){ r.classList.remove('selected'); });
+      bodyEl.querySelectorAll('.ms-row.ms-bump-highlight').forEach(function(r){ r.classList.remove('ms-bump-highlight'); });
+      if(alreadySelected) return;
+      row.classList.add('selected');
+      var tappedPts = parseFloat(row.getAttribute('data-pts')) || 0;
+      bodyEl.querySelectorAll('.ms-row[data-slot][data-pts]').forEach(function(r){
+        var slotPts = parseFloat(r.getAttribute('data-pts')) || 0;
+        if(tappedPts > slotPts) r.classList.add('ms-bump-highlight');
+      });
+    });
+  });
+}
+
 // Avatar (from a confirmed Jeabslist lookup) + name, used in every
 // scheduler row. CSV-imported players and unmatched applicants have no
 // avatarUrl, so they fall back to a plain placeholder circle. The <img>
@@ -4904,7 +4405,9 @@ function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '" data-carried="' + (p.carried ? '1' : '0') + '">\u00d7</button>';
   }
   var slotAttr = (slotIdx !== undefined && slotIdx !== null) ? ' data-slot="' + slotIdx + '"' : '';
-  return '<div class="ms-row' + (isNoSlot ? ' noslot' : '') + (isCurrent ? ' current' : '') + '"' + slotAttr + ' style="grid-template-columns:' + gridStyle + '">' + cellsHtml + '</div>';
+  var noSlotPidAttr = isNoSlot ? ' data-pid="' + p.id + '"' : '';
+  var ptsAttr = ' data-pts="' + (p.pts || 0) + '"';
+  return '<div class="ms-row' + (isNoSlot ? ' noslot' : '') + (isCurrent ? ' current' : '') + '"' + slotAttr + noSlotPidAttr + ptsAttr + ' style="grid-template-columns:' + gridStyle + '">' + cellsHtml + '</div>';
 }
 
 function msSetStatus(key, msg, isErr){
@@ -5169,7 +4672,9 @@ function kaRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '">\u00d7</button>';
   }
   var slotAttr = (slotIdx !== undefined && slotIdx !== null) ? ' data-slot="' + slotIdx + '"' : '';
-  return '<div class="ms-row' + (isNoSlot ? ' noslot' : '') + (isCurrent ? ' current' : '') + '"' + slotAttr + ' style="grid-template-columns:' + gridStyle + '">' + cellsHtml + '</div>';
+  var noSlotPidAttr = isNoSlot ? ' data-pid="' + p.id + '"' : '';
+  var ptsAttr = ' data-pts="' + (p.pts || 0) + '"';
+  return '<div class="ms-row' + (isNoSlot ? ' noslot' : '') + (isCurrent ? ' current' : '') + '"' + slotAttr + noSlotPidAttr + ptsAttr + ' style="grid-template-columns:' + gridStyle + '">' + cellsHtml + '</div>';
 }
 
 function renderKingApptView(){
@@ -5216,7 +4721,7 @@ function renderKingApptView(){
       if(kaFilter==='open' || kaFilter==='ns') continue;
       rows += kaRowHtml(key, gridStyle, t, p, false, i, isCurrent);
     } else if(kaFilter==='all' || kaFilter==='open'){
-      rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" style="grid-template-columns:' + gridStyle + '">' +
+      rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" data-pts="0" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time notranslate" translate="no">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
         cols.slice(2).map(function(){ return '<span></span>'; }).join('') +
         (EDIT_MODE ? '<span></span>' : '') + '</div>';
@@ -5234,7 +4739,7 @@ function renderKingApptView(){
   html += '</div>';
 
   body.innerHTML = html;
-  msWireTcRetryButtons(body,key,function(){if(kaCurrentRenderedKey===key)renderKingApptView();});
+  wireNoSlotHighlight(body);
 
   body.querySelectorAll('.ms-stat[data-kaf]').forEach(function(el){
     el.addEventListener('click', function(){
