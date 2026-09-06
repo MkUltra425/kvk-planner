@@ -331,6 +331,13 @@
     0%,100%{background:rgba(79,209,197,0.14);}
     50%{background:rgba(79,209,197,0.26);}
   }
+  .ms-choose-slot{display:flex;align-items:center;justify-content:center;}
+  .ms-choose-btn{
+    background:var(--teal);color:#08211f;border:none;border-radius:6px;
+    font-family:'Inter',sans-serif;font-size:10px;font-weight:700;
+    padding:5px 8px;cursor:pointer;white-space:nowrap;
+  }
+  .ms-choose-btn:hover{filter:brightness(1.1);}
   .ms-row.current{background:rgba(95,191,122,0.14);border-left:2px solid var(--green);}
   .ms-row.current .ms-time{color:var(--green);font-weight:700;}
   .ms-time{font-family:'JetBrains Mono',monospace;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:clip;}
@@ -2813,7 +2820,17 @@ function msCalcD4Pts(sp, t9, t10, t11, speedPct){
   }
 }
 
+// A manual "Choose" override (see wireNoSlotHighlight below) sets
+// forcedSlot instead of touching s1/e1/s2/e2 directly — that way the
+// player's originally-submitted range stays intact (still shown as-is in
+// the edit-mode "Requested" column) while this makes them available for
+// exactly one specific slot as far as the assignment algorithms are
+// concerned. Since msAssign/msDirectPlaceBySlot still sort by points
+// descending, a later override by someone with more KvK potential for the
+// same slot naturally wins and bumps this one back to no-slot — no extra
+// bookkeeping needed for that, it falls out of the existing sort.
 function msAvail(p, i){
+  if(p.forcedSlot != null) return i === p.forcedSlot;
   var s = i*30, e = s+30;
   function ov(ws, we){
     if(ws===null || we===null) return false;
@@ -3959,11 +3976,19 @@ function msColsFor(key){
   ].concat(reqCol);
 }
 
+// Reserved so a "Choose" button can be injected into a highlighted row
+// without reflowing every other row's columns (see wireNoSlotHighlight).
+// Always present — Choose doesn't require edit access — empty until a
+// no-slot player is tapped.
+function msChooseColWidth(){
+  return msIsNarrow() ? ' 50px' : ' 64px';
+}
+
 function msGridStyle(key){
   var delCol = EDIT_MODE ? (msIsNarrow() ? ' 18px' : ' 22px') : '';
   return msColsFor(key).map(function(c){
     return c.w.indexOf('fr') !== -1 ? 'minmax(0,' + c.w + ')' : c.w;
-  }).join(' ') + delCol;
+  }).join(' ') + delCol + msChooseColWidth();
 }
 
 // Formats a player's originally-requested availability window(s) — the
@@ -3975,7 +4000,11 @@ function msRequestedRangeText(p){
   var parts = [];
   if(p.s1 != null && p.e1 != null) parts.push(msMinToTime(p.s1) + '\u2013' + msMinToTime(p.e1));
   if(p.s2 != null && p.e2 != null) parts.push(msMinToTime(p.s2) + '\u2013' + msMinToTime(p.e2));
-  return parts.length ? parts.join(', ') : '\u2014';
+  var base = parts.length ? parts.join(', ') : '\u2014';
+  if(p.forcedSlot != null){
+    base += ' (forced \u2192 ' + msMinToTime(p.forcedSlot * 30) + ')';
+  }
+  return base;
 }
 
 function msRowValues(key, p){
@@ -4077,6 +4106,7 @@ function msRenderBody(key){
   html += '<div class="ms-head-row" style="grid-template-columns:' + gridStyle + '">';
   cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:center"':'') + '>' + c.h + '</span>'; });
   if(EDIT_MODE) html += '<span></span>';
+  html += '<span></span>'; // reserved for the Choose button
   html += '</div>';
 
   var rows = '';
@@ -4091,7 +4121,7 @@ function msRenderBody(key){
       rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" data-pts="0" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time notranslate" translate="no">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
         cols.slice(2).map(function(){ return '<span></span>'; }).join('') +
-        (EDIT_MODE ? '<span></span>' : '') + '</div>';
+        (EDIT_MODE ? '<span></span>' : '') + '<span class="ms-choose-slot"></span>' + '</div>';
     }
   }
   if(f==='all' || f==='ns'){
@@ -4109,7 +4139,7 @@ function msRenderBody(key){
     '</div>';
 
   body.innerHTML = html;
-  wireNoSlotHighlight(body);
+  wireNoSlotHighlight(body, key, function(){ msRenderBody(key); });
 
   body.querySelectorAll('.ms-stat[data-msf]').forEach(function(el){
     el.addEventListener('click', function(){
@@ -4359,20 +4389,61 @@ function msCurrentAppointedHtml(key){
 // points-priority (see msAssign/msDirectPlaceBySlot: higher pts always
 // gets first pick of any slot within its range). Tapping the same row
 // again clears the highlight; tapping a different one moves it.
-function wireNoSlotHighlight(bodyEl){
+//
+// In edit mode, each highlighted row also gets a "Choose" button (into
+// its reserved .ms-choose-slot cell) that sets the tapped player's
+// forcedSlot rather than touching their submitted s1/e1/s2/e2 — their
+// original request stays intact for the Requested column, and since
+// assignment still sorts by points descending, a later Choose by someone
+// with even more potential for the same slot naturally displaces this one
+// back to no-slot without any extra bookkeeping.
+function wireNoSlotHighlight(bodyEl, key, rerenderFn){
   if(!bodyEl) return;
-  bodyEl.querySelectorAll('.ms-row.noslot[data-pid]').forEach(function(row){
-    row.addEventListener('click', function(e){
+  bodyEl.querySelectorAll('.ms-row.noslot[data-pid]').forEach(function(noSlotRow){
+    noSlotRow.addEventListener('click', function(e){
       if(e.target.closest('.ms-del')) return; // don't fight the delete button's own click
-      var alreadySelected = row.classList.contains('selected');
+      var alreadySelected = noSlotRow.classList.contains('selected');
       bodyEl.querySelectorAll('.ms-row.noslot.selected').forEach(function(r){ r.classList.remove('selected'); });
-      bodyEl.querySelectorAll('.ms-row.ms-bump-highlight').forEach(function(r){ r.classList.remove('ms-bump-highlight'); });
+      bodyEl.querySelectorAll('.ms-row.ms-bump-highlight').forEach(function(r){
+        r.classList.remove('ms-bump-highlight');
+        var slotEl = r.querySelector('.ms-choose-slot');
+        if(slotEl) slotEl.innerHTML = '';
+      });
       if(alreadySelected) return;
-      row.classList.add('selected');
-      var tappedPts = parseFloat(row.getAttribute('data-pts')) || 0;
+      noSlotRow.classList.add('selected');
+      var tappedPid = noSlotRow.getAttribute('data-pid');
+      var tappedPts = parseFloat(noSlotRow.getAttribute('data-pts')) || 0;
       bodyEl.querySelectorAll('.ms-row[data-slot][data-pts]').forEach(function(r){
         var slotPts = parseFloat(r.getAttribute('data-pts')) || 0;
-        if(tappedPts > slotPts) r.classList.add('ms-bump-highlight');
+        if(tappedPts <= slotPts) return;
+        r.classList.add('ms-bump-highlight');
+        var slotEl = r.querySelector('.ms-choose-slot');
+        if(!slotEl) return; // not in edit mode — highlight only, no action available
+        var btn = document.createElement('button');
+        btn.className = 'ms-choose-btn';
+        btn.textContent = 'Choose';
+        btn.addEventListener('click', function(evt){
+          evt.stopPropagation();
+          var targetSlot = parseInt(r.getAttribute('data-slot'), 10);
+          // d4cm's "no slot" list can include Noble Advisor applicants who
+          // didn't make the d4 cut, carried over as clones (see
+          // msBuildD4cmQ) — their real, persisted record lives in
+          // msPlayers.d4, not msPlayers.d4cm, so both need checking or a
+          // forcedSlot set on the clone would vanish on the next recalc.
+          var searchLists = key === 'd4cm' ? [msPlayers.d4, msPlayers.d4cm] : [msPlayers[key] || []];
+          var player = null;
+          for(var si=0; si<searchLists.length && !player; si++){
+            player = (searchLists[si] || []).find(function(pp){ return pp.id === tappedPid; });
+          }
+          if(!player){ flag('Could not find that player \u2014 try again.'); return; }
+          player.forcedSlot = targetSlot;
+          msRecalcAll();
+          msSyncAndSave();
+          flag('Placed at ' + msMinToTime(targetSlot * 30) + ' \u2014 a higher-potential choice later can still bump them.');
+          rerenderFn();
+        });
+        slotEl.innerHTML = '';
+        slotEl.appendChild(btn);
       });
     });
   });
@@ -4404,6 +4475,7 @@ function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '" data-carried="' + (p.carried ? '1' : '0') + '">\u00d7</button>';
   }
+  cellsHtml += '<span class="ms-choose-slot"></span>';
   var slotAttr = (slotIdx !== undefined && slotIdx !== null) ? ' data-slot="' + slotIdx + '"' : '';
   var noSlotPidAttr = isNoSlot ? ' data-pid="' + p.id + '"' : '';
   var ptsAttr = ' data-pts="' + (p.pts || 0) + '"';
@@ -4645,7 +4717,7 @@ function kaGridStyle(key){
   var delCol = EDIT_MODE ? (msIsNarrow() ? ' 18px' : ' 22px') : '';
   return msColsFor(key).map(function(c){
     return c.w.indexOf('fr') !== -1 ? 'minmax(0,' + c.w + ')' : c.w;
-  }).join(' ') + delCol;
+  }).join(' ') + delCol + msChooseColWidth();
 }
 
 function kaApplySlotHtml(key){
@@ -4671,6 +4743,7 @@ function kaRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '">\u00d7</button>';
   }
+  cellsHtml += '<span class="ms-choose-slot"></span>';
   var slotAttr = (slotIdx !== undefined && slotIdx !== null) ? ' data-slot="' + slotIdx + '"' : '';
   var noSlotPidAttr = isNoSlot ? ' data-pid="' + p.id + '"' : '';
   var ptsAttr = ' data-pts="' + (p.pts || 0) + '"';
@@ -4710,6 +4783,7 @@ function renderKingApptView(){
   html += '<div class="ms-head-row" style="grid-template-columns:' + gridStyle + '">';
   cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:center"':'') + '>' + c.h + '</span>'; });
   if(EDIT_MODE) html += '<span></span>';
+  html += '<span></span>'; // reserved for the Choose button
   html += '</div>';
 
   var rows = '';
@@ -4724,7 +4798,7 @@ function renderKingApptView(){
       rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" data-pts="0" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time notranslate" translate="no">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
         cols.slice(2).map(function(){ return '<span></span>'; }).join('') +
-        (EDIT_MODE ? '<span></span>' : '') + '</div>';
+        (EDIT_MODE ? '<span></span>' : '') + '<span class="ms-choose-slot"></span>' + '</div>';
     }
   }
   if(kaFilter==='all' || kaFilter==='ns'){
@@ -4739,7 +4813,7 @@ function renderKingApptView(){
   html += '</div>';
 
   body.innerHTML = html;
-  wireNoSlotHighlight(body);
+  wireNoSlotHighlight(body, key, function(){ renderKingApptView(); });
 
   body.querySelectorAll('.ms-stat[data-kaf]').forEach(function(el){
     el.addEventListener('click', function(){
