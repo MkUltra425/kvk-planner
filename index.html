@@ -2396,7 +2396,11 @@ function switchView(view){
   document.getElementById('opponentView').style.display = view === 'opponent' ? 'block' : 'none';
   document.getElementById('dayView').style.display = view === 'day' ? 'block' : 'none';
   if(view === 'today') renderTodayView();
-  if(view === 'kingappt') renderKingApptView();
+  if(view === 'kingappt'){
+    kaSelectedKey='d1';
+    kaFilter='all';
+    renderKingApptView();
+  }
   if(view === 'opponent') renderOpponentView();
 }
 
@@ -5577,9 +5581,8 @@ var kaFilter = 'all';
 var kaSelectedKey = null;
 
 function kaActiveKey(){
-  var chiefMinisterOpen=msApplyPublicIsOpen('d1');
-  if(!chiefMinisterOpen&&(kaSelectedKey==='d1'||kaSelectedKey==='d4'))return kaSelectedKey;
-  return chiefMinisterOpen?'d1':'d4';
+  if(kaSelectedKey==='d1'||kaSelectedKey==='d4')return kaSelectedKey;
+  return 'd1';
 }
 
 function kaGridStyle(key){
@@ -5639,13 +5642,13 @@ function renderKingApptView(){
   var html = '<div class="today-hero"><div class="today-hero-phase">King Appointment Schedule</div>';
   html += '<div class="today-hero-sub">' + msEsc(MS_LABELS[key]) + '</div></div>';
 
-  // Once Chief Minister closes, keep both schedules available here. Noble
-  // Advisor remains the default, while Chief Minister becomes a public
-  // historical view instead of disappearing from the appointment tab.
+  // Once Chief Minister closes, keep both schedules available here. Chief
+  // Minister stays first and is the default whenever the main appointment
+  // view is opened; Noble Advisor remains available as the second tab.
   if(!msApplyPublicIsOpen('d1')){
     html += '<div class="ms-tabbar ka-tabbar" role="tablist" aria-label="Appointment schedules">'+
-      '<button type="button" class="ms-tab'+(key==='d4'?' active':'')+'" data-kakey="d4" role="tab" aria-selected="'+(key==='d4'?'true':'false')+'">Noble Advisor</button>'+
       '<button type="button" class="ms-tab'+(key==='d1'?' active':'')+'" data-kakey="d1" role="tab" aria-selected="'+(key==='d1'?'true':'false')+'">Chief Minister <span class="ka-tab-state">Closed</span></button>'+
+      '<button type="button" class="ms-tab'+(key==='d4'?' active':'')+'" data-kakey="d4" role="tab" aria-selected="'+(key==='d4'?'true':'false')+'">Noble Advisor</button>'+
     '</div>';
   }
 
@@ -5735,7 +5738,9 @@ function renderKingApptView(){
 
 function kaRefreshHighlight(){
   var newKey = kaActiveKey();
-  if(newKey !== kaCurrentRenderedKey){
+  var tabsShouldShow=!msApplyPublicIsOpen('d1');
+  var tabsVisible=!!document.querySelector('#kingApptViewBody .ka-tabbar');
+  if(newKey !== kaCurrentRenderedKey||tabsShouldShow!==tabsVisible){
     // The deadline flipped since the last render (e.g. the tab was left
     // open across it) — do a full re-render so the schedule swaps over.
     renderKingApptView();
