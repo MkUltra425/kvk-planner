@@ -496,6 +496,28 @@
     display:block;font-size:11px;font-weight:600;color:var(--text-mid);margin-bottom:5px;
     text-transform:uppercase;letter-spacing:0.04em;
   }
+  .ms-field-label-row{display:flex;align-items:center;gap:6px;position:relative;margin-bottom:5px;}
+  .ms-field-label-row label{margin-bottom:0;}
+  .ms-field-optional{color:var(--text-dim);font-weight:500;text-transform:none;letter-spacing:0;}
+  .ms-info-tip{
+    position:static;display:inline-grid;place-items:center;width:19px;height:19px;padding:0;flex:0 0 19px;
+    border:1px solid rgba(74,214,199,.5);border-radius:50%;background:rgba(74,214,199,.09);
+    color:var(--teal);font:700 12px/1 'JetBrains Mono',monospace;cursor:help;
+  }
+  .ms-info-popover{
+    position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:80;width:auto;box-sizing:border-box;
+    padding:10px 12px;border:1px solid rgba(74,214,199,.42);border-radius:9px;
+    background:#172027;color:var(--text-mid);box-shadow:0 10px 26px rgba(0,0,0,.4);
+    font:500 11.5px/1.5 'Inter',sans-serif;text-align:left;text-transform:none;letter-spacing:0;
+    white-space:normal;overflow-wrap:anywhere;
+    opacity:0;visibility:hidden;transform:translateY(-3px);pointer-events:none;
+    transition:opacity .15s ease,transform .15s ease,visibility .15s ease;
+  }
+  .ms-info-tip:hover .ms-info-popover,
+  .ms-info-tip:focus .ms-info-popover,
+  .ms-info-tip:focus-visible .ms-info-popover{
+    opacity:1;visibility:visible;transform:translateY(0);
+  }
   .ms-apply-field input[type="text"]{
     width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);
     border-radius:8px;color:var(--text-hi);padding:9px 11px;font-size:13px;font-family:inherit;
@@ -1192,14 +1214,24 @@
           </div>
 
           <div class="ms-apply-field" id="msApplyT9Wrap" style="display:none;">
-            <label>T9 Troop Count *</label>
-            <input type="text" inputmode="numeric" id="msApplyT9" placeholder="e.g. 500000">
+            <div class="ms-field-label-row">
+              <label for="msApplyT9">T9 Troop Count <span class="ms-field-optional">(optional)</span></label>
+              <button type="button" class="ms-info-tip" aria-label="About T9 troop count">i
+                <span class="ms-info-popover" id="msT9Help" role="tooltip">Enter the number of existing T9 troops you expect to promote to T10 during the appointment. The calculator applies speedups to those promotions first, then uses any remaining time for new T10 training. Leave this blank if you have none or do not know the count.</span>
+              </button>
+            </div>
+            <input type="text" inputmode="numeric" id="msApplyT9" placeholder="e.g. 500000" aria-describedby="msT9Help">
           </div>
 
           <div class="ms-apply-field" id="msApplySpeedWrap" style="display:none;">
-            <label>Base Training Speed % *</label>
-            <input type="text" inputmode="decimal" id="msApplySpeed" placeholder="e.g. 178.7">
-            <div class="ms-apply-hint" style="margin-top:8px;margin-bottom:0;">Enter your <strong>base</strong> Training Speed only &mdash; not counting Noble Advisor, Mobilize, or KvK Bonus. Those buffs get added automatically.</div>
+            <div class="ms-field-label-row">
+              <label for="msApplySpeed">Profile Training Speed % *</label>
+              <button type="button" class="ms-info-tip" aria-label="Where to find Training Speed">i
+                <span class="ms-info-popover" id="msTrainingSpeedHelp" role="tooltip">Tap your profile picture, then tap the magnifying glass next to your Power. <strong>Training Speed</strong> is in the fifth row of the Military section.</span>
+              </button>
+            </div>
+            <input type="text" inputmode="decimal" id="msApplySpeed" placeholder="e.g. 178.7" aria-describedby="msTrainingSpeedHelp msTrainingSpeedNote">
+            <div class="ms-apply-hint" id="msTrainingSpeedNote" style="margin-top:8px;margin-bottom:0;">Enter the Training Speed shown on your profile. It already includes the Kingdom of Power bonus. Noble Advisor and Mobilize are added automatically.</div>
           </div>
         </div>
 
@@ -2404,7 +2436,9 @@ function switchView(view){
   document.getElementById('dayView').style.display = view === 'day' ? 'block' : 'none';
   if(view === 'today') renderTodayView();
   if(view === 'kingappt'){
-    kaSelectedKey='d1';
+    // Reset any prior manual tab choice so each visit uses the correct
+    // time-based default for the current appointment phase.
+    kaSelectedKey=null;
     kaFilter='all';
     renderKingApptView();
   }
@@ -3054,19 +3088,18 @@ function msCalcConstructionPts(townHallLevel, truegoldAvailable, speedupDaysAvai
   return Math.round((totalGoldSpent * 2000) + (totalDaysSpent * 1440 * 30));
 }
 
-// Noble Advisor training-speed buffs that stack ON TOP of a player's base
-// Training Speed — applicants enter only their base %, these get added
-// automatically before scoring. D4_BASE_SPEED_DEFAULT (178.7%) is used
-// when an applicant leaves the field blank; the two together reproduce
-// the original 283.7% default effective speed.
+// Noble Advisor training-speed buffs that stack ON TOP of the Training
+// Speed shown on a player's profile. The profile value already includes
+// the Kingdom of Power troop-training bonus, so only Noble Advisor and
+// Mobilize are added here. D4_BASE_SPEED_DEFAULT (178.7%) is used when
+// an imported record has no saved profile speed.
 var D4_BASE_SPEED_DEFAULT = 178.7;
 var D4_BUFF_NOBLE_ADVISOR = 50;
 var D4_BUFF_MOBILIZE = 30;
-var D4_BUFF_KVK_BONUS = 25;
-var D4_ADDITIONAL_BUFFS_TOTAL = D4_BUFF_NOBLE_ADVISOR + D4_BUFF_MOBILIZE + D4_BUFF_KVK_BONUS;
+var D4_ADDITIONAL_BUFFS_TOTAL = D4_BUFF_NOBLE_ADVISOR + D4_BUFF_MOBILIZE;
 
 function msCalcD4Pts(sp, t9, t10, t11, speedPct){
-  var DEFAULT_SPEED = 283.7;
+  var DEFAULT_SPEED = D4_BASE_SPEED_DEFAULT + D4_ADDITIONAL_BUFFS_TOTAL;
   var effSpeed = (speedPct === undefined || speedPct === null || speedPct === '') ? DEFAULT_SPEED : parseFloat(speedPct);
   if(isNaN(effSpeed)) effSpeed = DEFAULT_SPEED;
   var speedMultiplier = 1 + (effSpeed / 100);
@@ -3174,6 +3207,17 @@ function msBuildD4cmQ(){
 }
 
 function msRecalcAll(){
+  // Recompute saved Noble Advisor applications from the profile speed on
+  // file. This also corrects applications created before the Kingdom of
+  // Power bonus was recognized as already included in that profile value.
+  msPlayers.d4.forEach(function(p){
+    if(p.source !== 'apply') return;
+    var profileSpeed = parseFloat(p.trainingSpeedBasePct);
+    if(isNaN(profileSpeed)) profileSpeed = D4_BASE_SPEED_DEFAULT;
+    var effectiveSpeed = profileSpeed + D4_ADDITIONAL_BUFFS_TOTAL;
+    p.trainingSpeedEffectivePct = effectiveSpeed;
+    p.pts = msCalcD4Pts(parseFloat(p.sp)||0, parseInt(p.t9)||0, parseInt(p.t10)||0, !!p.t11, effectiveSpeed);
+  });
   msSchedule.d1 = msDirectPlaceBySlot(msPlayers.d1,'d1');
   msSchedule.d4 = msDirectPlaceBySlot(msPlayers.d4,'d4');
   msSchedule.d4cm = msAssign(msBuildD4cmQ(),'d4cm');
@@ -4492,9 +4536,8 @@ function msApplyGoToStep2(){
   var t9Raw = document.getElementById('msApplyT9').value.trim();
   var speedRaw = document.getElementById('msApplySpeed').value.trim();
 
-  // Every field currently visible on step 1 is required — which fields
-  // are visible depends on the position (msOpenApplyModal toggles the
-  // wraps below per key), so check visibility rather than hardcoding by key.
+  // Required fields depend on the position (msOpenApplyModal toggles the
+  // wraps below per key). T9 count is optional even when its field is visible.
   var truegoldVisible = document.getElementById('msApplyTruegoldWrap').style.display !== 'none';
   var t9Visible = document.getElementById('msApplyT9Wrap').style.display !== 'none';
   var speedVisible = document.getElementById('msApplySpeedWrap').style.display !== 'none';
@@ -4515,14 +4558,13 @@ function msApplyGoToStep2(){
     if(isNaN(tg) || tg < 0){ msApplyShowError('Truegold quantity must be a positive number.'); return; }
   }
 
-  if(t9Visible){
-    if(!t9Raw){ msApplyShowError('Please enter your T9 Troop Count.'); return; }
+  if(t9Visible && t9Raw){
     var t9 = parseInt(t9Raw, 10);
     if(isNaN(t9) || t9 < 0){ msApplyShowError('T9 count must be a positive whole number.'); return; }
   }
 
   if(speedVisible){
-    if(!speedRaw){ msApplyShowError('Please enter your Base Training Speed %.'); return; }
+    if(!speedRaw){ msApplyShowError('Please enter the Training Speed shown on your profile.'); return; }
     var speedVal = parseFloat(speedRaw);
     if(isNaN(speedVal) || speedVal < 0){ msApplyShowError('Training Speed % must be a positive number.'); return; }
   }
@@ -4565,14 +4607,13 @@ function msSubmitApplication(){
   }
 
   var t9 = 0;
-  if(t9Visible){
-    if(!t9Raw){ msSetApplyStep(1); msApplyShowError('Please enter your T9 Troop Count.'); return; }
+  if(t9Visible && t9Raw){
     t9 = parseInt(t9Raw, 10);
     if(isNaN(t9) || t9 < 0){ msSetApplyStep(1); msApplyShowError('T9 count must be a positive whole number.'); return; }
   }
 
   if(speedVisible){
-    if(!speedRaw){ msSetApplyStep(1); msApplyShowError('Please enter your Base Training Speed %.'); return; }
+    if(!speedRaw){ msSetApplyStep(1); msApplyShowError('Please enter the Training Speed shown on your profile.'); return; }
     if(isNaN(parseFloat(speedRaw)) || parseFloat(speedRaw) < 0){
       msSetApplyStep(1);
       msApplyShowError('Training Speed % must be a positive number.');
@@ -4624,8 +4665,9 @@ function msSubmitApplication(){
     p.pts = msCalcConstructionPts(currentLevel, tg, sp);
   } else if(key === 'd4'){
     // Noble Advisor — T11 isn't unlocked yet, so always pass t10:0, t11:false.
-    // The field collects BASE Training Speed only; Noble Advisor/Mobilize/
-    // KvK Bonus buffs are added here before scoring, not entered by hand.
+    // The field collects the Training Speed shown on the profile, which
+    // already includes Kingdom of Power. Only Noble Advisor and Mobilize
+    // are added here before scoring.
     var baseSpeed = speedRaw ? parseFloat(speedRaw) : D4_BASE_SPEED_DEFAULT;
     if(isNaN(baseSpeed)) baseSpeed = D4_BASE_SPEED_DEFAULT;
     var effectiveSpeed = baseSpeed + D4_ADDITIONAL_BUFFS_TOTAL;
@@ -5591,9 +5633,18 @@ var kaCurrentRenderedKey = null;
 var kaFilter = 'all';
 var kaSelectedKey = null;
 
+function kaDefaultKey(){
+  // Chief Minister Construction runs through Monday. At Tuesday 00:00 UTC,
+  // make Noble Advisor the first and default schedule while keeping Chief
+  // Minister available as the second tab.
+  var parts = CONSTRUCTION_DATE.split('-').map(Number);
+  var tuesdayStart = Date.UTC(parts[0], parts[1]-1, parts[2], 0, 0, 0) + DAY_MS;
+  return Date.now() >= tuesdayStart ? 'd4' : 'd1';
+}
+
 function kaActiveKey(){
   if(kaSelectedKey==='d1'||kaSelectedKey==='d4')return kaSelectedKey;
-  return 'd1';
+  return kaDefaultKey();
 }
 
 function kaGridStyle(key){
@@ -5653,13 +5704,16 @@ function renderKingApptView(){
   var html = '<div class="today-hero"><div class="today-hero-phase">King Appointment Schedule</div>';
   html += '<div class="today-hero-sub">' + msEsc(MS_LABELS[key]) + '</div></div>';
 
-  // Once Chief Minister closes, keep both schedules available here. Chief
-  // Minister stays first and is the default whenever the main appointment
-  // view is opened; Noble Advisor remains available as the second tab.
+  // Once Chief Minister applications close, keep both schedules available.
+  // Chief Minister stays first through Monday; beginning Tuesday at 00:00
+  // UTC, Noble Advisor moves first and becomes the default.
   if(!msApplyPublicIsOpen('d1')){
+    var tabOrder = kaDefaultKey()==='d4' ? ['d4','d1'] : ['d1','d4'];
     html += '<div class="ms-tabbar ka-tabbar" role="tablist" aria-label="Appointment schedules">'+
-      '<button type="button" class="ms-tab'+(key==='d1'?' active':'')+'" data-kakey="d1" role="tab" aria-selected="'+(key==='d1'?'true':'false')+'">Chief Minister <span class="ka-tab-state">Closed</span></button>'+
-      '<button type="button" class="ms-tab'+(key==='d4'?' active':'')+'" data-kakey="d4" role="tab" aria-selected="'+(key==='d4'?'true':'false')+'">Noble Advisor</button>'+
+      tabOrder.map(function(tabKey){
+        var tabLabel = tabKey==='d1' ? 'Chief Minister <span class="ka-tab-state">Closed</span>' : 'Noble Advisor';
+        return '<button type="button" class="ms-tab'+(key===tabKey?' active':'')+'" data-kakey="'+tabKey+'" role="tab" aria-selected="'+(key===tabKey?'true':'false')+'">'+tabLabel+'</button>';
+      }).join('')+
     '</div>';
   }
 
