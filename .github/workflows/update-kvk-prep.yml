@@ -1,0 +1,55 @@
+name: Update KvK Prep leaderboard
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-kvk-prep
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out dashboard
+        uses: actions/checkout@v4
+
+      - name: Fetch and validate Jeabslist data
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f docs/index.html ]]; then
+            OUTPUT_FILE="docs/kvk-prep.json"
+          else
+            OUTPUT_FILE="kvk-prep.json"
+          fi
+          TEMP_FILE="${RUNNER_TEMP}/kvk-prep.json"
+          curl --fail --silent --show-error \
+            --retry 3 --retry-delay 5 --connect-timeout 15 --max-time 120 \
+            -H "Accept: application/json" \
+            "https://jeabslist.com/api/kingdoms/1884/kvk/prep" \
+            --output "${TEMP_FILE}"
+          jq -e '.kid == 1884 and ((.active == false) or (.board.entries | type == "array"))' "${TEMP_FILE}" >/dev/null
+          cp "${TEMP_FILE}" "${OUTPUT_FILE}"
+
+      - name: Publish updated cache
+        shell: bash
+        run: |
+          if [[ -f docs/index.html ]]; then
+            OUTPUT_FILE="docs/kvk-prep.json"
+          else
+            OUTPUT_FILE="kvk-prep.json"
+          fi
+          if git diff --quiet -- "${OUTPUT_FILE}"; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${OUTPUT_FILE}"
+          git commit -m "Update KvK Prep leaderboard"
+          git push
