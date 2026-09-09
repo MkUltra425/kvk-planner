@@ -3634,10 +3634,16 @@ function msCalcD4Pts(sp, t9, t10, t11, speedPct){
     var rem1 = Math.max(0, totalSec - (t9*12) - (t10*6));
     return (t9*30) + (t10*15) + Math.floor(rem1/44)*75;
   } else {
-    var promoTimeUsed = (parseInt(t9)||0) * promoSecPerTroop;
+    // Promotions happen first, but only troops that fit inside the player's
+    // available speedup time earn promotion points. Previously every entered
+    // T9 troop earned 15 points even when there was not enough time to promote
+    // it, which could inflate a few days of speedups into 100M+ potential.
+    var t9Count = Math.max(0, parseInt(t9)||0);
+    var promotedT9 = Math.min(t9Count, Math.floor(totalSec / promoSecPerTroop));
+    var promoTimeUsed = promotedT9 * promoSecPerTroop;
     var remainingSec = Math.max(0, totalSec - promoTimeUsed);
     var newTroopsTrained = Math.floor(remainingSec / trainSecPerTroop);
-    return ((parseInt(t9)||0) * 15) + (newTroopsTrained * 60);
+    return (promotedT9 * 15) + (newTroopsTrained * 60);
   }
 }
 
