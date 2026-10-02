@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1354,6 +1353,16 @@
             <input type="text" inputmode="numeric" id="msApplyT9" placeholder="e.g. 500000" aria-describedby="msT9Help">
           </div>
 
+          <div class="ms-apply-field" id="msApplySpeedWrap" style="display:none;">
+            <div class="ms-field-label-row">
+              <label for="msApplySpeed">Profile Training Speed % *</label>
+              <button type="button" class="ms-info-tip" aria-label="Where to find Training Speed">i
+                <span class="ms-info-popover" id="msTrainingSpeedHelp" role="tooltip">Tap your profile picture, then tap the magnifying glass next to your Power. <strong>Training Speed</strong> is in the fifth row of the Military section.</span>
+              </button>
+            </div>
+            <input type="text" inputmode="decimal" id="msApplySpeed" placeholder="e.g. 178.7" aria-describedby="msTrainingSpeedHelp msTrainingSpeedNote">
+            <div class="ms-apply-hint" id="msTrainingSpeedNote" style="margin-top:8px;margin-bottom:0;">Enter the Training Speed shown on your profile. It already includes the Kingdom of Power bonus. Noble Advisor and Mobilize are added automatically.</div>
+          </div>
         </div>
 
         <div id="msApplyStep2" style="display:none;">
@@ -3600,16 +3609,18 @@ function msCalcConstructionPts(townHallLevel, truegoldAvailable, speedupDaysAvai
   return Math.round((totalGoldSpent * 2000) + (totalDaysSpent * 1440 * 30));
 }
 
-// Noble Advisor uses one fixed profile Training Speed for every applicant.
-// The 200% value already includes Kingdom of Power, so only Noble Advisor
-// and Mobilize are added before scoring.
-var D4_FIXED_PROFILE_SPEED = 200;
+// Noble Advisor training-speed buffs that stack ON TOP of the Training
+// Speed shown on a player's profile. The profile value already includes
+// the Kingdom of Power troop-training bonus, so only Noble Advisor and
+// Mobilize are added here. D4_BASE_SPEED_DEFAULT (178.7%) is used when
+// an imported record has no saved profile speed.
+var D4_BASE_SPEED_DEFAULT = 178.7;
 var D4_BUFF_NOBLE_ADVISOR = 50;
 var D4_BUFF_MOBILIZE = 30;
 var D4_ADDITIONAL_BUFFS_TOTAL = D4_BUFF_NOBLE_ADVISOR + D4_BUFF_MOBILIZE;
 
 function msCalcD4Pts(sp, t9, t10, t11, speedPct){
-  var DEFAULT_SPEED = D4_FIXED_PROFILE_SPEED + D4_ADDITIONAL_BUFFS_TOTAL;
+  var DEFAULT_SPEED = D4_BASE_SPEED_DEFAULT + D4_ADDITIONAL_BUFFS_TOTAL;
   var effSpeed = (speedPct === undefined || speedPct === null || speedPct === '') ? DEFAULT_SPEED : parseFloat(speedPct);
   if(isNaN(effSpeed)) effSpeed = DEFAULT_SPEED;
   var speedMultiplier = 1 + (effSpeed / 100);
@@ -3622,16 +3633,10 @@ function msCalcD4Pts(sp, t9, t10, t11, speedPct){
     var rem1 = Math.max(0, totalSec - (t9*12) - (t10*6));
     return (t9*30) + (t10*15) + Math.floor(rem1/44)*75;
   } else {
-    // Promotions happen first, but only troops that fit inside the player's
-    // available speedup time earn promotion points. Previously every entered
-    // T9 troop earned 15 points even when there was not enough time to promote
-    // it, which could inflate a few days of speedups into 100M+ potential.
-    var t9Count = Math.max(0, parseInt(t9)||0);
-    var promotedT9 = Math.min(t9Count, Math.floor(totalSec / promoSecPerTroop));
-    var promoTimeUsed = promotedT9 * promoSecPerTroop;
+    var promoTimeUsed = (parseInt(t9)||0) * promoSecPerTroop;
     var remainingSec = Math.max(0, totalSec - promoTimeUsed);
     var newTroopsTrained = Math.floor(remainingSec / trainSecPerTroop);
-    return (promotedT9 * 15) + (newTroopsTrained * 60);
+    return ((parseInt(t9)||0) * 15) + (newTroopsTrained * 60);
   }
 }
 
@@ -3723,12 +3728,14 @@ function msBuildD4cmQ(){
 }
 
 function msRecalcAll(){
-  // Recompute every saved Noble Advisor application at the same fixed 200%
-  // profile speed so older submissions cannot retain a different value.
+  // Recompute saved Noble Advisor applications from the profile speed on
+  // file. This also corrects applications created before the Kingdom of
+  // Power bonus was recognized as already included in that profile value.
   msPlayers.d4.forEach(function(p){
     if(p.source !== 'apply') return;
-    var effectiveSpeed = D4_FIXED_PROFILE_SPEED + D4_ADDITIONAL_BUFFS_TOTAL;
-    p.trainingSpeedBasePct = D4_FIXED_PROFILE_SPEED;
+    var profileSpeed = parseFloat(p.trainingSpeedBasePct);
+    if(isNaN(profileSpeed)) profileSpeed = D4_BASE_SPEED_DEFAULT;
+    var effectiveSpeed = profileSpeed + D4_ADDITIONAL_BUFFS_TOTAL;
     p.trainingSpeedEffectivePct = effectiveSpeed;
     p.pts = msCalcD4Pts(parseFloat(p.sp)||0, parseInt(p.t9)||0, parseInt(p.t10)||0, !!p.t11, effectiveSpeed);
   });
@@ -4931,6 +4938,7 @@ function msOpenApplyModal(key){
   document.getElementById('msApplySpeedups').value = '';
   document.getElementById('msApplyTruegold').value = '';
   document.getElementById('msApplyT9').value = '';
+  document.getElementById('msApplySpeed').value = '';
   msAvailResetState();
   document.getElementById('msApplyError').style.display = 'none';
   var isConstruction = (key === 'd1');
@@ -4938,6 +4946,7 @@ function msOpenApplyModal(key){
   document.getElementById('msApplyAutoCalcHint').style.display = isConstruction ? 'block' : 'none';
   document.getElementById('msApplyTruegoldWrap').style.display = isNobleAdvisor ? 'none' : 'block';
   document.getElementById('msApplyT9Wrap').style.display = isNobleAdvisor ? 'block' : 'none';
+  document.getElementById('msApplySpeedWrap').style.display = isNobleAdvisor ? 'block' : 'none';
   var check = document.getElementById('msApplyIdCheck');
   if(check){ check.textContent = ''; check.className = 'ms-apply-idcheck'; }
   msApplyLookupResult = null;
@@ -4975,6 +4984,7 @@ function msPrefillFromPriorApplication(kingshotId){
   fillIfEmpty('msApplySpeedups',isNaN(speedupDays)?null:speedupDays);
   fillIfEmpty('msApplyTruegold',prior.tg);
   fillIfEmpty('msApplyT9',prior.t9);
+  fillIfEmpty('msApplySpeed',prior.trainingSpeedBasePct);
 
   if(!msAvailRanges.length){
     var ranges=[];
@@ -5045,11 +5055,13 @@ function msApplyGoToStep2(){
   var spRaw = document.getElementById('msApplySpeedups').value.trim();
   var tgRaw = document.getElementById('msApplyTruegold').value.trim();
   var t9Raw = document.getElementById('msApplyT9').value.trim();
+  var speedRaw = document.getElementById('msApplySpeed').value.trim();
 
   // Required fields depend on the position (msOpenApplyModal toggles the
   // wraps below per key). T9 count is optional even when its field is visible.
   var truegoldVisible = document.getElementById('msApplyTruegoldWrap').style.display !== 'none';
   var t9Visible = document.getElementById('msApplyT9Wrap').style.display !== 'none';
+  var speedVisible = document.getElementById('msApplySpeedWrap').style.display !== 'none';
 
   if(!kingshotId){ msApplyShowError('Please enter your Kingshot ID.'); return; }
   var lookupCheck=document.getElementById('msApplyIdCheck');
@@ -5072,6 +5084,12 @@ function msApplyGoToStep2(){
     if(isNaN(t9) || t9 < 0){ msApplyShowError('T9 count must be a positive whole number.'); return; }
   }
 
+  if(speedVisible){
+    if(!speedRaw){ msApplyShowError('Please enter the Training Speed shown on your profile.'); return; }
+    var speedVal = parseFloat(speedRaw);
+    if(isNaN(speedVal) || speedVal < 0){ msApplyShowError('Training Speed % must be a positive number.'); return; }
+  }
+
   msSetApplyStep(2);
 }
 
@@ -5088,9 +5106,11 @@ function msSubmitApplication(){
   var spRaw = document.getElementById('msApplySpeedups').value.trim();
   var tgRaw = document.getElementById('msApplyTruegold').value.trim();
   var t9Raw = document.getElementById('msApplyT9').value.trim();
+  var speedRaw = document.getElementById('msApplySpeed').value.trim();
 
   var truegoldVisible = document.getElementById('msApplyTruegoldWrap').style.display !== 'none';
   var t9Visible = document.getElementById('msApplyT9Wrap').style.display !== 'none';
+  var speedVisible = document.getElementById('msApplySpeedWrap').style.display !== 'none';
 
   if(!kingshotId){ msSetApplyStep(1); msApplyShowError('Please enter your Kingshot ID.'); return; }
   var manualError=msManualPlayerError(kingshotId);
@@ -5111,6 +5131,15 @@ function msSubmitApplication(){
   if(t9Visible && t9Raw){
     t9 = parseInt(t9Raw, 10);
     if(isNaN(t9) || t9 < 0){ msSetApplyStep(1); msApplyShowError('T9 count must be a positive whole number.'); return; }
+  }
+
+  if(speedVisible){
+    if(!speedRaw){ msSetApplyStep(1); msApplyShowError('Please enter the Training Speed shown on your profile.'); return; }
+    if(isNaN(parseFloat(speedRaw)) || parseFloat(speedRaw) < 0){
+      msSetApplyStep(1);
+      msApplyShowError('Training Speed % must be a positive number.');
+      return;
+    }
   }
 
   if(!msAvailRanges.length){
@@ -5157,10 +5186,14 @@ function msSubmitApplication(){
     p.pts = msCalcConstructionPts(currentLevel, tg, sp);
   } else if(key === 'd4'){
     // Noble Advisor — T11 isn't unlocked yet, so always pass t10:0, t11:false.
-    // Every applicant uses the same fixed 200% profile Training Speed.
-    var effectiveSpeed = D4_FIXED_PROFILE_SPEED + D4_ADDITIONAL_BUFFS_TOTAL;
+    // The field collects the Training Speed shown on the profile, which
+    // already includes Kingdom of Power. Only Noble Advisor and Mobilize
+    // are added here before scoring.
+    var baseSpeed = speedRaw ? parseFloat(speedRaw) : D4_BASE_SPEED_DEFAULT;
+    if(isNaN(baseSpeed)) baseSpeed = D4_BASE_SPEED_DEFAULT;
+    var effectiveSpeed = baseSpeed + D4_ADDITIONAL_BUFFS_TOTAL;
     p.sp = sp + 'd'; p.t9 = t9; p.t10 = 0; p.t11 = false;
-    p.trainingSpeedBasePct = D4_FIXED_PROFILE_SPEED;
+    p.trainingSpeedBasePct = speedRaw || null;
     p.trainingSpeedEffectivePct = effectiveSpeed;
     p.pts = msCalcD4Pts(sp, t9, 0, false, effectiveSpeed);
   } else {
