@@ -887,7 +887,8 @@
   .reset-btn:hover{border-color:var(--crimson);color:var(--crimson);}
   .save-flag{font-size:10.5px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
 
-  .view-toggle{display:flex;gap:6px;margin-bottom:16px;}
+  .view-toggle{display:flex;align-items:center;gap:2px;margin-bottom:16px;padding:3px 4px;background:rgba(255,255,255,0.025);border:1px solid var(--glass-border);border-radius:12px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+  .view-toggle::-webkit-scrollbar{display:none;}
 
   .reserve-appt-btn{
     display:block;width:100%;margin-bottom:16px;padding:14px 18px;border-radius:12px;
@@ -1005,11 +1006,14 @@
   }
   .view-btn{
     background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);
-    font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:7px 16px;
-    border-radius:9px;cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:10px 14px;
+    border-radius:8px;cursor:pointer;flex:0 0 auto;white-space:nowrap;position:relative;border-color:transparent;min-height:40px;
+  }
+  .view-btn:focus-visible{outline:2px solid var(--teal);outline-offset:-2px;}
+  .view-btn.active::after{content:'';position:absolute;bottom:1px;left:12px;right:12px;height:2px;border-radius:2px;background:var(--teal);
   }
   .view-btn:hover{background:rgba(255,255,255,0.05);}
-  .view-btn.active{border-color:var(--teal);color:var(--teal);background:rgba(79,209,197,0.08);}
+  .view-btn.active{border-color:transparent;color:var(--teal);background:rgba(79,209,197,0.06);}
 
   /* KvK Prep live leaderboard */
   .kvp-header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:4px 0 14px;}
@@ -1143,8 +1147,8 @@
     .panel{ padding:14px 12px 10px; }
     .panel-title{ font-size:14px; }
 
-    .view-toggle{ gap:5px; flex-wrap:wrap; }
-    .view-btn{ font-size:11px; padding:7px 8px; flex:1 1 calc(50% - 5px); text-align:center; }
+    .view-toggle{gap:0;flex-wrap:nowrap;padding:3px 2px;}
+    .view-btn{font-size:11px;padding:10px 9px;flex:1 0 auto;text-align:center;}
 
     .kvp-header{align-items:flex-start;margin-top:2px;}.kvp-title{font-size:24px;}.kvp-sub{font-size:11px;}
     .kvp-header-actions{flex-direction:column;align-items:stretch;}.kvp-header-actions .kvp-refresh{padding:7px 9px;}
@@ -1289,14 +1293,14 @@
     </div>
   </div>
 
-  <div class="view-toggle" id="viewToggle">
+  <nav class="view-toggle" id="viewToggle" aria-label="Dashboard sections">
     <button class="view-btn active" data-view="today">Today</button>
-    <button class="view-btn" data-view="kingappt">King Appointment Schedule</button>
-    <button class="view-btn" data-view="opponent">KvK Opponent</button>
+    <button class="view-btn" data-view="kingappt" title="King Appointment Schedule">Schedule</button>
+    <button class="view-btn" data-view="opponent" title="KvK Opponent">Opponent</button>
     <button class="view-btn" data-view="prep">Leaders</button>
     <button class="view-btn" data-view="battle">Battle</button>
     <button class="view-btn" id="dayViewBtn" data-view="day" style="display:none;">Day view</button>
-  </div>
+  </nav>
 
     <div class="ms-apply-modal-backdrop" id="msApplyModalBackdrop">
       <div class="ms-apply-modal">
@@ -2591,7 +2595,15 @@ window.addEventListener('message', function(event){
 });
 function switchView(view){
   document.querySelectorAll('.view-btn').forEach(function(b){
-    b.classList.toggle('active', b.getAttribute('data-view') === view);
+    var selected = b.getAttribute('data-view') === view;
+    b.classList.toggle('active', selected);
+    if(selected) b.setAttribute('aria-current','page');
+    else b.removeAttribute('aria-current');
+    if(selected && b.offsetParent){
+      var nav=b.parentElement, left=b.offsetLeft-nav.offsetLeft;
+      if(left<nav.scrollLeft) nav.scrollLeft=left;
+      else if(left+b.offsetWidth>nav.scrollLeft+nav.clientWidth) nav.scrollLeft=left+b.offsetWidth-nav.clientWidth;
+    }
   });
   document.getElementById('todayView').style.display = view === 'today' ? 'block' : 'none';
   document.getElementById('kingApptView').style.display = view === 'kingappt' ? 'block' : 'none';
