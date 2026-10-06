@@ -1305,6 +1305,18 @@
     <button class="view-btn" id="dayViewBtn" data-view="day" style="display:none;">Day view</button>
   </nav>
 
+<div class="ms-apply-modal-backdrop" id="battleAvailabilityBackdrop">
+  <div class="ms-apply-modal" role="dialog" aria-modal="true" aria-labelledby="battleAvailabilityTitle">
+    <div class="ms-apply-modal-head"><h3 id="battleAvailabilityTitle">Castle Battle Availability</h3><button class="ms-apply-modal-close" id="battleAvailabilityClose" type="button" aria-label="Close">&times;</button></div>
+    <p class="ms-apply-hint">Enter your Kingshot ID to load your username and TC level, then select your availability for Castle Battle.</p>
+    <div class="ms-apply-field"><label for="battleAvailabilityId">Kingshot ID *</label><input type="text" inputmode="numeric" id="battleAvailabilityId" placeholder="Enter your Kingshot ID" spellcheck="false" autocomplete="off"><div class="ms-apply-idcheck" id="battleAvailabilityPlayer" role="status" aria-live="polite"></div></div>
+    <button class="ms-apply-cancel" id="battleAvailabilityLookup" type="button" style="margin-bottom:14px">Look up / Retry</button>
+    <div class="ms-apply-field"><label for="battleAvailabilityChoice">Battle Availability *</label><select id="battleAvailabilityChoice" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text-hi);font-family:Inter,sans-serif;font-size:16px"><option value="" disabled selected>Select availability</option><option value="Full">Full</option><option value="1st Half">1st Half</option><option value="2nd Half">2nd Half</option><option value="On/Off">On/Off</option><option value="None">None</option></select></div>
+    <div class="ms-apply-error" id="battleAvailabilityError" role="alert" style="display:none"></div>
+    <div class="ms-apply-actions"><button class="ms-apply-cancel" id="battleAvailabilityCancel" type="button">Cancel</button><button class="ms-apply-submit" id="battleAvailabilitySubmit" type="button">Save Availability</button></div>
+  </div>
+</div>
+
     <div class="ms-apply-modal-backdrop" id="msApplyModalBackdrop">
       <div class="ms-apply-modal">
         <div class="ms-apply-modal-head">
@@ -4966,6 +4978,7 @@ function msAvailShowError(msg){
 
 
 function msOpenApplyModal(key){
+  if(key==='d4' && !EDIT_MODE && battleAvailabilityIsOpen()){openBattleAvailability();return;}
   if(!msApplyIsOpen(key)){
     flag('Applications for this appointment are closed.');
     return;
@@ -5305,11 +5318,145 @@ function msReserveButtonTargetKey(){
   return null;
 }
 
+// Castle Battle registration uses the same player lookup as appointments,
+// but writes availability to the Battle Dashboard's live member records.
+var battleAvailabilityDb = null;
+var battleAvailabilityPlayer = null;
+var battleAvailabilitySequence = 0;
+var battleAvailabilityTimer = null;
+var battleAvailabilitySaving = false;
+var BATTLE_AVAILABILITY_OPTIONS = ['Full','1st Half','2nd Half','On/Off','None'];
+function battleAvailabilityIsOpen(){
+  var deadline=msDeadlineMsFor('d4');
+  return deadline!==null && Date.now()>=deadline;
+}
+function battleAvailabilityDatabase(){
+  if(battleAvailabilityDb)return battleAvailabilityDb;
+  var encoded=document.getElementById('battleViewerSource').textContent.trim();
+  var bytes=Uint8Array.from(atob(encoded),function(c){return c.charCodeAt(0);});
+  var viewer=new TextDecoder().decode(bytes);
+  var config=viewer.match(/firebase\.initializeApp\(\s*(\{[\s\S]*?\})\s*\);/);
+  if(!config)throw new Error('Battle database configuration is unavailable.');
+  // Extract the existing Firebase app configuration without executing viewer code.
+  var fields={},pattern=/([A-Za-z][A-Za-z0-9_]*)\s*:\s*"([^"\r\n]*)"/g,match;
+  while((match=pattern.exec(config[1])))fields[match[1]]=match[2];
+  if(!fields.databaseURL)throw new Error('Battle database URL is unavailable.');
+  var app=firebase.apps.find(function(a){return a.name==='castle-battle-availability';}) || firebase.initializeApp(fields,'castle-battle-availability');
+  battleAvailabilityDb=app.database();
+  return battleAvailabilityDb;
+}
+function battleAvailabilityTc(raw){
+  var text=String(raw||'').trim().toUpperCase();
+  if(/^TG[1-8]$/.test(text))return text;
+  var n=parseInt(text,10);
+  if(!Number.isFinite(n)||n<1)throw new Error('TC level was not returned. Please retry the ID lookup.');
+  if(n<30)return String(n);
+  if(n<35)return '30';
+  return 'TG'+Math.min(8,Math.floor((n-30)/5));
+}
+function battleAvailabilityFindMembers(data,id){
+  return Object.entries(data||{}).filter(function(entry){
+    var m=entry[1];if(!m||typeof m!=='object')return false;
+    var value=m.governorId||m.governor_id||m.kingshotId||m.playerId||m.fid;
+    if(!value && /^\d{7,10}$/.test(String(m.id||'')))value=m.id;
+    return String(value||'')===String(id);
+  });
+}
+function battleAvailabilityError(message){
+  var el=document.getElementById('battleAvailabilityError');el.textContent=message||'';el.style.display=message?'block':'none';
+}
+function openBattleAvailability(){
+  if(!battleAvailabilityIsOpen()){flag('Castle Battle availability opens when Noble Advisor reservations close.');return;}
+  battleAvailabilitySequence++;battleAvailabilityPlayer=null;clearTimeout(battleAvailabilityTimer);
+  document.getElementById('battleAvailabilityId').value='';document.getElementById('battleAvailabilityChoice').value='';
+  document.getElementById('battleAvailabilityPlayer').textContent='';battleAvailabilityError('');
+  document.getElementById('battleAvailabilityBackdrop').classList.add('open');
+  document.getElementById('battleAvailabilityId').focus();
+}
+function closeBattleAvailability(){
+  if(battleAvailabilitySaving)return;
+  battleAvailabilitySequence++;clearTimeout(battleAvailabilityTimer);
+  document.getElementById('battleAvailabilityBackdrop').classList.remove('open');
+  document.getElementById('reserveApptBtn').focus();
+}
+function lookupBattleAvailabilityPlayer(){
+  clearTimeout(battleAvailabilityTimer);
+  var id=document.getElementById('battleAvailabilityId').value.trim(),sequence=++battleAvailabilitySequence;
+  var check=document.getElementById('battleAvailabilityPlayer');battleAvailabilityPlayer=null;battleAvailabilityError('');
+  if(!/^\d{7,10}$/.test(id)){check.textContent=id?'Enter a valid numeric Kingshot ID.':'';check.className='ms-apply-idcheck notfound';return Promise.resolve(null);}
+  check.textContent='Looking up ID…';check.className='ms-apply-idcheck loading';
+  return msFetchPlayerProfileWithFallback(id).then(function(result){
+    if(sequence!==battleAvailabilitySequence)return null;
+    var p=result.profile,tc=battleAvailabilityTc(msProfileTcLevel(p));
+    if(!p.name || String(p.name)===id)throw new Error('Username was not returned. Please retry the ID lookup.');
+    battleAvailabilityPlayer={forId:id,name:p.name,tc:tc,alliance:p.alliance&&p.alliance.abbr||'',avatarUrl:p.avatar_url||''};
+    check.textContent='✓ '+p.name+' · '+tc+(p.alliance&&p.alliance.abbr?' · ['+p.alliance.abbr+']':'');check.className='ms-apply-idcheck found';
+    return battleAvailabilityDatabase().ref('members').once('value').then(function(snap){
+      if(sequence!==battleAvailabilitySequence)return null;
+      var members=battleAvailabilityFindMembers(snap.val(),id),choice=document.getElementById('battleAvailabilityChoice');
+      if(members.length===1&&!choice.value&&BATTLE_AVAILABILITY_OPTIONS.includes(members[0][1].available))choice.value=members[0][1].available;
+      return battleAvailabilityPlayer;
+    }).catch(function(){if(sequence===battleAvailabilitySequence)battleAvailabilityError('Your player details loaded, but existing availability could not be read. You can select an option and retry saving.');return battleAvailabilityPlayer;});
+  }).catch(function(error){
+    if(sequence!==battleAvailabilitySequence)return null;
+    battleAvailabilityPlayer=null;check.textContent='Could not load this player. Tap Look up / Retry.';check.className='ms-apply-idcheck notfound';return null;
+  });
+}
+function saveBattleAvailabilityRecord(db,player,availability){
+  return db.ref('members').once('value').then(function(snap){
+    var matches=battleAvailabilityFindMembers(snap.val(),player.forId);
+    if(matches.length>1)throw new Error('This ID matches multiple roster entries. Please ask an editor to resolve the duplicate.');
+    var update={available:availability,name:player.name,tc:player.tc,governorId:player.forId};
+    if(matches.length)return db.ref('members/'+matches[0][0]).update(update);
+    // A stable ID makes repeat submissions idempotent. Never replace an existing member.
+    return db.ref('members/'+player.forId).transaction(function(current){
+      if(current){
+        var identity=current.governorId||current.governor_id||current.kingshotId||current.playerId||current.fid||current.id;
+        if(String(identity)!==String(player.forId))return;
+        return Object.assign({},current,update);
+      }
+      return Object.assign({id:Number(player.forId),alliance:player.alliance||'',avatarUrl:player.avatarUrl||'',role:'',primaryTarget:'',kvkAlliance:'',team:'',notes:''},update);
+    }).then(function(result){if(!result.committed)throw new Error('The member record could not be saved. Please ask an editor to check the roster.');});
+  });
+}
+async function submitBattleAvailability(){
+  if(battleAvailabilitySaving)return;
+  battleAvailabilityError('');
+  if(!battleAvailabilityIsOpen()){battleAvailabilityError('Castle Battle availability is not open yet.');return;}
+  var id=document.getElementById('battleAvailabilityId').value.trim(),availability=document.getElementById('battleAvailabilityChoice').value;
+  if(!BATTLE_AVAILABILITY_OPTIONS.includes(availability)){battleAvailabilityError('Select your battle availability.');return;}
+  if(!battleAvailabilityPlayer||battleAvailabilityPlayer.forId!==id){battleAvailabilityError('Wait for your username and TC level to load, or tap Look up / Retry.');return;}
+  var player=Object.assign({},battleAvailabilityPlayer),button=document.getElementById('battleAvailabilitySubmit');
+  battleAvailabilitySaving=true;button.disabled=true;button.textContent='Saving…';
+  document.getElementById('battleAvailabilityId').disabled=true;document.getElementById('battleAvailabilityChoice').disabled=true;
+  try{
+    await saveBattleAvailabilityRecord(battleAvailabilityDatabase(),player,availability);
+    battleAvailabilitySaving=false;closeBattleAvailability();flag('Castle Battle availability saved!');
+  }catch(error){battleAvailabilityError('Could not save availability. '+(error.message||'Please try again.'));}
+  finally{battleAvailabilitySaving=false;button.disabled=false;button.textContent='Save Availability';document.getElementById('battleAvailabilityId').disabled=false;document.getElementById('battleAvailabilityChoice').disabled=false;}
+}
+(function initBattleAvailability(){
+  document.getElementById('battleAvailabilityClose').addEventListener('click',closeBattleAvailability);
+  document.getElementById('battleAvailabilityCancel').addEventListener('click',closeBattleAvailability);
+  document.getElementById('battleAvailabilityLookup').addEventListener('click',lookupBattleAvailabilityPlayer);
+  document.getElementById('battleAvailabilitySubmit').addEventListener('click',submitBattleAvailability);
+  document.getElementById('battleAvailabilityBackdrop').addEventListener('click',function(event){if(event.target===this)closeBattleAvailability();});
+  document.getElementById('battleAvailabilityId').addEventListener('input',function(){
+    battleAvailabilitySequence++;battleAvailabilityPlayer=null;clearTimeout(battleAvailabilityTimer);
+    document.getElementById('battleAvailabilityPlayer').textContent='';document.getElementById('battleAvailabilityChoice').value='';battleAvailabilityError('');
+    battleAvailabilityTimer=setTimeout(lookupBattleAvailabilityPlayer,500);
+  });
+  document.getElementById('battleAvailabilityId').addEventListener('blur',function(){if(!battleAvailabilityPlayer)lookupBattleAvailabilityPlayer();});
+  document.getElementById('battleAvailabilityId').addEventListener('keydown',function(event){if(event.key==='Enter'){event.preventDefault();lookupBattleAvailabilityPlayer();}});
+  document.addEventListener('keydown',function(event){if(event.key==='Escape'&&document.getElementById('battleAvailabilityBackdrop').classList.contains('open'))closeBattleAvailability();});
+})();
+
 (function initReserveButton(){
   var btn = document.getElementById('reserveApptBtn');
   var closeBtn = document.getElementById('apptChooserClose');
   var backdrop = document.getElementById('apptChooserBackdrop');
   if(btn) btn.addEventListener('click', function(){
+    if(!EDIT_MODE && battleAvailabilityIsOpen()){openBattleAvailability();return;}
     if(EDIT_MODE){openApptChooser();return;}
     var target = msReserveButtonTargetKey();
     if(target){
@@ -5867,6 +6014,7 @@ function msApplyStatusFor(key){
 }
 
 function msApplySlotHtml(key){
+  if(key==='d4' && !EDIT_MODE && battleAvailabilityIsOpen())return '<button class="ms-apply-btn" id="ms-apply-btn-'+key+'">⚔️ Enter Castle Battle Availability</button>';
   var status = msApplyStatusFor(key);
   if(status.state === 'not-yet-open'){
     return '<div class="ms-apply-closed">Applications for this appointment open in <span class="notranslate" translate="no">' +
@@ -6152,6 +6300,7 @@ function checkUrlAutoUnlock(){
 function renderReserveButtonLabel(){
   var btn = document.getElementById('reserveApptBtn');
   if(!btn) return;
+  if(!EDIT_MODE && battleAvailabilityIsOpen()){btn.textContent='⚔️ Castle Battle Availability';return;}
   if(EDIT_MODE){btn.textContent='\uD83D\uDC51 Manage Appointments';return;}
   var target = msReserveButtonTargetKey();
   btn.textContent = target
@@ -6219,6 +6368,7 @@ function kaGridStyle(key){
 }
 
 function kaApplySlotHtml(key){
+  if(key==='d4' && !EDIT_MODE && battleAvailabilityIsOpen())return '<button class="ms-apply-btn" id="ka-apply-btn-'+key+'">⚔️ Enter Castle Battle Availability</button>';
   var status = msApplyStatusFor(key);
   if(status.state === 'not-yet-open'){
     return '<div class="ms-apply-closed">Applications for this appointment open in <span class="notranslate" translate="no">' +
