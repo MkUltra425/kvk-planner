@@ -5531,7 +5531,7 @@ function msColsFor(key){
   else cols = [
     {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'T9', w:'1fr'}, {h:'T10', w:'1fr'}, {h:'T11', w:'1fr'}, {h:'TC', w:'1fr'}, {h:'TG', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
   ];
-  if(EDIT_MODE)cols.splice(2,0,{h:'Requested',w:narrow?'1.25fr':'1.4fr'});
+  if(EDIT_MODE)cols.splice(2,0,{h:'ID',w:narrow?'80px':'96px'},{h:'Requested',w:narrow?'1.25fr':'1.4fr'});
   return cols;
 }
 
@@ -5564,7 +5564,7 @@ function msRequestedHtml(p,key){
 }
 
 function msRowValues(key, p){
-  var requested=EDIT_MODE?[msRequestedHtml(p,key)]:[];
+  var requested=EDIT_MODE?['<span class="notranslate" translate="no">'+msEsc(p.kingshotId || '—')+'</span>',msRequestedHtml(p,key)]:[];
   if(key === 'd1'){
     return requested.concat([msTcValueHtml(p), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)]);
   }
