@@ -5406,7 +5406,7 @@ function saveBattleAvailabilityRecord(db,player,availability){
   return db.ref('members').once('value').then(function(snap){
     var matches=battleAvailabilityFindMembers(snap.val(),player.forId);
     if(matches.length>1)throw new Error('This ID matches multiple roster entries. Please ask an editor to resolve the duplicate.');
-    var update={available:availability,name:player.name,tc:player.tc,governorId:player.forId};
+    var update={available:availability,availabilitySubmittedValue:availability,availabilityLocked:true,availabilitySource:'1884kvk.com',availabilitySubmittedAt:Date.now(),name:player.name,tc:player.tc,governorId:player.forId};
     if(matches.length)return db.ref('members/'+matches[0][0]).update(update);
     // A stable ID makes repeat submissions idempotent. Never replace an existing member.
     return db.ref('members/'+player.forId).transaction(function(current){
