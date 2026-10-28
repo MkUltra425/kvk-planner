@@ -1499,7 +1499,8 @@
   <form class="ms-apply-modal" id="sb-schedule-form" role="dialog" aria-modal="true" aria-labelledby="sb-schedule-title">
     <div class="ms-apply-modal-head"><h3 id="sb-schedule-title">Schedule Super Bear</h3><button class="ms-apply-modal-close" id="sb-schedule-close" type="button" aria-label="Close">&times;</button></div>
     <p class="ms-apply-hint" id="sb-cycle-hint"></p>
-    <div class="ms-apply-field"><label for="sb-schedule-at">Super Bear date and time (UTC) *</label><input id="sb-schedule-at" type="datetime-local" step="60" required aria-describedby="sb-utc-note"><p class="ms-apply-hint" id="sb-utc-note">Enter UTC, not your device's local time. Existing sign-ups stay in place if you change the time.</p></div>
+    <div class="ms-apply-field"><label for="sb-schedule-date">Date (UTC) *</label><input id="sb-schedule-date" type="date" required></div>
+    <div class="ms-apply-field"><label for="sb-schedule-time">Time (UTC, 24-hour) *</label><div style="display:flex;align-items:center;gap:10px"><input id="sb-schedule-time" type="text" inputmode="numeric" placeholder="15:00" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" required aria-describedby="sb-utc-note" style="max-width:150px"><span>UTC</span></div><p class="ms-apply-hint" id="sb-utc-note">Use 24-hour UTC, for example 15:00 UTC. Existing sign-ups stay in place if you change the schedule.</p></div>
     <div class="ms-apply-error" id="sb-schedule-error" role="alert" style="display:none"></div>
     <div class="ms-apply-actions"><button class="ms-apply-cancel" id="sb-schedule-cancel" type="button">Cancel</button><button class="ms-apply-submit" id="sb-schedule-save" type="submit">Save schedule</button></div>
   </form>
@@ -6679,7 +6680,7 @@ function sbEventMs(data){return Number(data && data.event && data.event.schedule
 function sbVisibleAt(data,now){return sbEventMs(data)>0 && now<sbPrepEndMs();}
 function sbIsVisible(){return sbLoaded && sbVisibleAt(sbData,sbNow());}
 function sbCanWrite(data){return sbVisibleAt(data,sbNow()) && (EDIT_MODE || sbNow()<sbEventMs(data));}
-function sbUtc(ms){return new Date(ms).toISOString().slice(0,16).replace('T',' ')+' UTC';}
+function sbUtc(ms){var iso=new Date(ms).toISOString();return iso.slice(11,16)+' UTC · '+iso.slice(0,10);}
 function sbRemember(id){sbMyId=id;try{localStorage.setItem('sb-id-'+storageKey,id);}catch(e){}}
 function sbRank(signups){
   return Object.keys(signups||{}).filter(function(id){
@@ -6879,7 +6880,9 @@ async function sbSubmit(e){
 }
 function sbOpenSchedule(){
   if(!EDIT_MODE)return;
-  sbEl('schedule-at').value=sbEventMs(sbData)?new Date(sbEventMs(sbData)).toISOString().slice(0,16):'';
+  var iso=sbEventMs(sbData)?new Date(sbEventMs(sbData)).toISOString():'';
+  sbEl('schedule-date').value=iso.slice(0,10);
+  sbEl('schedule-time').value=iso.slice(11,16);
   sbEl('cycle-hint').textContent='Current cycle: '+fmtDateISO(ACTIVE_CYCLE_START_MS)+'. The Super Bear tab hides when prep ends at '+sbUtc(sbPrepEndMs())+'.';
   sbError('schedule-error','');sbOpenDialog('schedule');
 }
@@ -6887,8 +6890,10 @@ async function sbSaveSchedule(e){
   e.preventDefault();if(sbSaving)return;
   try{
     if(!EDIT_MODE)throw new Error('Edit access is required.');sbRequireConnection();
-    var raw=sbEl('schedule-at').value;if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw))throw new Error('Enter a valid UTC date and time.');
-    var scheduledAt=Date.parse(raw+':00Z');
+    var date=sbEl('schedule-date').value,time=sbEl('schedule-time').value.trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))throw new Error('Enter a date and a 24-hour UTC time, for example 15:00.');
+    var raw=date+'T'+time,scheduledAt=Date.parse(raw+':00Z');
+    if(!Number.isFinite(scheduledAt)||new Date(scheduledAt).toISOString().slice(0,16)!==raw)throw new Error('Enter a valid UTC date and time.');
     if(!Number.isFinite(scheduledAt)||scheduledAt<=sbNow())throw new Error('Choose a future UTC time.');
     if(sbNow()>=sbPrepEndMs())throw new Error('This cycle’s prep has ended. Reload to schedule in the upcoming cycle.');
     if(scheduledAt>=sbPrepEndMs())throw new Error('Choose a time before this cycle’s prep ends at '+sbUtc(sbPrepEndMs())+'.');
