@@ -1477,7 +1477,7 @@
       <p class="ms-apply-hint">Closest spots go to the highest Mystic Trial scores. Equal scores use the original sign-up time. Assignments update live.</p>
       <div class="sb-list"><table class="sb-table"><thead><tr><th scope="col">Spot #</th><th scope="col">Governor</th><th scope="col">Mystic Trial</th><th scope="col" id="sb-editor-heading" hidden><span class="sb-sr-only">Editor controls</span></th></tr></thead><tbody id="sb-rows"></tbody></table></div>
       <section id="sb-reserve" hidden aria-labelledby="sb-reserve-title"><h3 id="sb-reserve-title">Reserve</h3><p class="ms-apply-hint">Moves up automatically when a spot opens.</p><div id="sb-reserve-list"></div></section>
-      <div class="sb-actions"><button class="ms-apply-cancel" type="button" id="sb-copy">Copy for alliance chat</button><button class="ms-apply-cancel" type="button" id="sb-withdraw" hidden>Withdraw my sign-up</button><button class="ms-apply-cancel" type="button" id="sb-clear" hidden>Clear all sign-ups</button></div>
+      <div class="sb-actions"><button class="ms-apply-cancel" type="button" id="sb-copy" hidden>Copy for Alliance Chat</button><button class="ms-apply-cancel" type="button" id="sb-withdraw" hidden>Withdraw my sign-up</button><button class="ms-apply-cancel" type="button" id="sb-clear" hidden>Clear all sign-ups</button></div>
       <div class="ms-apply-error" id="sb-clear-confirm" hidden>Clear all Super Bear sign-ups for this cycle? This cannot be undone.<div class="sb-actions"><button class="ms-apply-submit" id="sb-clear-yes" type="button">Yes, clear sign-ups</button><button class="ms-apply-cancel" id="sb-clear-no" type="button">Cancel</button></div></div>
       <p class="ms-apply-hint" id="sb-message" role="status" aria-live="polite"></p><textarea class="sb-copy-fallback" id="sb-copy-fallback" hidden readonly aria-label="Super Bear spots to copy"></textarea>
     </section>
@@ -6772,6 +6772,8 @@ function sbRender(){
   sbEl('apply').disabled=!allowed||!sbConnected;
   sbEl('apply').textContent=sbNow()>=scheduledAt&&scheduledAt?(EDIT_MODE?'+ Add / update sign-up':'Sign-ups closed'):'+ Sign up for Super Bear';
   sbEl('editor-heading').hidden=!EDIT_MODE;sbEl('clear').hidden=!EDIT_MODE;
+  sbEl('copy').hidden=!EDIT_MODE;
+  if(!EDIT_MODE)sbEl('copy-fallback').hidden=true;
   sbEl('withdraw').hidden=!(sbMyId&&sbData.signups&&sbData.signups[sbMyId]&&allowed);
   sbMap.tiles.forEach(function(tl,i){
     var p=sbAssigned[i];tl.g.classList.toggle('sb-mine',!!p&&p.kid===sbMyId);tl.g.classList.toggle('sb-sel',sbSelected===i+1);
@@ -6940,7 +6942,8 @@ function sbCopyText(){
   if(sbReserve.length)lines.push('Reserve: '+sbReserve.map(function(p){return p.name;}).join(', '));return lines.join('\n');
 }
 function sbCopy(){
-  var text=sbCopyText();var fallback=function(){var box=sbEl('copy-fallback');box.hidden=false;box.value=text;box.focus();box.select();sbMessage('Copy the selected text below.');};
+  if(!EDIT_MODE)return;
+  var text=sbCopyText();var fallback=function(){if(!EDIT_MODE)return;var box=sbEl('copy-fallback');box.hidden=false;box.value=text;box.focus();box.select();sbMessage('Copy the selected text below.');};
   try{navigator.clipboard.writeText(text).then(function(){sbEl('copy-fallback').hidden=true;sbMessage('Copied for alliance chat.');},fallback);}catch(e){fallback();}
 }
 
