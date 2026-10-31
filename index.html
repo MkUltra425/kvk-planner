@@ -6685,7 +6685,9 @@ function sbNow(){return Date.now()+sbServerOffset;}
 function sbPrepEndMs(){return PREP_START + DAYS.filter(function(d){return d.group==='prep';}).length*DAY_MS;}
 function sbEventMs(data){return Number(data && data.event && data.event.scheduledAt)||0;}
 function sbVisibleAt(data,now){return sbEventMs(data)>0 && now<sbPrepEndMs();}
-function sbIsVisible(){return sbLoaded && sbVisibleAt(sbData,sbNow());}
+// Temporarily hide Super Bear without changing its saved event or sign-ups.
+var SB_TAB_ENABLED=false;
+function sbIsVisible(){return SB_TAB_ENABLED && sbLoaded && sbVisibleAt(sbData,sbNow());}
 function sbCanWrite(data){return sbVisibleAt(data,sbNow()) && (EDIT_MODE || sbNow()<sbEventMs(data));}
 function sbUtc(ms){var iso=new Date(ms).toISOString();return iso.slice(11,16)+' UTC · '+iso.slice(0,10);}
 function sbRemember(id){sbMyId=id;try{localStorage.setItem('sb-id-'+storageKey,id);}catch(e){}}
