@@ -2883,60 +2883,159 @@ function kvkPrepDayState(value){
 }
 
 function kvkPrepBookmarkUrl(){
-  return 'javascript:('+(async function(){
-  if(location.hostname!=='jeabslist.com'){alert('Open Jeabslist before using this bookmark.');return;}
-  const prior=document.getElementById('kvp-paste-sync');
-  if(prior){prior.showModal();return;}
-  const box=document.createElement('dialog');
-  box.id='kvp-paste-sync';
-  box.style.cssText='width:min(560px,90vw);max-height:85vh;overflow:auto;background:#151820;color:#f0f2f6;border:1px solid #45c9bf;border-radius:14px;padding:24px;font:15px system-ui;box-sizing:border-box';
-  const title=document.createElement('h2');title.textContent='Import KvK Prep';title.style.marginTop='0';
-  const help=document.createElement('p');help.textContent='Paste the response copied from Network → prep (total) or prep?board=N (daily). Source flags are preserved and shown as warnings on the dashboard. This bookmark makes no requests to Jeabslist.';
-  const input=document.createElement('textarea');input.placeholder='Paste the complete JSON response here';input.setAttribute('aria-label','Jeabslist prep JSON');input.style.cssText='width:100%;height:190px;box-sizing:border-box;background:#0c1017;color:#fff;border:1px solid #667085;border-radius:8px;padding:10px';
-  const status=document.createElement('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
-  const actions=document.createElement('div');actions.style.cssText='display:flex;gap:10px;flex-wrap:wrap';
-  function button(label){const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='padding:10px 14px;border-radius:8px;border:1px solid #45c9bf;background:#173737;color:#fff;cursor:pointer';actions.appendChild(b);return b;}
-  const paste=button('Paste from clipboard'),save=button('Save to dashboard'),close=button('Close');
-  box.append(title,help,input,status,actions);document.body.appendChild(box);box.showModal();
-  close.onclick=()=>box.close();box.addEventListener('close',()=>box.remove());
-  paste.onclick=async()=>{try{input.value=await navigator.clipboard.readText();status.textContent='Response pasted. Click Save to dashboard.';}catch(e){status.textContent='Clipboard access is unavailable. Paste into the text box using Ctrl+V or Command+V.';}};
-  save.onclick=async()=>{
-    save.disabled=true;paste.disabled=true;status.textContent='Checking response…';
+  // Runs on jeabslist.com. It captures prep responses that the Jeabslist page itself
+  // loads while you click its tabs, and makes NO requests to Jeabslist. Firebase only.
+  return 'javascript:('+(function(){
+  if(!/(^|\.)jeabslist\.com$/.test(location.hostname)){alert('Open Jeabslist before using this bookmark.');return;}
+  const W=window;
+  if(W.__kvpCapture){W.__kvpCapture.show();return;}
+  const FB='https://kvk-planner-1884-default-rtdb.firebaseio.com',KID=1884;
+  const ANCHOR=Date.UTC(2026,7,8),DAY=86400000,CYCLE=28*DAY;
+  const RX=/\/api\/kingdoms\/\d+\/kvk\/prep(?:[?#]|$)/;
+  const MATCH=['kid','opponent_kid','season','prep_start','prep_end'];
+  const got={};let latest=null,note='';
+  const same=(a,b)=>MATCH.every(k=>a[k]==null||b[k]==null||String(a[k])===String(b[k]));
+  const keyOf=d=>Number(d.board.rtype)===11?'total':String(Number(d.board.rtype));
+  const label=k=>k==='total'?'5-Day Total':'Day '+k;
+  function cycleKey(d){
+    // Same 28-day Saturday grid as the dashboard (CYCLE_ANCHOR_SAT_UTC); prep must fall on days 2-6.
+    const t=Number(d.prep_start)*1000,start=ANCHOR+Math.floor((t-ANCHOR)/CYCLE)*CYCLE,into=(t-start)/DAY;
+    return into>=2&&into<7?'kvk-cycle-'+new Date(start).toISOString().slice(0,10):null;
+  }
+  function problem(d){
+    const b=d&&d.board,type=Number(b&&b.rtype),day=Number(d&&d.day),opp=Number(d&&d.opponent_kid);
+    if(!d||Number(d.kid)!==KID)return 'not Kingdom '+KID;
+    if(!opp||!Number.isInteger(day)||day<1||day>5||!(Number(d.prep_start)>0))return 'missing matchup or day';
+    if(!b||!Array.isArray(b.entries)||![1,2,3,4,5,11].includes(type))return 'no player board';
+    if(!b.entries.every(e=>e&&Number.isFinite(Number(e.score))&&Number(e.score)>=0&&[KID,opp].includes(Number(e.kid))))return 'invalid scores or players outside this matchup';
+    if(!cycleKey(d))return 'prep dates do not fit the dashboard cycle';
+    return null;
+  }
+  function take(d,via){
+    const why=problem(d);
+    if(why){if(d&&typeof d==='object'&&d.board)note='Ignored a response: '+why+'.';render();return why;}
+    const any=Object.keys(got).map(k=>got[k].d)[0];
+    if(any&&!same(any,d)){for(const k in got)delete got[k];note='A different matchup was loaded; earlier captures were cleared.';}
+    const k=keyOf(d),prev=got[k];
+    if(prev&&Number(prev.d.board.fetched_at)>Number(d.board.fetched_at||0)){note=label(k)+': kept the newer copy already captured.';render();return null;}
+    got[k]={d,via,at:Math.floor(Date.now()/1000),saved:false};
+    if(!latest||Number(d.observed_at)>=Number(latest.observed_at))latest=d;
+    note='';render();return null;
+  }
+  // Passive hooks: clone responses the page already requested. Requests are not changed or repeated.
+  const origFetch=W.fetch,XO=XMLHttpRequest.prototype.open,XS=XMLHttpRequest.prototype.send;
+  const hookFetch=function(input){
+    const p=origFetch.apply(this,arguments);
     try{
-      const d=JSON.parse(input.value.trim()),b=d.board||{},type=Number(b.rtype),day=Number(d.day),start=Number(d.prep_start),opponent=Number(d.opponent_kid);
-      const sourceFlagged=d.is_poisoned===true;
-      if(Number(d.kid)!==1884||!opponent||!Number.isInteger(day)||day<1||day>5||!Number.isFinite(start)||start<=0||!Array.isArray(b.entries)||!([1,2,3,4,5,11].includes(type)))
-        throw new Error('Paste the complete prep response, including kingdom, matchup dates, and board entries.');
-      if(!b.entries.every(e=>e&&Number.isFinite(Number(e.score))&&Number(e.score)>=0&&[1884,opponent].includes(Number(e.kid))))
-        throw new Error('The response contains invalid scores or players from a different matchup.');
-      const date=new Date((start-2*86400)*1000).toISOString().slice(0,10);
-      const base='https://kvk-planner-1884-default-rtdb.firebaseio.com/kvk-cycle-'+date;
-      async function read(path){
-        const r=await fetch(base+'/'+path+'.json',{cache:'no-store'});
-        if(!r.ok)throw new Error('Could not verify the saved matchup. Firebase returned '+r.status+'.');
-        return r.json();
-      }
-      const current=await read('kvkPrepData');
-      if(current)for(const key of ['kid','opponent_kid','season','prep_start','prep_end'])
-        if(d[key]!=null&&current[key]!=null&&String(d[key])!==String(current[key]))
-          throw new Error('This response does not match the dashboard’s current KvK matchup.');
-      const daily=type!==11,path=daily?'kvkPrepDailyBoards/'+type:'kvkPrepData';
-      const existing=daily?await read(path):current;
-      if(Number(existing&&existing.board&&existing.board.fetched_at)>Number(b.fetched_at||0))
-        throw new Error('The dashboard already has a newer copy of this board. Nothing was replaced.');
-      const updates={};updates[path]=daily?Object.assign({},d,{day:type}):d;
-      if(!daily)updates['kvkPrepByDay/'+day]=d;
-      status.textContent='Saving '+(daily?'Day '+type:'total')+' leaderboard…';
-      const result=await fetch(base+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(updates)});
-      if(!result.ok)throw new Error('Firebase returned '+result.status+'. The save could not be confirmed.');
-      const verified=await read(path);
-      if(!verified||Number(verified.board&&verified.board.rtype)!==type)throw new Error('Could not verify the saved board. Refresh the dashboard before retrying.');
-      status.textContent='Saved '+b.entries.length+' players for '+(daily?'Day '+type:'the prep total')+'. '+(sourceFlagged?'The source flag was preserved; these scores are not independently verified. ':'')+'Refresh Leaders on 1884kvk.com. You can paste another response here.';
-      input.value='';
-    }catch(e){status.textContent=e instanceof SyntaxError?'The pasted text is not valid JSON. Use Copy response in Network.':e.message;}
-    finally{save.disabled=false;paste.disabled=false;}
+      const u=typeof input==='string'?input:(input&&input.url)||String(input);
+      if(RX.test(u))p.then(r=>{if(r.ok)r.clone().json().then(d=>take(d,'page')).catch(()=>{});}).catch(()=>{});
+    }catch(e){}
+    return p;
   };
-  input.focus();
+  W.fetch=hookFetch;
+  const hookOpen=function(m,u){this.__kvpUrl=String(u);return XO.apply(this,arguments);};
+  const hookSend=function(){
+    if(RX.test(this.__kvpUrl||''))this.addEventListener('load',function(){
+      try{
+        if(this.status<200||this.status>=300)return;
+        const t=this.responseType;
+        take(t==='json'?this.response:(t===''||t==='text')?JSON.parse(this.responseText):null,'page');
+      }catch(e){}
+    });
+    return XS.apply(this,arguments);
+  };
+  XMLHttpRequest.prototype.open=hookOpen;XMLHttpRequest.prototype.send=hookSend;
+  // Floating panel (not modal) so the Jeabslist tabs stay clickable.
+  const box=document.createElement('div');
+  box.id='kvp-capture';
+  box.style.cssText='position:fixed;right:16px;bottom:16px;z-index:2147483647;width:min(380px,92vw);max-height:80vh;overflow:auto;background:#151820;color:#f0f2f6;border:1px solid #45c9bf;border-radius:14px;padding:16px;font:14px/1.4 system-ui;box-shadow:0 10px 30px rgba(0,0,0,.5);box-sizing:border-box';
+  const el=(tag,css,text)=>{const n=document.createElement(tag);if(css)n.style.cssText=css;if(text!=null)n.textContent=text;return n;};
+  const title=el('div','font-weight:700;font-size:16px;margin-bottom:6px','KvK Prep capture is on');
+  const help=el('div','color:#b8c0cc;margin-bottom:10px','Click the 5-Day Total and each Day tab on this Jeabslist page. Boards appear below as the page loads them. This panel makes no requests to Jeabslist.');
+  const list=el('div','display:grid;gap:6px;margin-bottom:10px');
+  const status=el('div','min-height:1.4em;margin:8px 0;color:#ffd48a');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+  const actions=el('div','display:flex;gap:8px;flex-wrap:wrap');
+  const btn=t=>{const b=el('button','padding:8px 12px;border-radius:8px;border:1px solid #45c9bf;background:#173737;color:#fff;cursor:pointer;font:inherit',t);b.type='button';actions.appendChild(b);return b;};
+  const saveBtn=btn('Save captured boards'),pasteBtn=btn('Paste manually'),hideBtn=btn('Hide'),stopBtn=btn('Stop capture');
+  const pasteWrap=el('div','display:none;margin-top:10px');
+  const input=el('textarea','width:100%;height:120px;box-sizing:border-box;background:#0c1017;color:#fff;border:1px solid #667085;border-radius:8px;padding:8px;font:12px monospace');
+  input.placeholder='Paste a prep or prep?board=N response from Network';input.setAttribute('aria-label','Jeabslist prep JSON');
+  const addBtn=el('button','margin-top:6px;padding:8px 12px;border-radius:8px;border:1px solid #45c9bf;background:#173737;color:#fff;cursor:pointer;font:inherit','Add pasted response');addBtn.type='button';
+  pasteWrap.append(input,addBtn);
+  box.append(title,help,list,status,actions,pasteWrap);document.body.appendChild(box);
+  const fmt=s=>s?new Date(Number(s)*1000).toLocaleString():'unknown time';
+  function render(){
+    list.textContent='';
+    const current=Number(latest&&latest.day)||5;
+    ['total','1','2','3','4','5'].forEach(k=>{
+      const g=got[k],row=el('div','padding:6px 8px;border-radius:8px;background:'+(g?'#16302e':'#1d212b'));
+      if(g){
+        const b=g.d.board;
+        row.textContent='✓ '+label(k)+' — '+b.entries.length+' players, fetched '+fmt(b.fetched_at)+(g.d.is_poisoned===true?' · source flagged (not verified)':'')+(g.via==='paste'?' · pasted':'')+(g.saved?' · saved':' · not saved yet');
+      }else{
+        row.textContent='○ '+label(k)+' — '+(k!=='total'&&latest&&Number(k)>current?'not started yet':'not captured: open it on the page');
+        row.style.color='#9aa7ba';
+      }
+      list.appendChild(row);
+    });
+    const pending=Object.keys(got).filter(k=>!got[k].saved).length;
+    saveBtn.textContent=pending?'Save '+pending+' board'+(pending>1?'s':''):'Save captured boards';
+    if(note)status.textContent=note;
+  }
+  async function save(){
+    const keys=Object.keys(got).filter(k=>!got[k].saved);
+    if(!keys.length){status.textContent='Nothing new to save. Click a board tab on the page first.';return;}
+    saveBtn.disabled=true;status.textContent='Checking the dashboard…';
+    try{
+      const ref=got[keys[0]].d,base=FB+'/'+cycleKey(ref);
+      const read=async p=>{const r=await fetch(base+'/'+p+'.json',{cache:'no-store'});if(!r.ok)throw new Error('Firebase returned '+r.status+' while checking '+p+'.');return r.json();};
+      const current=await read('kvkPrepData');
+      if(current&&!same(current,ref))throw new Error('These boards do not match the dashboard’s current KvK matchup. Nothing was saved.');
+      const updates={},written=[],skipped=[];
+      for(const k of keys){
+        const g=got[k],d=g.d,daily=k!=='total',path=daily?'kvkPrepDailyBoards/'+k:'kvkPrepData';
+        const existing=daily?await read(path):current;
+        if(Number(existing&&existing.board&&existing.board.fetched_at)>Number(d.board.fetched_at||0)){skipped.push(label(k));g.saved=true;continue;}
+        const rec=Object.assign({},d,{capture_source:g.via==='paste'?'manual-paste':'page-response',captured_at:g.at});
+        if(daily)rec.day=Number(k);
+        updates[path]=rec;
+        if(!daily)updates['kvkPrepByDay/'+Number(d.day)]=Object.assign({},d,{capture_source:rec.capture_source,captured_at:g.at});
+        written.push(k);
+      }
+      if(written.length){
+        status.textContent='Saving '+written.map(label).join(', ')+'…';
+        const r=await fetch(base+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(updates)});
+        if(!r.ok)throw new Error('Firebase returned '+r.status+'. The save could not be confirmed.');
+        for(const k of written){
+          const v=await read(k==='total'?'kvkPrepData':'kvkPrepDailyBoards/'+k),b=got[k].d.board;
+          const want=k==='total'?11:Number(k);
+          if(!v||Number(v.board&&v.board.rtype)!==want||!Array.isArray(v.board.entries)||v.board.entries.length!==b.entries.length)
+            throw new Error('Could not verify '+label(k)+' after saving. Refresh the dashboard before retrying.');
+          got[k].saved=true;
+        }
+      }
+      const flagged=written.filter(k=>got[k].d.is_poisoned===true);
+      note=(written.length?'Saved '+written.map(label).join(', ')+'. ':'')+(skipped.length?'Skipped '+skipped.join(', ')+' (dashboard already has a newer copy). ':'')+(flagged.length?'Source flag preserved on '+flagged.map(label).join(', ')+'. ':'')+'Leaders on 1884kvk.com updates automatically.';
+    }catch(e){note=e.message;}
+    finally{saveBtn.disabled=false;render();status.textContent=note;}
+  }
+  function stop(){
+    if(W.fetch===hookFetch)W.fetch=origFetch;
+    if(XMLHttpRequest.prototype.open===hookOpen)XMLHttpRequest.prototype.open=XO;
+    if(XMLHttpRequest.prototype.send===hookSend)XMLHttpRequest.prototype.send=XS;
+    box.remove();delete W.__kvpCapture;
+  }
+  saveBtn.onclick=save;
+  hideBtn.onclick=()=>{box.style.display='none';};
+  stopBtn.onclick=stop;
+  pasteBtn.onclick=()=>{pasteWrap.style.display=pasteWrap.style.display==='none'?'block':'none';if(pasteWrap.style.display==='block')input.focus();};
+  addBtn.onclick=()=>{
+    let d;try{d=JSON.parse(input.value.trim());}catch(e){status.textContent='The pasted text is not valid JSON. Use Copy response in Network.';return;}
+    const why=take(d,'paste');
+    if(why)status.textContent='Not added: '+why+'.';else{input.value='';status.textContent=label(keyOf(d))+' added. Click Save when ready.';}
+  };
+  W.__kvpCapture={show:()=>{box.style.display='block';},got,stop};
+  render();
 }).toString()+')();';
 }
 
@@ -2950,7 +3049,7 @@ function kvkPrepOpenImport(){
   backdrop.innerHTML='<div class="kvp-import-modal" role="dialog" aria-modal="true" aria-labelledby="kvpImportTitle">'+
     '<div class="kvp-import-head"><div><div class="kvp-import-title" id="kvpImportTitle">Import KvK Prep Data</div><div class="kvp-import-help">Import a total snapshot, or select a day and paste that day’s actual player-board JSON. Source flags are preserved and displayed as warnings; imported scores are not independently verified. Total snapshots cannot reconstruct daily rankings.</div></div><button class="kvp-import-close" id="kvpImportClose" type="button" aria-label="Close">&times;</button></div>'+
     '<label class="kvp-import-help" for="kvpImportPeriod">Leaderboard period</label><select id="kvpImportPeriod" class="ms-select" style="width:100%;margin:8px 0 12px"><option value="auto">Auto-detect / total snapshot</option><option value="1">Day 1 player board</option><option value="2">Day 2 player board</option><option value="3">Day 3 player board</option><option value="4">Day 4 player board</option><option value="5">Day 5 player board</option></select>'+
-    '<div class="kvp-import-help" style="margin:8px 0 12px">Bookmark import: drag <a id="kvpSyncBookmark" class="kvp-refresh" style="display:inline-block;color:var(--accent,#45c9bf);text-decoration:none" href="#">Sync KvK Prep</a> to your bookmarks bar, replacing the old bookmark. On Jeabslist, copy the Network response for prep (total) or prep?board=N (daily), click the bookmark, paste, and save. It does not request data from Jeabslist.</div>'+
+    '<div class="kvp-import-help" style="margin:8px 0 12px">Bookmark capture: drag <a id="kvpSyncBookmark" class="kvp-refresh" style="display:inline-block;color:var(--accent,#45c9bf);text-decoration:none" href="#">Sync KvK Prep</a> to your bookmarks bar, replacing the old bookmark. On the Jeabslist KvK Prep page, click the bookmark first, then click the 5-Day Total and each Day tab. The bookmark saves the responses the page loads; it does not send its own requests to Jeabslist. Click Save in its panel. If a board doesn’t appear, use the panel’s Paste manually option for that board.</div>'+
     '<label class="kvp-import-help" for="kvpBookmarkUrl">Bookmark URL (copy this into an existing bookmark’s URL field)</label><textarea id="kvpBookmarkUrl" class="kvp-import-text" readonly style="min-height:64px;height:64px;margin:6px 0 16px" aria-label="KvK Prep sync bookmark URL"></textarea>'+
     '<textarea class="kvp-import-text" id="kvpImportText" placeholder="Paste JSON here..." spellcheck="false"></textarea>'+
     '<div class="kvp-import-error" id="kvpImportError"></div>'+
