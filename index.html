@@ -2882,6 +2882,45 @@ function kvkPrepDayState(value){
   return {label:'Soon',cls:'soon'};
 }
 
+function kvkPrepBookmarkUrl(){
+  return 'javascript:('+(async function(){
+  try{
+    if(location.hostname!=='jeabslist.com')throw new Error('Open Jeabslist and sign in before running this bookmark.');
+    const kid=1884,base='/api/kingdoms/'+kid+'/kvk/prep';
+    async function read(url){
+      const r=await fetch(url,{credentials:'include',headers:{Accept:'application/json'},cache:'no-store'});
+      if(!r.ok)throw new Error('Jeabslist returned '+r.status+'. Check that you are signed in and have access.');
+      const d=await r.json();
+      if(d.is_poisoned===true)throw new Error('Jeabslist marked this response as invalid. Nothing was saved.');
+      return d;
+    }
+    const total=await read(base),board=total.board,day=Number(total.day),start=Number(total.prep_start);
+    if(Number(total.kid)!==kid||total.active===false||!board||Number(board.rtype)!==11||!Array.isArray(board.entries)||day<1||day>5||!start)
+      throw new Error('The prep response is not a valid active total leaderboard. Nothing was saved.');
+    const cycleDate=new Date((start-2*86400)*1000).toISOString().slice(0,10);
+    const updates={kvkPrepData:total};
+    updates['kvkPrepByDay/'+day]=total;
+    let captured=0;
+    for(let n=1;n<=day;n++){
+      const daily=await read(base+'?board='+n),dailyBoard=daily.board;
+      if(!dailyBoard||Number(dailyBoard.rtype)!==n||!Array.isArray(dailyBoard.entries))
+        throw new Error('Day '+n+' did not return its actual daily player board. Nothing was saved.');
+      for(const field of ['kid','opponent_kid','season','prep_start','prep_end'])
+        if(daily[field]!=null&&total[field]!=null&&String(daily[field])!==String(total[field]))
+          throw new Error('Day '+n+' belongs to a different matchup. Nothing was saved.');
+      if(!dailyBoard.entries.every(e=>e&&Number.isFinite(Number(e.score))&&Number(e.score)>=0&&[kid,Number(total.opponent_kid)].includes(Number(e.kid))))
+        throw new Error('Day '+n+' contains invalid player rows. Nothing was saved.');
+      updates['kvkPrepDailyBoards/'+n]=Object.assign({},total,daily,{day:n});
+      captured++;
+    }
+    const url='https://kvk-planner-1884-default-rtdb.firebaseio.com/kvk-cycle-'+cycleDate+'.json';
+    const saved=await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(updates)});
+    if(!saved.ok)throw new Error('Firebase returned '+saved.status+'. The update could not be confirmed.');
+    alert('Saved the prep total and '+captured+' actual daily leaderboard'+(captured===1?'':'s')+' to 1884kvk.com. Refresh the Leaders tab to see them.');
+  }catch(e){alert('KvK Prep sync: '+e.message);}
+}).toString()+')();';
+}
+
 function kvkPrepOpenImport(){
   if(!EDIT_MODE)return;
   var old=document.getElementById('kvpImportBackdrop');
@@ -2892,10 +2931,17 @@ function kvkPrepOpenImport(){
   backdrop.innerHTML='<div class="kvp-import-modal" role="dialog" aria-modal="true" aria-labelledby="kvpImportTitle">'+
     '<div class="kvp-import-head"><div><div class="kvp-import-title" id="kvpImportTitle">Import KvK Prep Data</div><div class="kvp-import-help">Import a total snapshot, or select a day and paste that day’s actual player-board JSON. Total snapshots cannot reconstruct daily rankings.</div></div><button class="kvp-import-close" id="kvpImportClose" type="button" aria-label="Close">&times;</button></div>'+
     '<label class="kvp-import-help" for="kvpImportPeriod">Leaderboard period</label><select id="kvpImportPeriod" class="ms-select" style="width:100%;margin:8px 0 12px"><option value="auto">Auto-detect / total snapshot</option><option value="1">Day 1 player board</option><option value="2">Day 2 player board</option><option value="3">Day 3 player board</option><option value="4">Day 4 player board</option><option value="5">Day 5 player board</option></select>'+
+    '<div class="kvp-import-help" style="margin:8px 0 12px">Automatic import: drag <a id="kvpSyncBookmark" class="kvp-refresh" style="display:inline-block;color:var(--accent,#45c9bf);text-decoration:none" href="#">Sync KvK Prep</a> to your bookmarks bar, replacing your old bookmark. Run it while signed in to Jeabslist to capture the prep total plus each available daily board.</div>'+
+    '<label class="kvp-import-help" for="kvpBookmarkUrl">Bookmark URL (copy this into an existing bookmark’s URL field)</label><textarea id="kvpBookmarkUrl" class="kvp-import-text" readonly style="min-height:64px;height:64px;margin:6px 0 16px" aria-label="KvK Prep sync bookmark URL"></textarea>'+
     '<textarea class="kvp-import-text" id="kvpImportText" placeholder="Paste JSON here..." spellcheck="false"></textarea>'+
     '<div class="kvp-import-error" id="kvpImportError"></div>'+
     '<div class="kvp-import-actions"><button class="kvp-refresh" id="kvpImportCancel" type="button">Cancel</button><button class="kvp-refresh" id="kvpImportSave" type="button">Import Data</button></div></div>';
   document.body.appendChild(backdrop);
+  var bookmarkUrl=kvkPrepBookmarkUrl();
+  document.getElementById('kvpSyncBookmark').href=bookmarkUrl;
+  var bookmarkText=document.getElementById('kvpBookmarkUrl');
+  bookmarkText.value=bookmarkUrl;
+  bookmarkText.addEventListener('click',function(){bookmarkText.select();});
   var textEl=document.getElementById('kvpImportText');
   var errorEl=document.getElementById('kvpImportError');
   function close(){backdrop.remove();}
