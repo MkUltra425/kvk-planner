@@ -2920,6 +2920,7 @@ function kvkPrepBookmarkUrl(){
     if(any&&!same(any,d)){for(const k in got)delete got[k];note='A different matchup was loaded; earlier captures were cleared.';}
     const k=keyOf(d),prev=got[k];
     if(prev&&Number(prev.d.board.fetched_at)>Number(d.board.fetched_at||0)){note=label(k)+': kept the newer copy already captured.';render();return null;}
+    if(prev&&Number(prev.d.board.fetched_at)===Number(d.board.fetched_at||0)&&prev.d.is_poisoned!==true&&d.is_poisoned===true){note=label(k)+': kept the unflagged copy of the same snapshot.';render();return null;}
     got[k]={d,via,at:Math.floor(Date.now()/1000),saved:false};
     if(!latest||Number(d.observed_at)>=Number(latest.observed_at))latest=d;
     note='';render();return null;
@@ -2995,7 +2996,8 @@ function kvkPrepBookmarkUrl(){
       for(const k of keys){
         const g=got[k],d=g.d,daily=k!=='total',path=daily?'kvkPrepDailyBoards/'+k:'kvkPrepData';
         const existing=daily?await read(path):current;
-        if(Number(existing&&existing.board&&existing.board.fetched_at)>Number(d.board.fetched_at||0)){skipped.push(label(k));g.saved=true;continue;}
+        const exAt=Number(existing&&existing.board&&existing.board.fetched_at),newAt=Number(d.board.fetched_at||0);
+        if(exAt>newAt||(exAt===newAt&&existing.is_poisoned!==true&&d.is_poisoned===true)){skipped.push(label(k));g.saved=true;continue;}
         const rec=Object.assign({},d,{capture_source:g.via==='paste'?'manual-paste':'page-response',captured_at:g.at});
         if(daily)rec.day=Number(k);
         updates[path]=rec;
@@ -3015,7 +3017,7 @@ function kvkPrepBookmarkUrl(){
         }
       }
       const flagged=written.filter(k=>got[k].d.is_poisoned===true);
-      note=(written.length?'Saved '+written.map(label).join(', ')+'. ':'')+(skipped.length?'Skipped '+skipped.join(', ')+' (dashboard already has a newer copy). ':'')+(flagged.length?'Source flag preserved on '+flagged.map(label).join(', ')+'. ':'')+'Leaders on 1884kvk.com updates automatically.';
+      note=(written.length?'Saved '+written.map(label).join(', ')+'. ':'')+(skipped.length?'Skipped '+skipped.join(', ')+' (dashboard already has a newer or unflagged copy). ':'')+(flagged.length?'Source flag preserved on '+flagged.map(label).join(', ')+'. ':'')+'Leaders on 1884kvk.com updates automatically.';
     }catch(e){note=e.message;}
     finally{saveBtn.disabled=false;render();status.textContent=note;}
   }
