@@ -2885,7 +2885,10 @@ function kvkPrepDayState(value){
 function kvkPrepBookmarkUrl(){
   // Runs on jeabslist.com. It captures prep responses that the Jeabslist page itself
   // loads while you click its tabs, and makes NO requests to Jeabslist. Firebase only.
-  return 'javascript:('+(function(){
+  // Comments must stay OUT of the function body: bookmarks strip newlines, so a // comment
+  // would swallow the rest of the code. The body is URL-encoded for the same reason.
+  // Uses the dashboard's 28-day cycle grid; hooks only clone responses the page requested.
+  return 'javascript:'+encodeURIComponent('('+(function(){
   if(!/(^|\.)jeabslist\.com$/.test(location.hostname)){alert('Open Jeabslist before using this bookmark.');return;}
   const W=window;
   if(W.__kvpCapture){W.__kvpCapture.show();return;}
@@ -2898,7 +2901,6 @@ function kvkPrepBookmarkUrl(){
   const keyOf=d=>Number(d.board.rtype)===11?'total':String(Number(d.board.rtype));
   const label=k=>k==='total'?'5-Day Total':'Day '+k;
   function cycleKey(d){
-    // Same 28-day Saturday grid as the dashboard (CYCLE_ANCHOR_SAT_UTC); prep must fall on days 2-6.
     const t=Number(d.prep_start)*1000,start=ANCHOR+Math.floor((t-ANCHOR)/CYCLE)*CYCLE,into=(t-start)/DAY;
     return into>=2&&into<7?'kvk-cycle-'+new Date(start).toISOString().slice(0,10):null;
   }
@@ -2922,7 +2924,6 @@ function kvkPrepBookmarkUrl(){
     if(!latest||Number(d.observed_at)>=Number(latest.observed_at))latest=d;
     note='';render();return null;
   }
-  // Passive hooks: clone responses the page already requested. Requests are not changed or repeated.
   const origFetch=W.fetch,XO=XMLHttpRequest.prototype.open,XS=XMLHttpRequest.prototype.send;
   const hookFetch=function(input){
     const p=origFetch.apply(this,arguments);
@@ -2945,7 +2946,6 @@ function kvkPrepBookmarkUrl(){
     return XS.apply(this,arguments);
   };
   XMLHttpRequest.prototype.open=hookOpen;XMLHttpRequest.prototype.send=hookSend;
-  // Floating panel (not modal) so the Jeabslist tabs stay clickable.
   const box=document.createElement('div');
   box.id='kvp-capture';
   box.style.cssText='position:fixed;right:16px;bottom:16px;z-index:2147483647;width:min(380px,92vw);max-height:80vh;overflow:auto;background:#151820;color:#f0f2f6;border:1px solid #45c9bf;border-radius:14px;padding:16px;font:14px/1.4 system-ui;box-shadow:0 10px 30px rgba(0,0,0,.5);box-sizing:border-box';
@@ -3036,7 +3036,7 @@ function kvkPrepBookmarkUrl(){
   };
   W.__kvpCapture={show:()=>{box.style.display='block';},got,stop};
   render();
-}).toString()+')();';
+}).toString()+')();');
 }
 
 function kvkPrepOpenImport(){
