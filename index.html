@@ -2884,40 +2884,59 @@ function kvkPrepDayState(value){
 
 function kvkPrepBookmarkUrl(){
   return 'javascript:('+(async function(){
-  try{
-    if(location.hostname!=='jeabslist.com')throw new Error('Open Jeabslist and sign in before running this bookmark.');
-    const kid=1884,base='/api/kingdoms/'+kid+'/kvk/prep';
-    async function read(url){
-      const r=await fetch(url,{credentials:'include',headers:{Accept:'application/json'},cache:'no-store'});
-      if(!r.ok)throw new Error('Jeabslist returned '+r.status+'. Check that you are signed in and have access.');
-      const d=await r.json();
-      if(d.is_poisoned===true)throw new Error('Jeabslist marked this response as invalid. Nothing was saved.');
-      return d;
-    }
-    const total=await read(base),board=total.board,day=Number(total.day),start=Number(total.prep_start);
-    if(Number(total.kid)!==kid||total.active===false||!board||Number(board.rtype)!==11||!Array.isArray(board.entries)||day<1||day>5||!start)
-      throw new Error('The prep response is not a valid active total leaderboard. Nothing was saved.');
-    const cycleDate=new Date((start-2*86400)*1000).toISOString().slice(0,10);
-    const updates={kvkPrepData:total};
-    updates['kvkPrepByDay/'+day]=total;
-    let captured=0;
-    for(let n=1;n<=day;n++){
-      const daily=await read(base+'?board='+n),dailyBoard=daily.board;
-      if(!dailyBoard||Number(dailyBoard.rtype)!==n||!Array.isArray(dailyBoard.entries))
-        throw new Error('Day '+n+' did not return its actual daily player board. Nothing was saved.');
-      for(const field of ['kid','opponent_kid','season','prep_start','prep_end'])
-        if(daily[field]!=null&&total[field]!=null&&String(daily[field])!==String(total[field]))
-          throw new Error('Day '+n+' belongs to a different matchup. Nothing was saved.');
-      if(!dailyBoard.entries.every(e=>e&&Number.isFinite(Number(e.score))&&Number(e.score)>=0&&[kid,Number(total.opponent_kid)].includes(Number(e.kid))))
-        throw new Error('Day '+n+' contains invalid player rows. Nothing was saved.');
-      updates['kvkPrepDailyBoards/'+n]=Object.assign({},total,daily,{day:n});
-      captured++;
-    }
-    const url='https://kvk-planner-1884-default-rtdb.firebaseio.com/kvk-cycle-'+cycleDate+'.json';
-    const saved=await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(updates)});
-    if(!saved.ok)throw new Error('Firebase returned '+saved.status+'. The update could not be confirmed.');
-    alert('Saved the prep total and '+captured+' actual daily leaderboard'+(captured===1?'':'s')+' to 1884kvk.com. Refresh the Leaders tab to see them.');
-  }catch(e){alert('KvK Prep sync: '+e.message);}
+  if(location.hostname!=='jeabslist.com'){alert('Open Jeabslist before using this bookmark.');return;}
+  const prior=document.getElementById('kvp-paste-sync');
+  if(prior){prior.showModal();return;}
+  const box=document.createElement('dialog');
+  box.id='kvp-paste-sync';
+  box.style.cssText='width:min(560px,90vw);max-height:85vh;overflow:auto;background:#151820;color:#f0f2f6;border:1px solid #45c9bf;border-radius:14px;padding:24px;font:15px system-ui;box-sizing:border-box';
+  const title=document.createElement('h2');title.textContent='Import KvK Prep';title.style.marginTop='0';
+  const help=document.createElement('p');help.textContent='Paste the response copied from Network → prep (total) or prep?board=N (daily). This bookmark makes no requests to Jeabslist.';
+  const input=document.createElement('textarea');input.placeholder='Paste the complete JSON response here';input.setAttribute('aria-label','Jeabslist prep JSON');input.style.cssText='width:100%;height:190px;box-sizing:border-box;background:#0c1017;color:#fff;border:1px solid #667085;border-radius:8px;padding:10px';
+  const status=document.createElement('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+  const actions=document.createElement('div');actions.style.cssText='display:flex;gap:10px;flex-wrap:wrap';
+  function button(label){const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='padding:10px 14px;border-radius:8px;border:1px solid #45c9bf;background:#173737;color:#fff;cursor:pointer';actions.appendChild(b);return b;}
+  const paste=button('Paste from clipboard'),save=button('Save to dashboard'),close=button('Close');
+  box.append(title,help,input,status,actions);document.body.appendChild(box);box.showModal();
+  close.onclick=()=>box.close();box.addEventListener('close',()=>box.remove());
+  paste.onclick=async()=>{try{input.value=await navigator.clipboard.readText();status.textContent='Response pasted. Click Save to dashboard.';}catch(e){status.textContent='Clipboard access is unavailable. Paste into the text box using Ctrl+V or Command+V.';}};
+  save.onclick=async()=>{
+    save.disabled=true;paste.disabled=true;status.textContent='Checking response…';
+    try{
+      const d=JSON.parse(input.value.trim()),b=d.board||{},type=Number(b.rtype),day=Number(d.day),start=Number(d.prep_start),opponent=Number(d.opponent_kid);
+      if(d.is_poisoned===true)throw new Error('This response is marked invalid. Copy a valid response from the page; nothing was saved.');
+      if(Number(d.kid)!==1884||!opponent||!Number.isInteger(day)||day<1||day>5||!Number.isFinite(start)||start<=0||!Array.isArray(b.entries)||!([1,2,3,4,5,11].includes(type)))
+        throw new Error('Paste the complete prep response, including kingdom, matchup dates, and board entries.');
+      if(!b.entries.every(e=>e&&Number.isFinite(Number(e.score))&&Number(e.score)>=0&&[1884,opponent].includes(Number(e.kid))))
+        throw new Error('The response contains invalid scores or players from a different matchup.');
+      const date=new Date((start-2*86400)*1000).toISOString().slice(0,10);
+      const base='https://kvk-planner-1884-default-rtdb.firebaseio.com/kvk-cycle-'+date;
+      async function read(path){
+        const r=await fetch(base+'/'+path+'.json',{cache:'no-store'});
+        if(!r.ok)throw new Error('Could not verify the saved matchup. Firebase returned '+r.status+'.');
+        return r.json();
+      }
+      const current=await read('kvkPrepData');
+      if(current)for(const key of ['kid','opponent_kid','season','prep_start','prep_end'])
+        if(d[key]!=null&&current[key]!=null&&String(d[key])!==String(current[key]))
+          throw new Error('This response does not match the dashboard’s current KvK matchup.');
+      const daily=type!==11,path=daily?'kvkPrepDailyBoards/'+type:'kvkPrepData';
+      const existing=daily?await read(path):current;
+      if(Number(existing&&existing.board&&existing.board.fetched_at)>Number(b.fetched_at||0))
+        throw new Error('The dashboard already has a newer copy of this board. Nothing was replaced.');
+      const updates={};updates[path]=daily?Object.assign({},d,{day:type}):d;
+      if(!daily)updates['kvkPrepByDay/'+day]=d;
+      status.textContent='Saving '+(daily?'Day '+type:'total')+' leaderboard…';
+      const result=await fetch(base+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(updates)});
+      if(!result.ok)throw new Error('Firebase returned '+result.status+'. The save could not be confirmed.');
+      const verified=await read(path);
+      if(!verified||Number(verified.board&&verified.board.rtype)!==type)throw new Error('Could not verify the saved board. Refresh the dashboard before retrying.');
+      status.textContent='Saved '+b.entries.length+' players for '+(daily?'Day '+type:'the prep total')+'. Refresh Leaders on 1884kvk.com. You can paste another response here.';
+      input.value='';
+    }catch(e){status.textContent=e instanceof SyntaxError?'The pasted text is not valid JSON. Use Copy response in Network.':e.message;}
+    finally{save.disabled=false;paste.disabled=false;}
+  };
+  input.focus();
 }).toString()+')();';
 }
 
@@ -2931,7 +2950,7 @@ function kvkPrepOpenImport(){
   backdrop.innerHTML='<div class="kvp-import-modal" role="dialog" aria-modal="true" aria-labelledby="kvpImportTitle">'+
     '<div class="kvp-import-head"><div><div class="kvp-import-title" id="kvpImportTitle">Import KvK Prep Data</div><div class="kvp-import-help">Import a total snapshot, or select a day and paste that day’s actual player-board JSON. Total snapshots cannot reconstruct daily rankings.</div></div><button class="kvp-import-close" id="kvpImportClose" type="button" aria-label="Close">&times;</button></div>'+
     '<label class="kvp-import-help" for="kvpImportPeriod">Leaderboard period</label><select id="kvpImportPeriod" class="ms-select" style="width:100%;margin:8px 0 12px"><option value="auto">Auto-detect / total snapshot</option><option value="1">Day 1 player board</option><option value="2">Day 2 player board</option><option value="3">Day 3 player board</option><option value="4">Day 4 player board</option><option value="5">Day 5 player board</option></select>'+
-    '<div class="kvp-import-help" style="margin:8px 0 12px">Automatic import: drag <a id="kvpSyncBookmark" class="kvp-refresh" style="display:inline-block;color:var(--accent,#45c9bf);text-decoration:none" href="#">Sync KvK Prep</a> to your bookmarks bar, replacing your old bookmark. Run it while signed in to Jeabslist to capture the prep total plus each available daily board.</div>'+
+    '<div class="kvp-import-help" style="margin:8px 0 12px">Bookmark import: drag <a id="kvpSyncBookmark" class="kvp-refresh" style="display:inline-block;color:var(--accent,#45c9bf);text-decoration:none" href="#">Sync KvK Prep</a> to your bookmarks bar, replacing the old bookmark. On Jeabslist, copy the Network response for prep (total) or prep?board=N (daily), click the bookmark, paste, and save. It does not request data from Jeabslist.</div>'+
     '<label class="kvp-import-help" for="kvpBookmarkUrl">Bookmark URL (copy this into an existing bookmark’s URL field)</label><textarea id="kvpBookmarkUrl" class="kvp-import-text" readonly style="min-height:64px;height:64px;margin:6px 0 16px" aria-label="KvK Prep sync bookmark URL"></textarea>'+
     '<textarea class="kvp-import-text" id="kvpImportText" placeholder="Paste JSON here..." spellcheck="false"></textarea>'+
     '<div class="kvp-import-error" id="kvpImportError"></div>'+
@@ -2953,6 +2972,7 @@ function kvkPrepOpenImport(){
     try{parsed=JSON.parse(textEl.value.trim());}
     catch(e){errorEl.textContent='That is not valid JSON. Copy the entire response and try again.';errorEl.style.display='block';return;}
     function fail(message){errorEl.textContent=message;errorEl.style.display='block';}
+    if(parsed&&parsed.is_poisoned===true){fail('Jeabslist marked this response as invalid. No data was imported.');return;}
     var selectedPeriod=document.getElementById('kvpImportPeriod').value;
     var board=parsed&&(parsed.board||((Array.isArray(parsed.entries))?parsed:null));
     var explicitType=Number(board&&board.rtype);
