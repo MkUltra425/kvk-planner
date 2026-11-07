@@ -6609,7 +6609,7 @@ function checkUrlAutoUnlock(){
 function renderReserveButtonLabel(){
   var btn = document.getElementById('reserveApptBtn');
   if(!btn) return;
-  if(!EDIT_MODE && battleAvailabilityIsOpen()){btn.textContent='⚔️ Castle Battle Availability';return;}
+  if(!EDIT_MODE && battleAvailabilityIsOpen()){btn.textContent='⚔️ Register for Battle';return;}
   if(EDIT_MODE){btn.textContent='\uD83D\uDC51 Manage Appointments';return;}
   var target = msReserveButtonTargetKey();
   btn.textContent = target
