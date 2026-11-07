@@ -7244,7 +7244,13 @@ function init(){
   });
 }
 
-init();
+// The embedded Battle source appears after this script. Wait until it is parsed
+// before the battle-day default tries to open its iframe.
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', init, {once:true});
+}else{
+  init();
+}
 
 var msResizeTimer = null;
 window.addEventListener('resize', function(){
