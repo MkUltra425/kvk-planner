@@ -1605,10 +1605,9 @@ function computeActiveCycleStartMs(nowMs){
   var cyclesElapsed = Math.floor(diff / CYCLE_LENGTH_MS);
   var candidateStart = CYCLE_ANCHOR_SAT_UTC + cyclesElapsed * CYCLE_LENGTH_MS;
   var daysIntoCycle = (nowMs - candidateStart) / DAY_MS;
-  // The active 7-day tracked window (2 pre-prep + 5 prep days) has passed —
-  // Battle Phase itself still happens in-game but isn't tracked on this
-  // dashboard, so show the upcoming cycle right after Power boost ends.
-  if(daysIntoCycle >= 7){
+  // Keep the current cycle throughout Saturday's battle day (UTC).
+  // Return to the upcoming cycle at Sunday 00:00 UTC.
+  if(daysIntoCycle >= 8){
     candidateStart += CYCLE_LENGTH_MS;
   }
   return candidateStart;
@@ -2153,6 +2152,9 @@ function renderClock(targetMs, timeEl, subEl, clockEl){
 }
 
 function tickClocks(){
+  // Roll over open pages too, so battle-day navigation and availability end at UTC midnight.
+  if(computeActiveCycleStartMs() !== ACTIVE_CYCLE_START_MS){window.location.reload();return;}
+  syncBattleDayNavigation();
   sbTick();
   renderClock(PREP_START, document.getElementById('prepTime'), document.getElementById('prepSub'));
   renderClock(BATTLE_START, document.getElementById('battleTime'), document.getElementById('battleSub'));
@@ -2700,6 +2702,20 @@ lockBtn.addEventListener('click', function(){
     window.alert('Incorrect passphrase.');
   }
 });
+
+var battleDayNavigationApplied = false;
+function isBattleDay(nowMs){
+  nowMs = nowMs === undefined ? Date.now() : nowMs;
+  return nowMs >= ACTIVE_CYCLE_START_MS + 7*DAY_MS && nowMs < ACTIVE_CYCLE_START_MS + 8*DAY_MS;
+}
+function syncBattleDayNavigation(){
+  if(!isBattleDay() || battleDayNavigationApplied)return;
+  var tab=document.querySelector('.view-btn[data-view="battle"]');
+  if(!tab)return;
+  tab.parentElement.insertBefore(tab,tab.parentElement.firstChild);
+  battleDayNavigationApplied=true;
+  switchView('battle');
+}
 
 var battleFrameLoaded = false;
 function loadBattleView(){
@@ -5621,7 +5637,7 @@ var battleAvailabilitySaving = false;
 var BATTLE_AVAILABILITY_OPTIONS = ['Full','1st Half','2nd Half','On/Off','None'];
 function battleAvailabilityIsOpen(){
   var deadline=msDeadlineMsFor('d4');
-  return deadline!==null && Date.now()>=deadline;
+  return deadline!==null && Date.now()>=deadline && Date.now()<ACTIVE_CYCLE_START_MS+8*DAY_MS;
 }
 function battleAvailabilityDatabase(){
   if(battleAvailabilityDb)return battleAvailabilityDb;
