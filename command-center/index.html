@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WFP Command Center · Kingdom 1884</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Cinzel:wght@600;700&family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Theme matches the KvK War Room (1884kvk.com) */
+:root{
+  --bg-0:#0a0e14;--bg-1:#0f1520;--glass:rgba(255,255,255,.045);--glass-border:rgba(255,255,255,.09);--glass-hi:rgba(255,255,255,.09);
+  --text-hi:#eef2f7;--text-mid:#9aa7ba;--text-dim:#5c6779;--line:rgba(255,255,255,.07);
+  --teal:#4fd1c5;--teal-dim:#1c3d3a;--amber:#e8a33d;--amber-dim:#3d3016;--violet:#9b8cf0;--violet-dim:#2c2748;
+  --crimson:#e35b56;--crimson-dim:#3d1f1e;--green:#5fbf7a;--green-dim:#1c3324;--yellow:#e0c23d;
+  --war:var(--crimson);--alliance:var(--amber);--growth:var(--green);--special:var(--violet);--custom:var(--teal);
+  --mono:"JetBrains Mono",monospace;--disp:Rajdhani,sans-serif;
+  /* legacy aliases */
+  --text:var(--text-hi);--mute:var(--text-mid);--gold:var(--amber);--gold2:var(--amber);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg-0)}
+body{color:var(--text-hi);font:13.5px/1.45 Inter,sans-serif;min-height:100vh;
+  background:radial-gradient(ellipse 900px 500px at 15% -10%,rgba(79,209,197,.10),transparent),radial-gradient(ellipse 900px 600px at 100% 0%,rgba(232,163,61,.08),transparent),var(--bg-0);background-attachment:fixed}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit;font-size:12.5px;color:var(--text-hi);background:rgba(255,255,255,.03);border:1px solid var(--glass-border);border-radius:8px;padding:6px 9px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--teal)}
+select option{background:var(--bg-1);color:var(--text-hi)}
+textarea{width:100%;min-height:160px;resize:vertical;line-height:1.5}
+a{color:var(--teal)}
+code{font-family:var(--mono);font-size:11.5px;color:var(--teal)}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 24px 40px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);display:flex;align-items:center;gap:8px}
+.eyebrow .edot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal)}
+.header-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:6px;flex-wrap:wrap}
+h1{font-family:var(--disp);font-weight:700;font-size:34px;letter-spacing:.01em;margin:0;flex:1;min-width:0}
+.hsub{color:var(--text-mid);font-size:13.5px;margin:2px 0 22px}
+.lock-btn-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lock-btn{display:flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);font-size:12px;font-weight:500;padding:7px 14px;border-radius:9px;white-space:nowrap}
+.lock-btn:hover{border-color:var(--glass-hi)}
+.lock-btn.unlocked,.lock-btn.live{border-color:var(--green);color:var(--green);background:rgba(95,191,122,.08)}
+.lock-icn{width:9px;height:9px;border-radius:50%;background:var(--text-dim);flex:none}
+.lock-btn.unlocked .lock-icn,.lock-btn.live .lock-icn{background:var(--green)}
+.lock-btn input{background:transparent;border:0;border-bottom:1px dashed var(--glass-border);border-radius:0;padding:0 2px;width:96px;font-size:12px}
+.clocks{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:22px}
+@media(max-width:700px){.clocks{grid-template-columns:1fr}}
+.clock{background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden;backdrop-filter:blur(6px)}
+.clock::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent-c,var(--teal)),transparent);opacity:.6}
+.clock.battle{--accent-c:var(--crimson)}
+.clock-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-mid);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.clock-label .ctag{color:var(--accent-c,var(--teal));text-align:right}
+.clock-time{font-family:var(--disp);font-weight:700;font-size:30px;display:flex;gap:14px}
+.seg{display:flex;flex-direction:column;align-items:center}
+.seg .num{line-height:1}
+.seg .unit{font-family:Inter;font-weight:500;font-size:9.5px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.clock-sub{margin-top:8px;font-size:12px;color:var(--text-dim)}
+nav.view-toggle{display:flex;align-items:center;gap:2px;margin-bottom:16px;padding:3px 4px;background:rgba(255,255,255,.024);border:1px solid var(--glass-border);border-radius:12px;overflow-x:auto;scrollbar-width:none}
+nav.view-toggle::-webkit-scrollbar{display:none}
+nav.view-toggle button{background:transparent;border:1px solid transparent;color:var(--text-mid);font-size:12px;font-weight:500;padding:10px 14px;border-radius:8px;white-space:nowrap;position:relative;min-height:40px}
+nav.view-toggle button:hover{background:rgba(255,255,255,.05)}
+nav.view-toggle button.on{color:var(--teal);background:rgba(79,209,197,.06)}
+nav.view-toggle button.on::after{content:"";position:absolute;bottom:1px;left:12px;right:12px;height:2px;border-radius:2px;background:var(--teal)}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:14px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;padding:16px 16px 12px;backdrop-filter:blur(6px)}
+.card h2{font-family:var(--disp);font-weight:700;font-size:19px;letter-spacing:.01em;margin:0 0 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.card h2 small{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);font-weight:500}
+.btn{background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);font-size:11.5px;font-weight:500;padding:6px 12px;border-radius:8px;transition:border-color .15s,color .15s}
+.btn:hover{border-color:var(--teal);color:var(--teal)}
+.btn.gold{background:linear-gradient(135deg,rgba(232,163,61,.18),rgba(232,163,61,.08));border-color:rgba(232,163,61,.5);color:var(--amber);font-weight:600}
+.btn.gold:hover{border-color:var(--amber);background:rgba(232,163,61,.24)}
+.btn.sm{padding:4px 9px;font-size:11.5px}
+.btn.ghost{border-color:transparent}
+.btn.ghost:hover{border-color:var(--glass-border)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mute{color:var(--text-mid)}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none;background:var(--c)}
+.c-war{--c:var(--crimson);--cd:var(--crimson-dim)}.c-alliance{--c:var(--amber);--cd:var(--amber-dim)}.c-growth{--c:var(--green);--cd:var(--green-dim)}.c-special{--c:var(--violet);--cd:var(--violet-dim)}.c-custom{--c:var(--teal);--cd:var(--teal-dim)}
+.tag{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;border:1px solid var(--glass-border);border-radius:6px;padding:1px 6px;color:var(--text-mid);font-weight:600}
+.est{color:var(--amber);border-color:rgba(232,163,61,.35)}
+.conf{color:var(--teal);border-color:rgba(79,209,197,.35)}
+/* tasks */
+.group{margin-bottom:14px;padding-bottom:4px}
+.group-h{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.group-h>.dot{width:22px;height:22px;border-radius:7px;background:var(--cd);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent);position:relative}
+.group-h>.dot::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--c)}
+.group-h{font-family:var(--disp);font-weight:700;font-size:15px}
+.group-h .when{font-family:var(--mono);color:var(--text-dim);font-weight:500;font-size:10.5px;letter-spacing:.02em}
+.task{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:start;padding:7px 4px 7px 6px;border-bottom:1px solid var(--line)}
+.group .task:last-child{border-bottom:0}
+.chk{width:16px;height:16px;margin-top:2px;border-radius:5px;border:1.5px solid var(--text-dim);background:transparent;padding:0;display:grid;place-items:center;font-size:0;color:var(--bg-0)}
+.chk:hover{border-color:var(--teal)}
+.task.done .chk{background:var(--teal);border-color:var(--teal);font-size:11px;font-weight:700}
+.tt{font-size:13px;line-height:1.4}
+.task.done .tt{color:var(--text-dim);text-decoration:line-through}
+.meta{font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-top:2px}
+.owner{width:110px;background:transparent;border:0;border-bottom:1px dashed var(--glass-border);border-radius:0;padding:2px 0;font-size:12px;font-style:italic;color:var(--text-mid)}
+.owner:focus{border-bottom-color:var(--teal)}
+@media(max-width:560px){.task{grid-template-columns:22px 1fr}.task .owner{grid-column:2;width:100%}}
+.ev{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--line)}
+.ev:last-child{border-bottom:0}
+.ev .nm{flex:1;font-size:12.5px}
+.ev .tm{font-family:var(--mono);font-size:10.5px;color:var(--text-dim);text-align:right}
+.daynav{display:flex;gap:6px;align-items:center}
+.empty{color:var(--text-dim);padding:6px 4px;font-size:12.5px}
+.banner{border:1px solid rgba(232,163,61,.5);background:linear-gradient(135deg,rgba(232,163,61,.14),rgba(232,163,61,.05));color:var(--text-hi);border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px}
+.banner a{color:var(--amber)}
+/* gantt */
+.gantt{overflow-x:auto}
+.gh,.gr{display:block;min-width:720px}
+.gh .ticks{display:grid;gap:4px;padding-bottom:6px}
+.tick{background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);text-align:center;padding:5px 0 4px;cursor:pointer;position:relative;overflow:hidden}
+.tick::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--text-dim)}
+.tick:hover{background:rgba(255,255,255,.07)}
+.tick b{display:block;font-family:var(--disp);font-weight:700;font-size:16px;color:var(--text-hi);letter-spacing:0}
+.tick.today{border-color:var(--teal);background:rgba(79,209,197,.1)}
+.tick.today::before{background:var(--teal)}
+.tick.today b{color:var(--teal)}
+.tick.sel{border-color:rgba(232,163,61,.6);box-shadow:0 0 9px rgba(232,163,61,.12)}
+.tick.sel:not(.today)::before{background:var(--amber)}
+.gr .lbl{font-size:12px;padding:5px 8px 5px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;gap:6px;align-items:center;color:var(--text-mid)}
+.track{position:relative;height:30px;border-bottom:1px solid var(--line)}
+.track .gl{position:absolute;top:0;bottom:0;border-left:1px solid var(--line)}
+.bar{position:absolute;top:4px;height:22px;border-radius:5px;cursor:pointer;transition:filter .15s;background:color-mix(in srgb,var(--c) 22%,transparent);border:1px solid color-mix(in srgb,var(--c) 70%,transparent);font-size:11.5px;font-weight:500;padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:20px;color:var(--text-hi)}
+.bar .bt{font-family:var(--mono);font-size:10px;color:var(--text-mid);margin-left:5px}
+.bar.estb{border-style:dashed}
+.nowline{position:absolute;top:0;bottom:0;width:2px;background:var(--teal);box-shadow:0 0 8px var(--teal);z-index:2}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.fchip{display:flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);font-size:11px;padding:5px 10px;border-radius:8px}
+.fchip:not(.off){border-color:var(--teal);color:var(--teal);background:rgba(79,209,197,.08)}
+.fchip.off{opacity:.55}
+/* playbooks / messages */
+.pb{background:rgba(255,255,255,.025);border:1px solid var(--glass-border);border-radius:10px;margin-bottom:6px}
+.pb[open]{background:var(--glass)}
+.pb summary{padding:10px 14px;cursor:pointer;display:flex;gap:8px;align-items:center;font-size:13.5px;font-weight:600;list-style:none}
+.pb summary::-webkit-details-marker{display:none}
+.pb summary .cnt{margin-left:auto;font-family:var(--mono);font-weight:500;color:var(--text-dim);font-size:10.5px}
+.pb .body{padding:4px 14px 14px}
+.pbrow{display:grid;grid-template-columns:70px 70px 70px 1fr 110px 30px;gap:6px;margin-bottom:6px;align-items:center}
+.pbrow input[type=number]{width:100%}
+.pbhead{font-family:var(--mono);font-size:9.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em}
+@media(max-width:700px){.pbrow{grid-template-columns:1fr 1fr 1fr}.pbrow .wide{grid-column:1/-1}}
+label{font-size:12px;color:var(--text-mid);display:flex;align-items:center;gap:6px}
+.bar:hover{filter:brightness(1.35)}
+.modal-bg{position:fixed;inset:0;background:rgba(5,8,12,.72);backdrop-filter:blur(3px);z-index:20;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow-y:auto}
+.modal-bg[hidden]{display:none}
+.modal{width:100%;max-width:640px;background:var(--bg-1);border:1px solid var(--glass-border);border-radius:16px;padding:18px 18px 14px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal::before{content:"";position:absolute;top:0;left:16px;right:16px;height:2px;border-radius:2px;background:var(--c)}
+.modal-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:4px}
+.modal-head h3{font-family:var(--disp);font-weight:700;font-size:22px;margin:0;flex:1;line-height:1.15}
+.modal-when{font-family:var(--mono);font-size:11px;color:var(--text-mid);margin-bottom:14px}
+.modal-x{background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);border-radius:8px;width:30px;height:30px;font-size:15px;flex:none}
+.modal-x:hover{border-color:var(--crimson);color:var(--crimson)}
+.msec{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);margin:14px 0 6px;display:flex;justify-content:space-between;align-items:center}
+.tday{font-family:var(--mono);font-size:10.5px;color:var(--text-dim);white-space:nowrap}
+.task.today-row .tday{color:var(--teal)}
+.mmsg{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.mmsg-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.mmsg-h b{font-size:12.5px;flex:1}
+.mmsg pre{margin:0;white-space:pre-wrap;font-family:Inter;font-size:12.5px;line-height:1.5;color:var(--text-hi)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--bg-1);border:1px solid var(--teal);color:var(--teal);padding:8px 16px;border-radius:10px;font-size:12.5px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:9}
+.toast.on{opacity:1}
+pre.brief{white-space:pre-wrap;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12.5px;max-height:260px;overflow:auto;font-family:Inter}
+.cc{font-family:var(--mono);font-size:10px;color:var(--text-dim);text-align:right;margin-top:2px}
+.cc.over{color:var(--crimson);font-weight:600}
+.kv{display:grid;grid-template-columns:160px 1fr;gap:8px 12px;align-items:center;font-size:12.5px;color:var(--text-mid)}
+@media(max-width:560px){.kv{grid-template-columns:1fr}}
+.foot{margin-top:20px;font-size:11.5px;color:var(--text-dim)}
+/* ================== BEAR TRAPS (bt-) ================== */
+.bt-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.bt-views{display:flex;gap:2px;padding:3px;background:rgba(255,255,255,.024);border:1px solid var(--glass-border);border-radius:10px}
+.bt-views button{background:transparent;border:1px solid transparent;color:var(--text-mid);font-size:12px;font-weight:600;padding:7px 12px;border-radius:7px}
+.bt-views button.on{background:rgba(232,163,61,.12);border-color:rgba(232,163,61,.45);color:var(--amber)}
+.bt-top .sp{flex:1}
+.bt-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;align-items:start}
+@media(max-width:860px){.bt-grid{grid-template-columns:minmax(0,1fr)}}
+.bt-mapcard{padding:10px}
+.bt-mapbox{background:#0b1222;border:1px solid #1a2440;border-radius:12px;overflow:auto;-webkit-overflow-scrolling:touch}
+.bt-mapbox svg{display:block;width:100%;height:auto;max-width:none}
+.bt-mapwrap{position:relative}
+.bt-mapbox{max-height:78vh}
+.bt-mapbox.zoomed{cursor:grab}
+.bt-mapbox.dragging{cursor:grabbing;user-select:none}
+.bt-zoom{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:2}
+.bt-zoom button{width:34px;height:34px;border-radius:8px;border:1px solid #2a3a62;background:rgba(11,18,34,.88);color:#f2b632;font-size:19px;font-weight:700;line-height:1;padding:0}
+.bt-zoom button.r{font-size:15px;color:var(--text-mid)}
+.bt-zoom button:hover:not(:disabled){border-color:#f2b632}
+.bt-zoom button:disabled{opacity:.35;cursor:default}
+@media(max-width:700px){.bt-mapbox.zoom svg{min-width:620px}}
+.bt-detail{font-family:var(--mono);font-size:11.5px;color:var(--text-mid);margin-top:8px;min-height:18px}
+.bt-detail b{color:#f2b632;font-weight:600}
+.bt-svg .bt-grid-l{stroke:#1a2440;stroke-width:1}
+.bt-svg .bt-terr{fill:none;stroke:#3a4a74;stroke-width:3;stroke-dasharray:14 8}
+.bt-svg .bt-trap{fill:rgba(120,30,55,.55);stroke:#e35d78;stroke-width:2.5}
+.bt-svg .bt-hq{fill:rgba(90,60,150,.5);stroke:#9b8cf0;stroke-width:2.5}
+.bt-svg .bt-res{fill:rgba(120,130,150,.14);stroke:#56627e;stroke-width:1.5}
+.bt-svg .bt-ban{fill:#4a3410;stroke:#f2b632;stroke-width:1.5}
+.bt-svg text{text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+.bt-svg .bt-tl{font-family:Cinzel,serif;font-weight:700;font-size:26px;fill:#ffd9e1;letter-spacing:.06em}
+.bt-svg .bt-tt{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:20px;fill:#f2b632;letter-spacing:.04em}
+.bt-svg .bt-hql{font-family:Cinzel,serif;font-weight:700;font-size:24px;fill:#e2dcff}
+.bt-svg .bt-rl{font-family:"Barlow Condensed",sans-serif;font-size:16px;fill:#8e9abb}
+.bt-svg .bt-bl{font-family:"Barlow Condensed",sans-serif;font-size:11px;fill:#f6e2b0}
+.bt-svg .bt-tile{cursor:pointer}
+.bt-svg .bt-tile polygon{stroke-width:2}
+.bt-svg .bt-tile.open polygon{opacity:.5}
+.bt-svg .bt-tile.mine polygon{stroke:#f2b632!important;stroke-width:4}
+.bt-svg .bt-tile.sel polygon{stroke:#fff!important;stroke-width:3.5}
+.bt-svg .t-rank{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:15px;fill:#f2b632}
+.bt-svg .t-name{font-family:"Barlow Condensed","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans CJK SC","Microsoft YaHei",sans-serif;font-weight:600;font-size:19px;fill:#fff;paint-order:stroke;stroke:rgba(6,10,20,.85);stroke-width:4px;stroke-linejoin:round}
+.bt-svg .t-rank,.bt-svg .t-score{paint-order:stroke;stroke:rgba(6,10,20,.75);stroke-width:3px;stroke-linejoin:round}
+.bt-svg .t-score{font-family:"Barlow Condensed",sans-serif;font-size:15px;fill:#c9d2e3}
+.bt-svg .t-open{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:17px;fill:#8e9abb;letter-spacing:.08em}
+.bt-panel h2{display:flex;align-items:center;gap:8px}
+.bt-time{font-family:var(--mono);font-size:12px;font-weight:600;color:#f2b632;margin-left:auto;white-space:nowrap}
+.bt-time .bt-loc{color:var(--text-dim);font-weight:500}
+.bt-pick .bt-pt{display:block;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text-dim);margin-top:3px}
+.bt-meta{font-size:12px;color:var(--text-mid);margin:-4px 0 10px}
+.bt-meta .lk{color:var(--amber)}
+.bt-tblwrap{overflow-x:auto;margin:0 -4px}
+.bt-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.bt-tbl th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);text-align:left;padding:4px 6px;border-bottom:1px solid var(--line)}
+.bt-tbl td{padding:5px 5px;border-bottom:1px solid var(--line);vertical-align:middle}
+.bt-tbl td.n{font-family:var(--mono);color:var(--amber);width:28px}
+.bt-tbl td.c{font-family:var(--mono);font-size:11px;color:var(--text-mid);white-space:nowrap}
+.bt-tbl td.s{font-family:var(--mono);font-size:11.5px;white-space:nowrap}
+.bt-tbl td.a{white-space:nowrap;text-align:right}
+.bt-tbl tr.mine td{background:rgba(242,182,50,.10)}
+.bt-tbl tr.mine td:first-child{box-shadow:inset 3px 0 0 #f2b632}
+.bt-x{background:transparent;border:1px solid var(--glass-border);border-radius:6px;color:var(--text-mid);font-size:11px;padding:2px 6px;margin-left:2px}
+.bt-x:hover{border-color:var(--crimson);color:var(--crimson)}
+.bt-x.mv:hover{border-color:var(--teal);color:var(--teal)}
+.bt-flag{font-family:var(--mono);font-size:9.5px;padding:1px 5px;border-radius:5px;margin-left:4px;border:1px solid var(--glass-border);color:var(--text-dim)}
+.bt-flag.self{color:var(--yellow);border-color:rgba(224,194,61,.4)}
+.bt-flag.ovr{color:var(--violet);border-color:rgba(155,140,240,.4)}
+.bt-res-l{margin-top:10px;font-size:12.5px;color:var(--text-mid)}
+.bt-res-l b{color:var(--text-hi);font-weight:600}
+.bt-tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.bt-conf{border-color:rgba(232,163,61,.5)!important;margin-bottom:14px}
+.bt-conf ul{margin:6px 0 10px;padding-left:18px;max-height:220px;overflow:auto;font-size:12.5px}
+.bt-pick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 4px}
+.bt-pick button{background:rgba(255,255,255,.03);border:1px solid var(--glass-border);border-radius:10px;padding:12px 8px;font-family:var(--disp);font-weight:700;font-size:17px;color:var(--text-mid)}
+.bt-pick button.on{border-color:#e35d78;background:rgba(120,30,55,.35);color:#ffd9e1}
+.bt-f{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.bt-f label{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid)}
+.bt-f input{font-size:15px;padding:9px 11px}
+.bt-chk{font-size:12.5px;color:var(--text-dim);min-height:18px}
+.bt-chk.found{color:var(--green)}
+.bt-chk.warn{color:var(--yellow)}
+.bt-chk.bad{color:var(--crimson)}
+.bt-err{color:var(--crimson);font-size:12.5px;min-height:16px;margin-bottom:6px}
+.bt-done{text-align:center;padding:10px 4px}
+.bt-done .big{font-family:var(--disp);font-weight:700;font-size:26px;color:#f2b632;margin:4px 0}
+.bt-done p{color:var(--text-mid);margin:6px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow"><span class="edot"></span><span id="eyebrow">Alliance Ops — Command Center</span></div>
+  <div class="header-row">
+    <h1 id="title">WFP Command Center</h1>
+    <div class="lock-btn-group">
+      <span class="lock-btn" title="Shown next to tasks you check off"><span class="lock-icn"></span>You <input id="me" placeholder="your name"></span>
+      <span class="lock-btn" id="syncpill"><span class="lock-icn"></span>Local</span>
+      <button class="lock-btn" id="lockbtn"></button>
+    </div>
+  </div>
+  <p class="hsub" id="subtitle">Daily leadership tasks, event calendar and member messages — Kingdom 1884, UTC</p>
+  <div class="clocks">
+    <div class="clock"><div class="clock-label">Daily reset <span class="ctag" id="utc">--:-- UTC</span></div><div class="clock-time" id="clockA"></div><div class="clock-sub">resets at 00:00 UTC</div></div>
+  </div>
+  <nav id="nav" class="view-toggle">
+    <button data-tab="today" class="on">📅 This Week</button>
+    <button data-tab="playbooks">📋 Playbooks</button>
+    <button data-tab="messages">💬 Messages</button>
+    <button data-tab="bears">🐻 Bear Traps</button>
+    <button data-tab="sync">⚙️ Sync &amp; Settings</button>
+  </nav>
+  <main id="main"></main>
+</div>
+<div class="modal-bg" id="evmodal" hidden></div>
+<div class="modal-bg" id="bt-modal" hidden></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================== CONFIG ==================
+   FIREBASE: paste your Firebase web config to share checkmarks/owners/playbooks
+   across leadership in real time. Leave null to run in this browser only.
+   You can reuse the KvK War Room project; data lives under /allianceCC/<ALLIANCE_KEY>. */
+const FIREBASE_CONFIG = {apiKey:"AIzaSyBu26l53s3uQzTqNum-1Sulx6g_UBfl7qU",authDomain:"kvk-planner-1884.firebaseapp.com",databaseURL:"https://kvk-planner-1884-default-rtdb.firebaseio.com",projectId:"kvk-planner-1884",storageBucket:"kvk-planner-1884.firebasestorage.app",messagingSenderId:"856858420056",appId:"1:856858420056:web:6e1b9c1323ec63ae18bb2d"};; /* e.g. {apiKey:"...",authDomain:"...",databaseURL:"https://xxx.firebaseio.com",projectId:"..."} */
+const ALLIANCE_KEY = "wfp1884";
+const EDIT_PASSPHRASE = "madham";   /* set e.g. "madham" to require it before checking tasks or editing */
+const WAR_ROOM_URL = "https://1884kvk.com";
+/* Bear Traps: URL of the Jeabslist proxy (see jeabslist-proxy-worker.js), e.g. "https://jeabslist-proxy.yourname.workers.dev".
+   The Jeabslist token lives only in the proxy, never in this page. Empty = members type their name and score (marked self-reported). */
+const JEABSLIST_PROXY_URL = "";
+
+/* ================== EVENT DATA ==================
+   One full 28-day cycle for Kingdom 1884, taken from kingshot.net/calendar?kingdom=1884
+   (weeks of Nov 16 – Dec 13, 2026). The app repeats it every 28 days.
+   [name, category, startUTC, endUTC, estimated?] */
+const CYCLE_ANCHOR = "2026-11-16T00:00";
+const TEMPLATE = [
+ ["Golden Glaives","special","2026-11-16T00:00","2026-11-18T00:00"],
+ ["Alliance Championship","alliance","2026-11-16T00:00","2026-11-23T00:00"],
+ ["Strongest Governor","growth","2026-11-16T00:00","2026-11-23T00:00"],
+ ["Eternity's Reach","special","2026-11-17T00:00","2026-11-18T00:00"],
+ ["Defeat nearby beasts","growth","2026-11-17T00:00","2026-11-19T00:00"],
+ ["Hero Roulette","special","2026-11-17T00:00","2026-11-20T00:00"],
+ ["Viking Vengeance","alliance","2026-11-17T00:00","2026-11-20T00:00"],
+ ["Sanctuary Battle","war","2026-11-17T00:00","2026-11-21T00:00"],
+ ["All Out","growth","2026-11-20T00:00","2026-11-22T00:00"],
+ ["Castle Battle","war","2026-11-21T12:00","2026-11-21T17:00"],
+ ["Armament Competition","growth","2026-11-23T00:00","2026-11-25T00:00"],
+ ["Alliance Mobilization","alliance","2026-11-23T00:00","2026-11-29T00:00"],
+ ["Tri-Alliance Clash","war","2026-11-23T00:00","2026-11-29T00:00",1],
+ ["Alliance Championship","alliance","2026-11-23T00:00","2026-11-30T00:00"],
+ ["Swordland Showdown","war","2026-11-23T00:00","2026-11-30T00:00"],
+ ["Hero Rally","special","2026-11-23T00:00","2026-12-07T00:00"],
+ ["Call of the Sovereign","special","2026-11-24T00:00","2026-11-27T00:00",1],
+ ["Sanctuary Battle","war","2026-11-24T00:00","2026-11-28T00:00"],
+ ["Officer Project","growth","2026-11-25T00:00","2026-11-27T00:00"],
+ ["Champion's Way","growth","2026-11-25T00:00","2026-11-28T00:00"],
+ ["Armament Competition","growth","2026-11-27T00:00","2026-11-29T00:00",1],
+ ["Mystic Divination","special","2026-11-27T00:00","2026-11-29T00:00",1],
+ ["Tri-Alliance Clash battle","war","2026-11-28T00:00","2026-11-29T00:00",1],
+ ["Cesares Fury","special","2026-11-28T00:00","2026-12-01T00:00"],
+ ["Kingdom of Power","war","2026-11-28T00:00","2026-12-08T00:00"],
+ ["Officer Project","growth","2026-11-29T00:00","2026-12-01T00:00"],
+ ["Golden Glaives","special","2026-11-30T00:00","2026-12-02T00:00"],
+ ["Alliance Championship","alliance","2026-11-30T00:00","2026-12-07T00:00"],
+ ["Treasure Cove","special","2026-11-30T00:00","2026-12-07T00:00"],
+ ["Eternity's Reach","special","2026-12-01T00:00","2026-12-02T00:00"],
+ ["Defeat nearby beasts","growth","2026-12-01T00:00","2026-12-03T00:00"],
+ ["Hero Roulette","special","2026-12-01T00:00","2026-12-04T00:00"],
+ ["Viking Vengeance","alliance","2026-12-01T00:00","2026-12-04T00:00"],
+ ["Sanctuary Battle","war","2026-12-01T00:00","2026-12-05T00:00"],
+ ["Blizzard Brawl","special","2026-12-03T00:00","2026-12-05T00:00"],
+ ["Kingdom of Power battle","war","2026-12-05T10:00","2026-12-05T22:00"],
+ ["Castle Battle","war","2026-12-05T12:00","2026-12-05T17:00"],
+ ["Finder's Fortune","special","2026-12-06T00:00","2026-12-09T00:00",1],
+ ["Armament Competition","growth","2026-12-07T00:00","2026-12-09T00:00"],
+ ["Champagne Fair","special","2026-12-07T00:00","2026-12-09T00:00"],
+ ["Merchant Empire","special","2026-12-07T00:00","2026-12-13T04:00"],
+ ["Alliance Brawl","alliance","2026-12-07T00:00","2026-12-13T12:00"],
+ ["Alliance Championship","alliance","2026-12-07T00:00","2026-12-14T00:00"],
+ ["Swordland Showdown","war","2026-12-07T00:00","2026-12-14T00:00"],
+ ["Hero Rally","special","2026-12-07T00:00","2026-12-21T00:00"],
+ ["Fishing Tournament","special","2026-12-08T00:00","2026-12-11T00:00"],
+ ["Sanctuary Battle","war","2026-12-08T00:00","2026-12-12T00:00"],
+ ["Officer Project","growth","2026-12-09T00:00","2026-12-11T00:00"],
+ ["Champion's Way","growth","2026-12-09T00:00","2026-12-12T00:00"],
+ ["Armament Competition","growth","2026-12-11T00:00","2026-12-13T00:00",1],
+ ["Officer Project","growth","2026-12-13T00:00","2026-12-15T00:00"]
+];
+/* One-off events that don't follow the 28-day cycle */
+const ONE_OFF = [ ["Kingdom Transfer","special","2026-11-08T00:00","2026-11-15T00:00"] ];
+
+/* ================== DEFAULT PLAYBOOKS ==================
+   d = day offset from the event's start day (UTC). daily:true repeats from d through "to". */
+const HEADSUP = n => [{d:-1,t:`Heads-up post: ${n} starts tomorrow`}];
+const DEFAULT_PB = {
+ "Kingdom of Power":[
+   {d:0,t:"Confirm matchmaking opponent; post to alliance + NAP chat"},
+   {d:1,t:"Post prep-phase plan & open minister sign-ups in the War Room",link:WAR_ROOM_URL},
+   {d:2,to:6,daily:true,t:"Post today's KvK prep theme reminder"},
+   {d:8,t:"Post KvK results + MVP shout-outs"}],
+ "Kingdom of Power battle":[
+   {d:-1,t:"Lock rally leaders, garrison captains & joiner groups"},
+   {d:-1,t:"Remind non-fighters to shield before 10:00 UTC"},
+   {d:0,t:"Run KvK battle comms (10:00–22:00 UTC)"}],
+ "Castle Battle":[
+   {d:-2,t:"Confirm castle rotation holder with NAP5"},
+   {d:0,t:"Post castle rally/garrison assignments before 12:00 UTC"}],
+ "Alliance Championship":[
+   {d:0,t:"Set Championship lineup & formations"},
+   {d:4,t:"Fill Championship lineup gaps (swap inactives)"}],
+ "Swordland Showdown":[
+   {d:0,t:"Open Swordland sign-ups (main + subs)"},
+   {d:4,t:"Lock Swordland roster; post roles + battle time"}],
+ "Tri-Alliance Clash":[{d:0,t:"Open Tri-Alliance Clash sign-ups"}],
+ "Tri-Alliance Clash battle":[
+   {d:-1,t:"Lock Tri-Alliance roster & post plan"},
+   {d:0,t:"Run Tri-Alliance battle comms"}],
+ "Alliance Brawl":[{d:0,to:5,daily:true,t:"Post today's Brawl stage focus"}],
+ "Alliance Mobilization":[
+   {d:0,t:"Kick off Mobilization: remind members to grab tasks"},
+   {d:3,t:"Check Mobilization progress; nudge low contributors"}],
+ "Viking Vengeance":[
+   {d:-1,t:"Pick Viking Vengeance start time & announce it"},
+   {d:0,t:"Post reinforcement pairs (who reinforces whom)"}],
+ "Strongest Governor":[{d:0,to:6,daily:true,t:"Post today's Strongest Governor scoring theme"}],
+ "Sanctuary Battle":[{d:0,t:"Assign Sanctuary Battle teams / targets"}],
+ "Kingdom Transfer":[{d:0,t:"Review transfer recruiting targets; refresh recruit pitch"}],
+};
+["All Out","Merchant Empire","Fishing Tournament","Champagne Fair","Cesares Fury","Blizzard Brawl","Treasure Cove","Hero Rally","Eternity's Reach","Golden Glaives"]
+ .forEach(n=>DEFAULT_PB[n]=HEADSUP(n));
+
+/* ================== MEMBER MESSAGES ==================
+   Paste-ready alliance chat messages per event. [BRACKETS] = fill in before sending.
+   Built from community guides (kingshotmastery, kingshotguide, kingshotguides, heaven-guardian, kingshot-data). */
+const MSG = {
+ "Kingdom of Power":[{l:"Kickoff",t:"⚔️ KvK is ON! Prep Mon–Fri, battle Sat 10:00 UTC.\nGoal: hit the 200k chest EVERY prep day (each = 1 State Medal). Don't dump it all on Day 1.\nSave for: D1 Truegold, construction speedups, charms, Watchtower Intel · D2 research speedups, hero shards, Roulette · D3 taming marks + pets · D4 training speedups · D5 mithril, forgehammers, widgets, gov gear.\nPlan + minister sign-ups: 1884kvk.com"},{l:"Prep day",t:"📅 KvK Prep Day [#]: [THEME]. Spend only what scores best TODAY and grab the 200k chest before 00:00 UTC. Beast hunts don't score prep points — save stamina."}],
+ "Kingdom of Power battle":[{l:"Day before",t:"🛡️ KvK BATTLE tomorrow 10:00–22:00 UTC, castle from 12:00.\nNot fighting → shield before 10:00 and bring gathers home.\nFighting → heal, set PvP presets, check your role: [CHANNEL]. You only score on cities within ±3 TC of yours. Taking part in the battle = 6th State Medal."},{l:"Go time",t:"⚔️ KvK battle is LIVE. Follow rally calls only — no solo hits on bigger players. Turrets matter: each one we hold buffs our squads in the castle. Shield up if you're not in the plan."}],
+ "Castle Battle":[{l:"Heads-up",t:"🏰 Castle Battle Sat [TIME] UTC. Win = hold the castle 2.5h straight, or most total hold time (check the in-game timer). Turrets we don't hold hit our garrison every time — turret teams matter as much as the castle. Heal first, set PvP presets, follow rally calls. Roles: [CHANNEL]"}],
+ "Alliance Championship":[{l:"Sign up",t:"🏆 Alliance Championship sign-up is OPEN until Wed 23:00 UTC. Your stats are snapshotted when you register — turn on buffs + pet skills FIRST, then register your 3 strongest heroes. Don't re-register later without the same buffs or you'll overwrite it. 20 spots per lane. Lane: [LANE]"}],
+ "Swordland Showdown":[{l:"Register",t:"⚔️ Swordland Showdown: vote for a battle time and register ONLY if you can play the full hour. You must be in the alliance before registration closes. Buffs on for Championship? Register for both at the same time."},{l:"Battle day",t:"⚔️ Swordland today [TIME] UTC (1 hour). Clear your infirmary first — you can't enter with wounded troops. Auto-hunt off, recall all marches, be online 15 min early. Losses are healed free when you leave, so fight! Personal Relic Points count even if we lose."}],
+ "Tri-Alliance Clash":[{l:"Sign up",t:"🔱 Tri-Alliance Clash sign-ups open Wed–Thu, battle Sat [TIME] UTC (1 hour). Points come from HOLDING buildings, not kills. Only sign up if you'll show up and follow your lane. Save your buffs for it."}],
+ "Tri-Alliance Clash battle":[{l:"Battle day",t:"🔱 Tri-Alliance today [TIME] UTC. Follow your lane and role, don't chase fights — buildings = points. Temple of Tides opens at minute 40: 50k for first capture + 1,800/min while held. Stay alive and regroup for it!"}],
+ "Viking Vengeance":[{l:"Heads-up",t:"🪓 Viking Vengeance [DAY] [TIME] UTC — 20 waves.\n• Send ALL inf + cav out to reinforce teammates; keep only your 3 best defense heroes home\n• Bear joiner hero in slot 1\n• Shields don't work · don't heal during the event\n• Waves 7/14/17 only hit ONLINE players — be on\n• Can't be online? Reinforce someone before you log off"},{l:"Go time",t:"🪓 Vikings in 10 min! Reinforce ONLINE members first. After wave 9 is fully done (and 19): send 1 strong inf/cav march (no archers) to HQ for waves 10 & 20, then send it back to your buddy. Recall too early = lost points."}],
+ "Alliance Brawl":[{l:"Kickoff",t:"🥊 Alliance Brawl vs [ENEMY]! 6 stages worth 1/2/2/2/2/4 horns — 7 horns wins. The final stage runs 36h and is worth 4, so don't empty your stash early.\nD1 Truegold, speedups, gathering · D2 hero dev + Intel · D4 troops + forgehammers/widgets · D5 caravans, beasts, Terror rallies. Escort + raid caravans for points!"},{l:"Daily",t:"🥊 Brawl Day [#]: [FOCUS]. Hit your personal milestone chests before 00:00 UTC — milestones are the stop line, don't burn everything."}],
+ "Merchant Empire":[{l:"Kickoff",t:"🐪 Merchant Empire is live (7 days, escorts the first 6). Refresh with Caravan Vouchers, not gems, for SSR. Launch 4–6h after reset to dodge raiders. Raid up to 4 caravans a day. Every escort + raid = Brawl points. Guard each other's caravans!"}],
+ "Alliance Mobilization":[{l:"Kickoff",t:"📋 Alliance Mobilization is live! Take tasks that are HIGH points + LOW cost + quick. Refresh your free missions (short cooldown) until you get a good one, and finish what you accept. Leaders will keep refreshing the alliance list."}],
+ "Strongest Governor":[{l:"Kickoff",t:"👑 Strongest Governor – 7 days, spend on the right day:\nD1 Construction (Truegold!) · D2 Hero dev · D3 Skills · D4 Troops · D5 Skills · D6 Troops · D7 Hero dev + gathering.\nMithril scores 40k on hero days. Line up your biggest TC upgrade for Day 1. Stop when the next chest isn't worth it."},{l:"Daily",t:"👑 Strongest Governor Day [#]: [THEME]. Spend only what scores today and save the rest for KvK prep."}],
+ "Golden Glaives":[{l:"Day before",t:"✨ Golden Glaives starts tomorrow! Tonight: finish your Intel missions but DON'T claim them — claim right after it starts for free Dim Goldstones. Regular Intel = 1 stone, Golden Glaives = 10. Stones only drop days 1–2; spend them by day 3 (leftovers turn into bread). Buy the Truegold first."}],
+ "Sanctuary Battle":[{l:"Battle",t:"🏯 Sanctuary Battle: [SANCTUARY] at [TIME] UTC (up to 2h). It's an objective fight, not a kill event — holding it wins. Heal first, set PvP presets, use the Sanctuary teleport, follow rally calls."}],
+ "Eternity's Reach":[{l:"Today",t:"🌌 Eternity's Reach today (30 min). Sign up any time until 10 min before your slot. Recall ALL troops first — you can't enter with marches out. Inside: jump on Fracture Veins when they spawn and skip pointless PvP. Troops are unlimited, no losses."}],
+ "Bear Hunt":[{l:"Call",t:"🐻 Bear Hunt in [X] min! Your wave: [CHANNEL]. Join the TOP open rally. Slot 1 = your best bear joiner hero (Chenko, Amane, Amadeus, Yeonwoo…) — no hero beats a bad one. Archer-heavy ~1/10/89. Do Intel daily (24 arrows) and donate — each Pitfall level = +5% atk for everyone."}],
+ "All Out":[{l:"Day before",t:"💀 All Out (kill event) starts tomorrow, 2 days. Not fighting? Shield EVERY time you log off, even for 30 min, and recall long gathers. Fighting? Scout first, follow rallies, set a stop point for losses. Points scale with troop tier."}],
+ "Armament Competition":[{l:"Heads-up",t:"🔨 Armament Competition (2 days). Check which variant is live before spending — they score different items. Don't burn mats that Officer Project, Brawl or KvK needs more."}],
+ "Officer Project":[{l:"Heads-up",t:"🛠️ Officer Project (2 days). There are two variants with different tasks — check which one is live. Only spend gear/charm mats if they match what you saved and KvK/Armament doesn't need them more."}],
+ "Champion's Way":[{l:"Kickoff",t:"🗡️ Champion's Way (3 days): hunt beasts for Weapon Scraps → use them to find Cesare's Elite Rebels → rally. 1/3/5/7/10 kills = 5 milestone chests. Joining rallies pays up to 50 rewards a day — turn on auto-join. Bring Diana to save stamina. Scraps don't expire!"}],
+ "Cesares Fury":[{l:"Kickoff",t:"🗡️ Cesare's Fury (3 days) — bring stamina (about 1,100–1,500 to clear all 50). 15 to scout, 10 per solo hit. Try solo first; save rallies + your 5 Accords for the big stages (10/20/30/40/50). Use Diana. Our clears unlock Captains for R4s to spawn — everyone hit them for rewards!"}],
+ "Hero Roulette":[{l:"Heads-up",t:"🎰 Hero Roulette (3 days). Claim your 1 free spin every day! Milestones at 5/15/35/70/120 spins. Only push if the featured hero fits your lineup and you can reach a milestone. KvK prep Day 2 also scores Roulette spins."}],
+ "Mystic Divination":[{l:"Heads-up",t:"🔮 Mystic Divination (2 days). ~23 free Fortune Tokens a day (daily missions + free shop token). A full board costs 96 and guarantees your wish. Tokens don't expire — fine to save for next time. Forgehammers are the top wish."}],
+ "Treasure Cove":[{l:"Heads-up",t:"🏴‍☠️ Treasure Cove: open it every day and claim the FREE daily chest. The map is pack-based — only buy if the Captain's Treasure is worth it to you."}],
+ "Fishing Tournament":[{l:"Heads-up",t:"🎣 Fishing Tournament is on! Restart a bad cast for free, chase sparkling fish, and put Fishing Points into tool upgrades. Use all your attempts before reset."}],
+ "Champagne Fair":[{l:"Heads-up",t:"🥂 Champagne Fair: trade spare hero shards for Fair Vouchers and buy what you actually need (widgets!). Check the trade cap per hero rarity. Vouchers don't expire, so no need to spend them all."}],
+ "Call of the Sovereign":[{l:"Kickoff",t:"📜 Call of the Sovereign (3 days, resets 00:00 UTC). Do every free task daily = 102 Glory Points = first 4 chests. Gen 3+: use exactly 30 Epic + 10 Advanced keys a day — don't spend tomorrow's early. Rally Terrors together and bring Diana."}],
+ "Blizzard Brawl":[{l:"Heads-up",t:"❄️ Blizzard Brawl: real-time 10-player rooms (Same-Gen or Cross-Gen). 4 matchmaking windows a day, 2h each. Jump in when you can."}],
+ "Finder's Fortune":[{l:"Heads-up",t:"🔎 Finder's Fortune: the timer keeps running if you leave, so open the right map before you start a round."}],
+ "Hero Rally":[{l:"Heads-up",t:"🦸 Hero Rally is running — check the event for this rotation's heroes and grab the free rewards."}],
+ "Defeat nearby beasts":[{l:"Heads-up",t:"🐺 Defeat Nearby Beasts (2 days): 1 pt per beast (10 stamina), 3 pts per Terror rally (25 stamina). Save stamina, bring Diana, and join Terror rallies."}],
+ "Kingdom Transfer":[{l:"Recruit",t:"🚚 Kingdom Transfer window is open (7 days). We're recruiting — know someone strong looking to move? Send them to [R4/R5]."}],
+ "__daily":[{l:"Intel",t:"🏹 Daily: finish your Intel missions (24 arrows a day) and donate Hunting Arrows to the Pitfall — a maxed Pitfall = +25% attack on the Bear for all of us."}]
+};
+
+const DEFAULT_STATE = () => ({
+  settings:{alliance:"WFP",kingdom:"1884",tz:"utc",cats:{war:1,alliance:1,growth:1,special:1,custom:1}},
+  playbooks:{},          /* slug -> task[] overrides */
+  daily:[{id:"d1",t:"Review alliance applications & clear inactives"},{id:"d2",t:"Check NAP / kingdom chat for issues"}],
+  custom:[{id:"bear",name:"Bear Hunt",start:"2026-11-14T12:00",durMin:30,every:2,enabled:false,
+           tasks:[{d:0,t:"Post Bear Hunt waves & call the rally"}]}],
+  imported:{},           /* key -> {name,cat,s,e,est} confirmed from kingshot.net paste */
+  messages:{},           /* slug -> [{l,t}] edited member messages */
+  tasks:{}               /* taskKey -> {done,by,at,owner} */
+});
+
+/* ================== UTIL ================== */
+const DAY=864e5, H=36e5;
+const U = s => Date.parse(s+":00Z");
+const dayStart = t => Math.floor(t/DAY)*DAY;
+const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const keyT = t => new Date(t).toISOString().slice(0,13).replace(/[-T:]/g,"");
+const WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function parts(t){const d=new Date(t);return S.settings.tz==="local"
+  ?{wd:d.getDay(),mo:d.getMonth(),d:d.getDate(),h:d.getHours(),m:d.getMinutes(),y:d.getFullYear()}
+  :{wd:d.getUTCDay(),mo:d.getUTCMonth(),d:d.getUTCDate(),h:d.getUTCHours(),m:d.getUTCMinutes(),y:d.getUTCFullYear()};}
+const pad=n=>String(n).padStart(2,"0");
+function fDate(t){const p=parts(t);return `${WD[p.wd]} ${MO[p.mo]} ${p.d}`;}
+function fTime(t){const p=parts(t);return `${pad(p.h)}:${pad(p.m)}`;}
+function fDT(t){return `${fDate(t)}, ${fTime(t)}`;}
+function fDur(ms){ms=Math.max(0,ms);const d=Math.floor(ms/DAY),h=Math.floor(ms%DAY/H),m=Math.floor(ms%H/6e4);return d?`${d}d ${h}h`:h?`${h}h ${m}m`:`${m}m`;}
+const fDayUTC = t => {const d=new Date(t);return `${WD[d.getUTCDay()]} ${MO[d.getUTCMonth()]} ${d.getUTCDate()}`;};
+function toast(m){const e=document.getElementById("toast");e.textContent=m;e.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(()=>e.classList.remove("on"),1800);}
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+/* ================== STATE / STORAGE ================== */
+let S = DEFAULT_STATE();
+let fb = null;
+function merge(raw){const d=DEFAULT_STATE();raw=raw||{};
+  return {settings:{...d.settings,...(raw.settings||{}),cats:{...d.settings.cats,...((raw.settings||{}).cats||{})}},
+    playbooks:raw.playbooks||{}, daily:raw.daily||d.daily, custom:raw.custom||d.custom,
+    imported:raw.imported||{}, messages:raw.messages||{}, tasks:raw.tasks||{},
+    bearTraps:{traps:(raw.bearTraps||{}).traps||{}, signups:(raw.bearTraps||{}).signups||{}}};}
+/* kingshot.net community Message Templates search term per event */
+const KSN_Q={"Kingdom of Power":"kvk","Kingdom of Power battle":"kvk","Castle Battle":"castle","Alliance Championship":"championship","Swordland Showdown":"swordland",
+ "Tri-Alliance Clash":"tri-alliance","Tri-Alliance Clash battle":"tri-alliance","Viking Vengeance":"viking","Alliance Brawl":"brawl","Merchant Empire":"merchant",
+ "Alliance Mobilization":"mobilization","Strongest Governor":"strongest governor","Golden Glaives":"golden glaives","Sanctuary Battle":"sanctuary",
+ "Eternity's Reach":"eternity","Bear Hunt":"bear","All Out":"all out","Armament Competition":"armament","Officer Project":"officer project",
+ "Champion's Way":"champion's way","Cesares Fury":"cesare","Hero Roulette":"roulette","Mystic Divination":"divination","Treasure Cove":"treasure cove",
+ "Fishing Tournament":"fishing","Champagne Fair":"champagne","Call of the Sovereign":"sovereign","Blizzard Brawl":"blizzard","Finder's Fortune":"finder",
+ "Hero Rally":"hero rally","Defeat nearby beasts":"beast","Kingdom Transfer":"transfer"};
+const ksnUrl=n=>`https://kingshot.net/message-templates${n&&n!=="__daily"?`?q=${encodeURIComponent(KSN_Q[n]||n.toLowerCase())}`:""}`;
+function msgs(name){return (S.messages&&S.messages[slug(name)])||MSG[name]||[];}
+function copyText(txt,label){
+  const fb2=()=>{document.getElementById("main").insertAdjacentHTML("afterbegin",`<div class="card" style="margin-bottom:14px"><h2>${esc(label||"Copy this")}</h2><pre class="brief">${esc(txt)}</pre></div>`);window.scrollTo(0,0);};
+  try{(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast("Copied")).catch(fb2);}catch(e){fb2();}
+}
+function save(path,val){
+  if(fb){ fb.ref(`allianceCC/${ALLIANCE_KEY}/${path}`).set(val===undefined?null:val); }
+  else ls.set("allianceCC:"+ALLIANCE_KEY, JSON.stringify(S));
+}
+function loadScript(src){return new Promise((r,j)=>{const s=document.createElement("script");s.src=src;s.onload=r;s.onerror=j;document.head.appendChild(s);});}
+async function initStore(){
+  if(FIREBASE_CONFIG){
+    try{
+      await loadScript("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
+      await loadScript("https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js");
+      firebase.initializeApp(FIREBASE_CONFIG); fb=firebase.database();
+      fb.ref(`allianceCC/${ALLIANCE_KEY}`).on("value",snap=>{S=merge(snap.val());render();});
+      const sp=document.getElementById("syncpill");sp.classList.add("live");sp.innerHTML='<span class="lock-icn"></span>Live sync';
+      return;
+    }catch(e){console.warn("Firebase failed, using local",e);fb=null;}
+  }
+  const raw=ls.get("allianceCC:"+ALLIANCE_KEY); if(raw){try{S=merge(JSON.parse(raw))}catch(e){}}
+  document.getElementById("syncpill").innerHTML='<span class="lock-icn"></span>This browser only';
+  render();
+}
+
+/* ================== EDIT LOCK ================== */
+let unlocked = !EDIT_PASSPHRASE || ls.get("allianceCC:unlock")===EDIT_PASSPHRASE;
+function canEdit(){ if(unlocked) return true; toast("Leader mode is locked"); return false; }
+function renderLock(){const b=document.getElementById("lockbtn");
+  if(!EDIT_PASSPHRASE){b.style.display="none";return;}
+  b.classList.toggle("unlocked",unlocked);b.innerHTML=`<span class="lock-icn"></span>${unlocked?"Leader access":"View only"}`;}
+document.getElementById("lockbtn").onclick=()=>{
+  if(unlocked){unlocked=false;ls.set("allianceCC:unlock","");renderLock();render();return;}
+  const box=document.getElementById("main");
+  const v=window.__pp; // inline field below
+  showUnlock();
+};
+function showUnlock(){
+  const m=document.getElementById("main");
+  m.insertAdjacentHTML("afterbegin",`<div class="banner row" id="unl">Passphrase: <input id="ppin" type="password"> <button class="btn gold sm" id="ppgo">Unlock</button></div>`);
+  document.getElementById("ppgo").onclick=()=>{if(document.getElementById("ppin").value===EDIT_PASSPHRASE){unlocked=true;ls.set("allianceCC:unlock",EDIT_PASSPHRASE);renderLock();render();toast("Leader mode on");}else toast("Wrong passphrase");};
+}
+
+/* ================== EVENT ENGINE ================== */
+const CATMAP={}; TEMPLATE.concat(ONE_OFF).forEach(e=>CATMAP[e[0]]=e[1]);
+const CYCLE=28*DAY, ANCHOR=U(CYCLE_ANCHOR);
+function occurrences(from,to){
+  const out=[]; const k0=Math.floor((from-ANCHOR)/CYCLE)-1, k1=Math.floor((to-ANCHOR)/CYCLE)+1;
+  for(let k=k0;k<=k1;k++) for(const [n,c,s,e,est] of TEMPLATE){
+    const st=U(s)+k*CYCLE, en=U(e)+k*CYCLE;
+    if(en>from && st<to) out.push({name:n,cat:c,s:st,e:en,est:!!est,src:"cycle"});
+  }
+  for(const [n,c,s,e] of ONE_OFF){const st=U(s),en=U(e);if(en>from&&st<to)out.push({name:n,cat:c,s:st,e:en,est:false,src:"oneoff"});}
+  // imported (confirmed) events replace cycle events with same name + same start day
+  const imp=Object.values(S.imported||{});
+  for(const ev of imp){
+    if(!(ev.e>from&&ev.s<to)) continue;
+    const i=out.findIndex(o=>o.name===ev.name&&dayStart(o.s)===dayStart(ev.s));
+    const rec={name:ev.name,cat:ev.cat||CATMAP[ev.name]||"special",s:ev.s,e:ev.e,est:!!ev.est,src:"confirmed"};
+    if(i>=0) out[i]=rec; else out.push(rec);
+  }
+  // alliance-scheduled custom events
+  for(const c of S.custom||[]){ if(!c.enabled) continue;
+    const base=U(c.start), every=(c.every||1)*DAY, dur=(c.durMin||30)*6e4;
+    let n=Math.floor((from-base)/every)-1;
+    for(let t=base+n*every;t<to;t+=every){ if(t+dur>from) out.push({name:c.name,cat:"custom",s:t,e:t+dur,est:false,src:"custom",cid:c.id}); }
+  }
+  return out.sort((a,b)=>a.s-b.s||a.name.localeCompare(b.name));
+}
+function playbook(name, cid){
+  const k=slug(name);
+  if(S.playbooks && S.playbooks[k]) return S.playbooks[k];
+  if(cid){const c=(S.custom||[]).find(x=>x.id===cid); if(c) return c.tasks||[];}
+  return DEFAULT_PB[name]||[];
+}
+function tasksFor(day){ /* day = UTC midnight ms */
+  const occ=occurrences(day-45*DAY, day+45*DAY), list=[];
+  for(const o of occ){
+    const sd=dayStart(o.s), pb=playbook(o.name,o.cid);
+    pb.forEach((t,i)=>{
+      let hit=false;
+      if(t.daily){const a=sd+(t.d||0)*DAY, b=sd+((t.to??Math.round((dayStart(o.e-1)-sd)/DAY)))*DAY; hit=day>=a&&day<=b;}
+      else hit=sd+(t.d||0)*DAY===day;
+      if(hit) list.push({key:`${slug(o.name)}_${keyT(o.s)}_${i}_${keyT(day)}`,t:t.t,link:t.link,owner:t.owner||"",ev:o});
+    });
+  }
+  return list;
+}
+
+/* ================== RENDER ================== */
+let TAB="today", VIEWDAY=dayStart(Date.now()), CALSTART=null, CALSPAN=7;
+document.getElementById("nav").onclick=e=>{const b=e.target.closest("button[data-tab]");if(!b)return;TAB=b.dataset.tab;
+  [...document.querySelectorAll("#nav button")].forEach(x=>x.classList.toggle("on",x===b));render();};
+const meIn=document.getElementById("me"); meIn.value=ls.get("allianceCC:me")||""; meIn.onchange=()=>ls.set("allianceCC:me",meIn.value.trim());
+
+function render(){
+  document.getElementById("title").textContent=`${S.settings.alliance} Command Center`;
+  document.getElementById("subtitle").textContent=`Daily leadership tasks, event calendar and member messages — Kingdom ${S.settings.kingdom}, UTC`;
+  renderLock();
+  const m=document.getElementById("main");
+  if(TAB==="today") m.innerHTML=viewToday()+`<div style="height:14px"></div>`+viewCalendar();
+  if(TAB==="playbooks") m.innerHTML=viewPlaybooks();
+  if(TAB==="sync") m.innerHTML=viewSync();
+  if(TAB==="messages") m.innerHTML=viewMessages();
+  if(TAB==="bears"){ m.innerHTML=viewBearTraps(); btAfterRender(); }
+  renderModal();
+}
+function catOn(c){return S.settings.cats[c]!==0;}
+
+function taskRow(x){
+  const st=S.tasks[x.key]||{}; const c=x.ev?x.ev.cat:"custom";
+  const owner=st.owner??x.owner;
+  return `<div class="task c-${c} ${st.done?"done":""}">
+    <button class="chk" data-act="toggle" data-k="${esc(x.key)}">${st.done?"✓":""}</button>
+    <div><div class="tt">${esc(x.t)} ${x.link?`<a href="${esc(x.link)}" target="_blank" rel="noopener">↗</a>`:""}</div>
+      ${st.done?`<div class="meta">✓ ${esc(st.by||"someone")} · ${fDT(st.at)}</div>`:""}</div>
+    <input class="owner" placeholder="owner" value="${esc(owner)}" data-act="owner" data-k="${esc(x.key)}">
+  </div>`;
+}
+function viewToday(){
+  const now=Date.now(), day=VIEWDAY, isToday=day===dayStart(now);
+  const tasks=tasksFor(day);
+  const groups=new Map();
+  for(const t of tasks){const g=t.ev?`${t.ev.name}|${t.ev.s}`:"__daily";if(!groups.has(g))groups.set(g,[]);groups.get(g).push(t);}
+  const done=tasks.filter(t=>S.tasks[t.key]?.done).length;
+  let g="";
+  for(const [k,arr] of groups){
+    const ev=arr[0].ev;
+    g+=`<div class="group"><div class="group-h">${ev?`<span class="dot c-${ev.cat}"></span>${esc(ev.name)}
+      <span class="when">${fDT(ev.s)} → ${fDT(ev.e)}</span>${ev.est?`<span class="tag est">Estimated</span>`:""}`
+      :`<span class="dot c-custom"></span>Every day`}${msgBtns(ev?ev.name:"__daily")}</div>${arr.map(taskRow).join("")}</div>`;
+  }
+  return `<section class="card" id="tasks"><h2><span>Leadership tasks · ${fDayUTC(day)}${isToday?" (today)":""}</span>
+     <span class="daynav"><button class="btn sm" data-act="day" data-d="-1">←</button>${isToday?"":`<button class="btn sm" data-act="day" data-d="0">Today</button>`}<button class="btn sm" data-act="day" data-d="1">→</button></span></h2>
+     <div class="row mute" style="margin-bottom:10px">${done}/${tasks.length} done · <button class="btn sm gold" data-act="brief">Copy daily brief</button></div>
+     ${g||`<div class="empty">No leadership tasks for this day.</div>`}
+   </section>`;
+}
+function msgBtns(name){
+  const b=msgs(name).map((m,i)=>`<button class="btn sm ghost" style="font-weight:500" data-act="copymsg" data-n="${esc(name)}" data-i="${i}" title="Copy member message">📋 ${esc(m.l)}</button>`).join("");
+  const more=name!=="__daily"?`<a class="btn sm ghost" style="text-decoration:none;font-weight:500" href="${ksnUrl(name)}" target="_blank" rel="noopener" title="Community templates on kingshot.net">🔎 More</a>`:"";
+  return `<span class="row" style="margin-left:auto;gap:4px">${b}${more}</span>`;
+}
+function evRow(o,right){
+  const kvk=/Kingdom of Power/.test(o.name)?` <a href="${WAR_ROOM_URL}" target="_blank" rel="noopener" title="Open War Room">⚔</a>`:"";
+  return `<div class="ev"><span class="dot c-${o.cat}"></span><span class="nm">${esc(o.name)}${kvk}</span>
+   ${o.est?`<span class="tag est">Est.</span>`:o.src==="confirmed"?`<span class="tag conf">Synced</span>`:""}<span class="tm">${right}</span></div>`;
+}
+
+function viewCalendar(){
+  const now=Date.now();
+  if(CALSTART===null){const t=dayStart(now);const wd=(new Date(t).getUTCDay()+6)%7;CALSTART=t-wd*DAY;}
+  const from=CALSTART,to=from+CALSPAN*DAY;
+  const occ=occurrences(from,to).filter(o=>catOn(o.cat));
+  // pack events into as few lanes as possible; name goes on the bar
+  const lanes=[]; occ.slice().sort((x,y)=>x.s-y.s||(y.e-y.s)-(x.e-x.s)).forEach(o=>{
+    let L=lanes.find(l=>l.end<=o.s); if(!L){L={end:0,items:[]};lanes.push(L);} L.items.push(o); L.end=o.e;});
+  const pct=t=>Math.max(0,Math.min(100,(t-from)/(to-from)*100));
+  let ticks="",gl="";
+  for(let i=0;i<CALSPAN;i++){const t=from+i*DAY,d=new Date(t);
+    ticks+=`<div class="tick ${t===dayStart(now)?"today":""} ${t===VIEWDAY?"sel":""}" data-act="opendate" data-t="${t}">${WD[d.getUTCDay()][0]}${CALSPAN<=7?WD[d.getUTCDay()].slice(1):""}<b>${d.getUTCDate()}</b></div>`;
+    gl+=`<div class="gl" style="left:${i/CALSPAN*100}%"></div>`;}
+  const nowl=now>=from&&now<to?`<div class="nowline" style="left:${pct(now)}%"></div>`:"";
+  let body="";
+  for(const L of lanes){
+    body+=`<div class="gr"><div class="track">${gl}${nowl}${
+      L.items.map(o=>{const tm=fTime(o.s)!=="00:00"?`<span class="bt">${fTime(o.s)}</span>`:"";
+        return `<div class="bar c-${o.cat} ${o.est?"estb":""}" data-act="evopen" data-n="${esc(o.name)}" data-s="${o.s}" title="${esc(o.name)}: ${fDT(o.s)} → ${fDT(o.e)}${o.est?" (estimated)":""} · click for tasks & messages" style="left:${pct(o.s)}%;width:${Math.max(.8,pct(o.e)-pct(o.s))}%">${esc(o.name)}${o.est?" (est.)":""}${tm}</div>`;}).join("")}</div></div>`;}
+  const fc=["war","alliance","growth","special","custom"].map(c=>`<button class="fchip c-${c} ${catOn(c)?"":"off"}" data-act="cat" data-c="${c}"><span class="dot"></span>${c[0].toUpperCase()+c.slice(1)}</button>`).join("");
+  return `<section class="card"><h2><span>Event calendar · ${fDayUTC(from)} – ${fDayUTC(to-DAY)}</span>
+    <span class="row"><button class="btn sm" data-act="cal" data-d="-1">←</button><button class="btn sm" data-act="cal" data-d="0">This week</button><button class="btn sm" data-act="cal" data-d="1">→</button>
+    <select data-act="span"><option value="7" ${CALSPAN===7?"selected":""}>1 week</option><option value="14" ${CALSPAN===14?"selected":""}>2 weeks</option><option value="28" ${CALSPAN===28?"selected":""}>4 weeks (full cycle)</option></select></span></h2>
+    <div class="row" style="margin-bottom:10px;justify-content:space-between"><div class="filters">${fc}</div><span class="mute" style="font-size:12px">Tap a day to see its tasks above · dashed = estimated · times in ${S.settings.tz==="local"?"your time":"UTC"}</span></div>
+    <div class="gantt"><div class="gh"><div class="ticks" style="grid-template-columns:repeat(${CALSPAN},1fr)">${ticks}</div></div>${body||`<div class="empty">No events.</div>`}</div></section>`;
+}
+
+function allEventNames(){
+  const s=new Set(TEMPLATE.map(e=>e[0])); ONE_OFF.forEach(e=>s.add(e[0]));
+  Object.values(S.imported||{}).forEach(e=>s.add(e.name)); return [...s].sort();
+}
+function pbRows(tasks,scope){
+  return `<div class="pbrow pbhead"><span>Day</span><span>Daily?</span><span>Until day</span><span class="wide">Task</span><span>Default owner</span><span></span></div>`+
+  tasks.map((t,i)=>`<div class="pbrow" data-scope="${esc(scope)}" data-i="${i}">
+    <input type="number" value="${t.d||0}" data-f="d"><select data-f="daily"><option value="">No</option><option value="1" ${t.daily?"selected":""}>Yes</option></select>
+    <input type="number" value="${t.to??""}" placeholder="end" data-f="to" ${t.daily?"":"disabled"}>
+    <input class="wide" value="${esc(t.t)}" data-f="t"><input value="${esc(t.owner||"")}" placeholder="R4…" data-f="owner">
+    <button class="btn sm ghost" data-act="pbdel">✕</button></div>`).join("")+
+  `<div class="row"><button class="btn sm" data-act="pbadd" data-scope="${esc(scope)}">+ Add task</button>${scope.startsWith("ev:")&&S.playbooks[slug(scope.slice(3))]?`<button class="btn sm ghost" data-act="pbreset" data-scope="${esc(scope)}">Reset to default</button>`:""}</div>`;
+}
+function viewPlaybooks(){
+  const ro=unlocked?"":`<div class="banner">Read-only. Unlock leader mode to edit.</div>`;
+  const evs=allEventNames().map(n=>{const tasks=playbook(n);const c=CATMAP[n]||"special";
+    return `<details class="pb"><summary><span class="dot c-${c}"></span>${esc(n)}<span class="cnt">${tasks.length} task${tasks.length===1?"":"s"}${S.playbooks[slug(n)]?" · edited":""}</span></summary><div class="body">${pbRows(tasks,"ev:"+n)}</div></details>`;}).join("");
+  const cust=(S.custom||[]).map((c,ci)=>`<details class="pb" ${c.enabled?"":"open"}><summary><span class="dot c-custom"></span>${esc(c.name)}<span class="cnt">${c.enabled?`every ${c.every}d · ${fTime(U(c.start))} UTC`:"off – set a time"}</span></summary><div class="body">
+     <div class="row" style="margin-bottom:10px" data-ci="${ci}">
+       <label>Name <input value="${esc(c.name)}" data-cf="name" style="width:130px"></label>
+       <label>Next start (UTC) <input type="datetime-local" value="${esc(c.start)}" data-cf="start"></label>
+       <label>Every <input type="number" min="1" value="${c.every}" data-cf="every" style="width:60px"> days</label>
+       <label>Length <input type="number" min="5" value="${c.durMin}" data-cf="durMin" style="width:70px"> min</label>
+       <label><input type="checkbox" ${c.enabled?"checked":""} data-cf="enabled"> On</label>
+       <button class="btn sm ghost" data-act="cdel" data-ci="${ci}">Delete</button></div>
+     ${pbRows(c.tasks||[],"c:"+c.id)}</div></details>`).join("");
+  const daily=`<div class="pb"><div class="body" style="padding-top:12px">${(S.daily||[]).map((t,i)=>`<div class="pbrow" style="grid-template-columns:1fr 110px 30px" data-scope="daily" data-i="${i}"><input value="${esc(t.t)}" data-f="t"><input value="${esc(t.owner||"")}" placeholder="owner" data-f="owner"><button class="btn sm ghost" data-act="pbdel">✕</button></div>`).join("")}<button class="btn sm" data-act="pbadd" data-scope="daily">+ Add daily task</button></div></div>`;
+  return `${ro}<div class="grid"><section class="card"><h2>Event playbooks <small>tasks auto-appear on the right day</small></h2>
+   <p class="mute" style="margin-top:0">Day 0 = the day the event starts (UTC). −1 = the day before. "Daily" repeats a task every day from Day through Until.</p>${evs}</section>
+   <aside>   <section class="card"><h2>Alliance-scheduled events <button class="btn sm" data-act="cadd">+ Add</button></h2>
+   <p class="mute" style="margin-top:0">Events your alliance times itself (Bear Hunt, rally drills…).</p>${cust}</section></aside></div>`;
+}
+
+function viewMessages(){
+  const now=Date.now();
+  const names=[...new Set([...allEventNames(),...(S.custom||[]).map(c=>c.name),...Object.keys(MSG).filter(k=>k!=="__daily")])];
+  // order: running/next-up first, then the rest alphabetically
+  const occ=occurrences(now-DAY,now+14*DAY), next={};
+  occ.forEach(o=>{if(o.e>now&&!(o.name in next))next[o.name]=o.s;});
+  names.sort((a,b)=>((next[a]??9e15)-(next[b]??9e15))||a.localeCompare(b));
+  const card=n=>{const list=msgs(n);const c=n==="__daily"?"custom":(CATMAP[n]||((S.custom||[]).some(x=>x.name===n)?"custom":"special"));
+    const when=n in next?(next[n]<=now?`<span class="tag conf">Running</span>`:`<span class="mute" style="font-size:12px">${fDT(next[n])}</span>`):"";
+    return `<details class="pb" ${n in next&&next[n]<now+3*DAY?"open":""}><summary><span class="dot c-${c}"></span>${n==="__daily"?"Every day":esc(n)} ${when}<span class="cnt">${list.length} msg${list.length===1?"":"s"}${S.messages[slug(n)]?" · edited":""}</span></summary><div class="body">
+      ${list.map((m,i)=>`<div style="margin-bottom:10px" data-mn="${esc(n)}" data-mi="${i}">
+        <div class="row" style="margin-bottom:4px"><input value="${esc(m.l)}" data-mf="l" style="width:130px" ${unlocked?"":"disabled"}>
+        <button class="btn sm gold" data-act="copymsg" data-n="${esc(n)}" data-i="${i}">📋 Copy</button>
+        ${unlocked?`<button class="btn sm ghost" data-act="msgdel">✕</button>`:""}</div>
+        <textarea data-mf="t" style="min-height:80px" ${unlocked?"":"readonly"}>${esc(m.t)}</textarea>
+        <div class="cc ${m.t.length>512?"over":""}">${m.t.length}/512</div></div>`).join("")}
+      <div class="row">${unlocked?`<button class="btn sm" data-act="msgadd" data-n="${esc(n)}">+ Add message</button>${S.messages[slug(n)]&&MSG[n]?`<button class="btn sm ghost" data-act="msgreset" data-n="${esc(n)}">Reset to default</button>`:""}`:""}
+      ${n!=="__daily"?`<a class="btn sm ghost" style="text-decoration:none" href="${ksnUrl(n)}" target="_blank" rel="noopener">🔎 Browse kingshot.net templates</a>`:""}</div>
+    </div></details>`;};
+  return `<section class="card"><h2>Member messages <small>paste-ready for alliance chat</small></h2>
+    <p class="mute" style="margin-top:0">Fill in anything in [BRACKETS] before sending. Every message fits the 512-character chat limit. Events running or coming up soon are listed first. Edits save for all leaders.<br>
+    Want more? <a href="https://kingshot.net/message-templates" target="_blank" rel="noopener">kingshot.net Message Templates</a> has 400+ community messages (🔎 on each event opens a search for it). For decorative text art, see <a href="https://keyboarding.wiki/?q=tag:kingshot" target="_blank" rel="noopener">keyboarding.wiki</a>. Found one you like? Use "+ Add message" to keep it here.</p>
+    ${card("__daily")}${names.map(card).join("")}</section>`;
+}
+function viewSync(){
+  const n=Object.keys(S.imported||{}).length;
+  return `<div class="grid"><section class="card"><h2>Sync from kingshot.net</h2>
+   <p class="mute" style="margin-top:0">The calendar auto-repeats Kingdom 1884's 28-day cycle. To confirm upcoming dates, open
+   <a href="https://kingshot.net/calendar?kingdom=${esc(S.settings.kingdom)}" target="_blank" rel="noopener">kingshot.net/calendar?kingdom=${esc(S.settings.kingdom)}</a>,
+   select all on the page (Ctrl/Cmd+A), copy, and paste below. Use "Next week" there and repeat for more weeks.</p>
+   <textarea id="imp" placeholder="Paste the kingshot.net calendar page here…"></textarea>
+   <div class="row" style="margin-top:8px"><button class="btn gold" data-act="import">Import events</button>
+   <span class="mute">${n} confirmed event${n===1?"":"s"} stored</span>${n?`<button class="btn sm ghost" data-act="clearimp">Clear synced</button>`:""}</div>
+   </section>
+   <aside><section class="card" style="margin-bottom:14px"><h2>Settings</h2><div class="kv">
+    <span>Alliance tag</span><input data-set="alliance" value="${esc(S.settings.alliance)}">
+    <span>Kingdom #</span><input data-set="kingdom" value="${esc(S.settings.kingdom)}">
+    <span>Show times in</span><select data-set="tz"><option value="utc" ${S.settings.tz==="utc"?"selected":""}>UTC (game time)</option><option value="local" ${S.settings.tz==="local"?"selected":""}>My time</option></select>
+   </div></section>
+   <section class="card"><h2>Storage</h2><p class="mute" style="margin-top:0">${fb?`Live-synced to Firebase at <code>/allianceCC/${ALLIANCE_KEY}</code>. Every leader sees the same checkmarks.`:
+   `Saving to this browser only. Add your Firebase config at the top of the file to share across leadership.`}</p>
+   <div class="row"><button class="btn sm" data-act="export">Export backup</button><label class="btn sm">Restore backup<input type="file" accept=".json" data-act="restore" hidden></label></div></section></aside></div>`;
+}
+
+/* ================== IMPORT PARSER ================== */
+function parseKingshot(text){
+  const L=text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  const now=Date.now(), out=[]; let packs=false;
+  const md=(mon,d,h,mi)=>{const M=MO.indexOf(mon);let best=null;
+    for(const y of [new Date(now).getUTCFullYear()-1,new Date(now).getUTCFullYear(),new Date(now).getUTCFullYear()+1]){
+      const t=Date.UTC(y,M,+d,+h,+mi); if(best===null||Math.abs(t-now)<Math.abs(best-now)) best=t;}return best;};
+  const rA=/^\w{3}, (\w{3}) (\d{1,2}), (\d{2}):(\d{2}) → \w{3}, (\w{3}) (\d{1,2}), (\d{2}):(\d{2})$/;
+  const rB=/^\w{3}, (\w{3}) (\d{1,2}) · (\d{2}):(\d{2})[–-](\d{2}):(\d{2})$/;
+  const rC=/^\w{3}, (\w{3}) (\d{1,2}) · Battle day$/;
+  for(let i=0;i<L.length;i++){const l=L[i];
+    if(/^Week of /.test(l)){packs=false;continue;}
+    if(/^Packs$/.test(l)){packs=true;continue;}
+    if(packs) continue;
+    let s,e,m;
+    if(m=l.match(rA)){s=md(m[1],m[2],m[3],m[4]);e=md(m[5],m[6],m[7],m[8]);}
+    else if(m=l.match(rB)){s=md(m[1],m[2],m[3],m[4]);e=md(m[1],m[2],m[5],m[6]);if(e<=s)e+=DAY;}
+    else if(m=l.match(rC)){s=md(m[1],m[2],0,0);e=s+DAY;}
+    else continue;
+    let j=i-1,est=false; if(L[j]==="Estimated"){est=true;j--;}
+    const name=L[j]; if(!name||/^(Show|Running|Up next|Packs)/.test(name)) continue;
+    out.push({name,cat:CATMAP[name]||"special",s,e,est});
+  }
+  return out;
+}
+
+/* ================== DAILY BRIEF ================== */
+function brief(){
+  const day=VIEWDAY, now=Date.now();
+  const occ=occurrences(day,day+DAY).filter(o=>o.cat!=="custom"||true);
+  const soon=occurrences(day+DAY,day+3*DAY).filter(o=>o.s>=day+DAY);
+  const tasks=tasksFor(day).filter(t=>!(S.tasks[t.key]?.done));
+  const L=[`📅 ${S.settings.alliance} Daily Brief · ${fDayUTC(day)} (UTC)`,""];
+  if(occ.length){L.push("🔥 Running:");occ.forEach(o=>L.push(`• ${o.name} – ends ${fDT(o.e)}`));L.push("");}
+  if(soon.length){L.push("⏭ Coming up:");soon.forEach(o=>L.push(`• ${o.name} – ${fDT(o.s)}${o.est?" (est.)":""}`));L.push("");}
+  if(tasks.length){L.push("✅ Leadership to-do:");tasks.forEach(t=>{const ow=(S.tasks[t.key]?.owner??t.owner);L.push(`☐ ${t.t}${ow?` – ${ow}`:""}`);});}
+  return L.join("\n");
+}
+
+
+/* ================== EVENT DETAIL POPUP ================== */
+let MODAL=null; /* {name, s} */
+function occTasks(o){
+  const sd=dayStart(o.s), lastDay=dayStart(o.e-1), out=[];
+  playbook(o.name,o.cid).forEach((t,i)=>{
+    const days=[];
+    if(t.daily){const a=sd+(t.d||0)*DAY, b=sd+((t.to??Math.round((lastDay-sd)/DAY)))*DAY; for(let d=a;d<=b;d+=DAY)days.push(d);}
+    else days.push(sd+(t.d||0)*DAY);
+    days.forEach(d=>out.push({key:`${slug(o.name)}_${keyT(o.s)}_${i}_${keyT(d)}`,t:t.t,link:t.link,owner:t.owner||"",day:d,ev:o}));
+  });
+  return out.sort((a,b)=>a.day-b.day);
+}
+function renderModal(){
+  const box=document.getElementById("evmodal");
+  if(!MODAL){box.hidden=true;box.innerHTML="";return;}
+  const o=occurrences(MODAL.s-DAY,MODAL.s+DAY).find(x=>x.name===MODAL.name&&x.s===MODAL.s);
+  if(!o){MODAL=null;box.hidden=true;return;}
+  const today=dayStart(Date.now()), tasks=occTasks(o), done=tasks.filter(t=>S.tasks[t.key]?.done).length;
+  const list=msgs(o.name);
+  const rows=tasks.map(x=>{const st=S.tasks[x.key]||{};const owner=st.owner??x.owner;
+    return `<div class="task c-${o.cat} ${st.done?"done":""} ${x.day===today?"today-row":""}" style="grid-template-columns:22px 1fr auto auto">
+      <button class="chk" data-act="toggle" data-k="${esc(x.key)}">${st.done?"✓":""}</button>
+      <div><div class="tt">${esc(x.t)} ${x.link?`<a href="${esc(x.link)}" target="_blank" rel="noopener">↗</a>`:""}</div>
+        ${st.done?`<div class="meta">✓ ${esc(st.by||"someone")} · ${fDT(st.at)}</div>`:""}</div>
+      <span class="tday">${x.day===today?"Today":fDayUTC(x.day)}</span>
+      <input class="owner" placeholder="owner" value="${esc(owner)}" data-act="owner" data-k="${esc(x.key)}"></div>`;}).join("");
+  const mm=list.map((m,i)=>`<div class="mmsg"><div class="mmsg-h"><b>${esc(m.l)}</b><span class="tday">${m.t.length}/512</span>
+      <button class="btn sm gold" data-act="copymsg" data-n="${esc(o.name)}" data-i="${i}">📋 Copy</button></div><pre>${esc(m.t)}</pre></div>`).join("");
+  box.innerHTML=`<div class="modal c-${o.cat}" role="dialog" aria-modal="true">
+    <div class="modal-head"><span class="dot" style="margin-top:8px"></span><h3>${esc(o.name)}</h3>
+      ${o.est?`<span class="tag est" style="margin-top:6px">Estimated</span>`:o.src==="confirmed"?`<span class="tag conf" style="margin-top:6px">Synced</span>`:""}
+      <button class="modal-x" data-act="evclose" aria-label="Close">✕</button></div>
+    <div class="modal-when">${fDT(o.s)} → ${fDT(o.e)} ${S.settings.tz==="local"?"(your time)":"UTC"}${/Kingdom of Power/.test(o.name)?` · <a href="${WAR_ROOM_URL}" target="_blank" rel="noopener">Open War Room ↗</a>`:""}</div>
+    <div class="msec"><span>Leadership tasks</span><span>${done}/${tasks.length} done</span></div>
+    ${rows||`<div class="empty">No tasks for this event. Add some in Playbooks.</div>`}
+    <div class="msec"><span>Member messages</span><a href="${ksnUrl(o.name)}" target="_blank" rel="noopener" style="text-transform:none;letter-spacing:0">🔎 More on kingshot.net</a></div>
+    ${mm||`<div class="empty">No messages yet. Add one in the Messages tab.</div>`}
+    <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn sm" data-act="evgoto" data-tab="playbooks">Edit tasks</button><button class="btn sm" data-act="evgoto" data-tab="messages">Edit messages</button></div>
+  </div>`;
+  box.hidden=false;
+}
+document.getElementById("evmodal").addEventListener("click",e=>{if(e.target.id==="evmodal"){MODAL=null;renderModal();}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&MODAL){MODAL=null;renderModal();}});
+
+/* ================== EVENTS (delegation) ================== */
+document.addEventListener("click",e=>{
+  const a=e.target.closest("[data-act]"); if(!a) return; const act=a.dataset.act;
+  if(act==="goto"){e.preventDefault();TAB=a.dataset.tab;[...document.querySelectorAll("#nav button")].forEach(x=>x.classList.toggle("on",x.dataset.tab===TAB));render();}
+  if(act==="evopen"){MODAL={name:a.dataset.n,s:+a.dataset.s};renderModal();return;}
+  if(act==="evclose"){MODAL=null;renderModal();return;}
+  if(act==="evgoto"){MODAL=null;TAB=a.dataset.tab;[...document.querySelectorAll("#nav button")].forEach(x=>x.classList.toggle("on",x.dataset.tab===TAB));render();window.scrollTo(0,0);return;}
+  if(act==="toggle"){ if(!canEdit())return; const k=a.dataset.k; const cur=S.tasks[k]||{};
+    const nv=cur.done?{...cur,done:false,by:null,at:null}:{...cur,done:true,by:meIn.value.trim()||"leader",at:Date.now()};
+    S.tasks[k]=nv; save("tasks/"+k,nv); render(); }
+  if(act==="day"){const d=+a.dataset.d; VIEWDAY=d===0?dayStart(Date.now()):VIEWDAY+d*DAY; if(d===0)CALSTART=null; else if(CALSTART!==null&&(VIEWDAY<CALSTART||VIEWDAY>=CALSTART+CALSPAN*DAY)){const wd=(new Date(VIEWDAY).getUTCDay()+6)%7;CALSTART=VIEWDAY-wd*DAY;} render();}
+  if(act==="brief"){const txt=brief();
+    (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast("Brief copied")).catch(()=>{
+      document.getElementById("main").insertAdjacentHTML("afterbegin",`<div class="card" style="margin-bottom:14px"><h2>Daily brief</h2><pre class="brief">${esc(txt)}</pre></div>`);});}
+  if(act==="cal"){const d=+a.dataset.d; if(d===0)CALSTART=null; else CALSTART+=d*CALSPAN*DAY; render();}
+  if(act==="opendate"){VIEWDAY=+a.dataset.t;render();const el=document.getElementById("tasks");if(el)el.scrollIntoView({behavior:"smooth",block:"start"});}
+  if(act==="cat"){const c=a.dataset.c;S.settings.cats[c]=catOn(c)?0:1;save("settings",S.settings);render();}
+  if(act==="pbadd"){ if(!canEdit())return; editScope(a.dataset.scope,arr=>arr.push(a.dataset.scope==="daily"?{id:"d"+Date.now(),t:"New task"}:{d:0,t:"New task"})); }
+  if(act==="pbdel"){ if(!canEdit())return; const r=a.closest(".pbrow"); editScope(r.dataset.scope,arr=>arr.splice(+r.dataset.i,1)); }
+  if(act==="pbreset"){ if(!canEdit())return; const k=slug(a.dataset.scope.slice(3)); delete S.playbooks[k]; save("playbooks/"+k,null); render(); }
+  if(act==="cadd"){ if(!canEdit())return; S.custom=[...(S.custom||[]),{id:"c"+Date.now(),name:"New event",start:new Date(dayStart(Date.now())+12*H).toISOString().slice(0,16),durMin:30,every:1,enabled:false,tasks:[{d:0,t:"Call the rally"}]}]; save("custom",S.custom); render(); }
+  if(act==="cdel"){ if(!canEdit())return; S.custom.splice(+a.dataset.ci,1); save("custom",S.custom); render(); }
+  if(act==="import"){ if(!canEdit())return; const evs=parseKingshot(document.getElementById("imp").value);
+    if(!evs.length){toast("No events found in that paste");return;}
+    evs.forEach(ev=>{S.imported[`${slug(ev.name)}_${keyT(ev.s)}`]=ev;}); save("imported",S.imported); render(); toast(`Imported ${evs.length} events`); }
+  if(act==="clearimp"){ if(!canEdit())return; S.imported={}; save("imported",{}); render(); }
+  if(act==="copymsg"){const m=msgs(a.dataset.n)[+a.dataset.i]; if(m) copyText(m.t.replace(/\{alliance\}/g,S.settings.alliance),m.l);}
+  if(act==="msgadd"){ if(!canEdit())return; editMsgs(a.dataset.n,arr=>arr.push({l:"New",t:""})); }
+  if(act==="msgdel"){ if(!canEdit())return; const r=a.closest("[data-mn]"); editMsgs(r.dataset.mn,arr=>arr.splice(+r.dataset.mi,1)); }
+  if(act==="msgreset"){ if(!canEdit())return; const k=slug(a.dataset.n); delete S.messages[k]; save("messages/"+k,null); render(); }
+  if(act==="export"){const b=new Blob([JSON.stringify(S,null,1)],{type:"application/json"});const u=URL.createObjectURL(b);const l=document.createElement("a");l.href=u;l.download=`command-center-${ALLIANCE_KEY}.json`;l.click();}
+});
+document.addEventListener("input",e=>{const t=e.target;if(t.dataset&&t.dataset.mf==="t"){const c=t.parentElement.querySelector(".cc");if(c){c.textContent=t.value.length+"/512";c.classList.toggle("over",t.value.length>512);}}});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.dataset.act==="owner"){ if(!canEdit())return; const k=t.dataset.k; S.tasks[k]={...(S.tasks[k]||{}),owner:t.value.trim()}; save("tasks/"+k,S.tasks[k]); }
+  if(t.dataset.mf){ if(!canEdit())return; const r=t.closest("[data-mn]"); editMsgs(r.dataset.mn,arr=>{arr[+r.dataset.mi][t.dataset.mf]=t.value;},true); }
+  if(t.dataset.act==="span"){CALSPAN=+t.value;render();}
+  if(t.dataset.set){ if(!canEdit())return; S.settings[t.dataset.set]=t.value; save("settings",S.settings); render(); }
+  if(t.dataset.f){ if(!canEdit())return; const r=t.closest(".pbrow"); const f=t.dataset.f;
+    editScope(r.dataset.scope,arr=>{const o=arr[+r.dataset.i];
+      if(f==="d")o.d=+t.value||0; else if(f==="to")o.to=t.value===""?undefined:+t.value; else if(f==="daily")o.daily=!!t.value; else o[f]=t.value;}); }
+  if(t.dataset.cf){ if(!canEdit())return; const ci=+t.closest("[data-ci]").dataset.ci, c=S.custom[ci], f=t.dataset.cf;
+    c[f]=f==="enabled"?t.checked:(f==="every"||f==="durMin")?Math.max(1,+t.value):t.value; save("custom",S.custom); render(); }
+  if(t.dataset.act==="restore"&&t.files[0]){ if(!canEdit())return; t.files[0].text().then(x=>{S=merge(JSON.parse(x));
+    if(fb) fb.ref(`allianceCC/${ALLIANCE_KEY}`).set(S); else save(); render(); toast("Backup restored");}); }
+});
+function editMsgs(name,fn,noRender){const k=slug(name);const arr=JSON.parse(JSON.stringify(msgs(name)));fn(arr);
+  S.messages[k]=arr;save("messages/"+k,arr);if(!noRender)render();}
+function editScope(scope,fn){
+  if(scope==="daily"){S.daily=[...(S.daily||[])];fn(S.daily);save("daily",S.daily);}
+  else if(scope.startsWith("c:")){const c=S.custom.find(x=>x.id===scope.slice(2));c.tasks=[...(c.tasks||[])];fn(c.tasks);save("custom",S.custom);}
+  else {const n=scope.slice(3),k=slug(n);const arr=JSON.parse(JSON.stringify(playbook(n)));fn(arr);
+    arr.forEach(o=>{if(o.to===undefined)delete o.to;});S.playbooks[k]=arr;save("playbooks/"+k,arr);}
+  render();
+}
+
+/* ================== BEAR TRAPS ==================
+   Two alliance traps, 48 city spots each. Members sign up with their Kingshot ID;
+   rank by Mystic Trial score (ties: earliest sign-up) → rank N gets spot N.
+   Storage: bearTraps/traps/{1,2} and bearTraps/signups/<kingshotId> (not tied to any event cycle). */
+const BT_N=48, BT_S=40, BT_O=[784,748];
+/* Daily trap times (UTC) */
+const BT_TIME={1:"16:00",2:"13:00"};
+function btLocalTime(t){const [h,m]=BT_TIME[t].split(":").map(Number), n=new Date(), d=new Date(Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate(),h,m));
+  try{return d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});}catch(e){return "";}}
+const btTimeHTML=t=>`<span class="bt-time">⏰ ${BT_TIME[t]} UTC<span class="bt-loc"> · ${esc(btLocalTime(t))} your time</span></span>`;
+const BT_CENTER={1:[784,759],2:[784,737]};
+const BT_OFF=[[3.5,1.5],[3.5,-1.5],[1.5,-3.5],[-1.5,-3.5],[-3.5,-1.5],[-3.5,1.5],[-1.5,3.5],[1.5,3.5],[3.5,3.5],[3.5,-3.5],[-3.5,-3.5],[-3.5,3.5],[5.5,1.5],[5.5,-1.5],[1.5,-5.5],[-1.5,-5.5],[-5.5,-1.5],[-5.5,1.5],[-1.5,5.5],[1.5,5.5],[5.5,3.5],[5.5,-3.5],[3.5,-5.5],[-3.5,-5.5],[-5.5,-3.5],[-5.5,3.5],[-3.5,5.5],[3.5,5.5],[7.5,1.5],[7.5,-1.5],[1.5,-7.5],[-1.5,-7.5],[-7.5,-1.5],[-7.5,1.5],[-1.5,7.5],[1.5,7.5],[5.5,5.5],[5.5,-5.5],[-5.5,-5.5],[-5.5,5.5],[7.5,3.5],[7.5,-3.5],[3.5,-7.5],[-3.5,-7.5],[-7.5,-3.5],[-7.5,3.5],[-3.5,7.5],[3.5,7.5]];
+const BT_BANNER_OFF=[[7,7],[0,7],[7,0],[0,5],[5,0],[2,2],[0,3],[3,0],[-7,7],[-2,2],[2,-2],[7,-7],[-3,0],[0,-3],[-2,-2],[-5,0],[0,-5],[-7,0],[0,-7],[-7,-7]];
+const BT_BANDS=[8,12,20,28,36,40,48]; /* last spot of each distance band */
+const btBand=n=>BT_BANDS.findIndex(b=>n<=b);
+/* spot n (1-based) → in-game coordinate = city's lower corner */
+/* Spots in the same distance band are equally close to the trap; within a band, the spot closer to
+   Alliance HQ (784,748) gets the lower number, so higher-ranked players sit nearer HQ. */
+const BT_HQ=[784,748];
+const BT_ORDER={}; for(const t of [1,2]){const [cx,cy]=BT_CENTER[t];
+  BT_ORDER[t]=BT_OFF.map((o,i)=>({i,band:btBand(i+1),d:Math.hypot(cx+o[0]-BT_HQ[0],cy+o[1]-BT_HQ[1])}))
+    .sort((a,b)=>a.band-b.band||a.d-b.d||a.i-b.i).map(x=>x.i);}
+function btSpot(t,n){const [cx,cy]=BT_CENTER[t],[ox,oy]=BT_OFF[BT_ORDER[t][n-1]];return {X:cx+ox-.5,Y:cy+oy-.5,cx:cx+ox,cy:cy+oy};}
+const btXY=(t,n)=>{const s=btSpot(t,n);return `X:${s.X} Y:${s.Y}`;};
+const btValidId=k=>/^\d{6,12}$/.test(String(k));
+function btReadScore(raw){if(raw===null||raw===undefined||String(raw).trim()==="")return null;const n=Number(String(raw).replace(/,/g,""));return Number.isSafeInteger(n)&&n>=0?n:null;}
+const btFmt=n=>Number(n).toLocaleString("en-US");
+const btBT=()=>S.bearTraps||(S.bearTraps={traps:{},signups:{}});
+const btLocked=(t,bt)=>!!(((bt||btBT()).traps||{})[t]||{}).locked;
+
+/* ---------- ranking ---------- */
+function btRankList(sg,t){
+  return Object.entries(sg||{}).filter(([k,p])=>p&&Number(p.trap)===t&&btValidId(k)&&typeof p.name==="string"&&Number.isFinite(+p.score)&&+p.score>=0)
+    .map(([k,p])=>({...p,kid:k,score:+p.score}))
+    .sort((a,b)=>b.score-a.score||(+a.signedUpAt||0)-(+b.signedUpAt||0)||a.kid.localeCompare(b.kid));
+}
+/* → {spots:[null, p1..p48], reserve:[...], ranked} */
+function btAssign(t,bt){
+  bt=bt||btBT(); const ranked=btRankList(bt.signups,t), spots=new Array(BT_N+1).fill(null), reserve=[];
+  if(!btLocked(t,bt)){ ranked.forEach((p,i)=>{ if(i<BT_N) spots[i+1]=p; else reserve.push(p); }); }
+  else{
+    const rest=[];
+    for(const p of ranked){const ls=+p.lockedSpot;
+      if(Number.isInteger(ls)&&ls>=1&&ls<=BT_N&&!spots[ls]) spots[ls]=p; else rest.push(p);}
+    for(const p of rest){const open=spots.findIndex((x,i)=>i>0&&!x); if(open>0) spots[open]=p; else reserve.push(p);}
+  }
+  return {spots,reserve,ranked};
+}
+function btWhere(kid,bt){bt=bt||btBT();const p=(bt.signups||{})[kid];if(!p)return null;const t=Number(p.trap),a=btAssign(t,bt);
+  const n=a.spots.findIndex(x=>x&&x.kid===kid); if(n>0) return {t,spot:n};
+  const r=a.reserve.findIndex(x=>x.kid===kid); return r>=0?{t,reserve:r+1}:null;}
+
+/* ---------- writes ----------
+   Every change goes through btCommit(updates) with paths relative to allianceCC/<key>.
+   For locked traps it also pins lockedSpot for everyone, so the lock survives reloads
+   and new sign-ups keep the spot they were given. */
+function btSetPath(obj,path,val){const ps=path.split("/");let o=obj;for(let i=0;i<ps.length-1;i++){if(!o[ps[i]]||typeof o[ps[i]]!=="object")o[ps[i]]={};o=o[ps[i]];}
+  if(val===null||val===undefined) delete o[ps[ps.length-1]]; else o[ps[ps.length-1]]=val;}
+function btCommit(updates){
+  const root={bearTraps:JSON.parse(JSON.stringify(btBT()))};
+  if(!root.bearTraps.signups)root.bearTraps.signups={}; if(!root.bearTraps.traps)root.bearTraps.traps={};
+  for(const [p,v] of Object.entries(updates)) btSetPath(root,p,v===undefined?null:JSON.parse(JSON.stringify(v)));
+  const bt=root.bearTraps;
+  for(const t of [1,2]){ if(!btLocked(t,bt)) continue; const a=btAssign(t,bt);
+    const want={}; a.spots.forEach((p,i)=>{if(p)want[p.kid]=i;}); a.reserve.forEach(p=>want[p.kid]=null);
+    for(const [kid,v] of Object.entries(want)){ const cur=bt.signups[kid].lockedSpot??null; if(cur===v) continue;
+      bt.signups[kid].lockedSpot=v;
+      const full=`bearTraps/signups/${kid}`;
+      if(full in updates && updates[full]) updates[full]={...updates[full],lockedSpot:v};
+      else updates[`${full}/lockedSpot`]=v; } }
+  S.bearTraps=bt;
+  if(fb){ const u={}; for(const [k,v] of Object.entries(updates)) u[k]=v===undefined?null:v; fb.ref(`allianceCC/${ALLIANCE_KEY}`).update(u); }
+  else ls.set("allianceCC:"+ALLIANCE_KEY, JSON.stringify(S));
+}
+const btWho=()=>(document.getElementById("me").value||"").trim()||"officer";
+function btSetLock(t,on){
+  const u={[`bearTraps/traps/${t}`]:{locked:!!on,updatedBy:btWho(),updatedAt:Date.now()}};
+  if(on){ const a=btAssign(t); a.spots.forEach((p,i)=>{if(p)u[`bearTraps/signups/${p.kid}/lockedSpot`]=i;}); a.reserve.forEach(p=>u[`bearTraps/signups/${p.kid}/lockedSpot`]=null); }
+  else btRankList(btBT().signups,t).forEach(p=>{ if(p.lockedSpot!=null) u[`bearTraps/signups/${p.kid}/lockedSpot`]=null; });
+  btCommit(u);
+}
+function btRerankDiff(t){
+  const cur=btAssign(t), fresh=btAssign(t,{...btBT(),traps:{...btBT().traps,[t]:{locked:false}}});
+  const pos=a=>{const m={};a.spots.forEach((p,i)=>{if(p)m[p.kid]=i;});a.reserve.forEach((p,i)=>m[p.kid]=-(i+1));return m;};
+  const A=pos(cur),B=pos(fresh), lab=v=>v>0?`spot ${v}`:`reserve ${-v}`, out=[];
+  for(const p of fresh.ranked){ if(A[p.kid]!==B[p.kid]) out.push({kid:p.kid,name:p.name,from:lab(A[p.kid]),to:lab(B[p.kid]),nv:B[p.kid]}); }
+  return out;
+}
+function btApplyRerank(t){
+  const d=btRerankDiff(t), u={[`bearTraps/traps/${t}`]:{locked:true,updatedBy:btWho(),updatedAt:Date.now()}};
+  d.forEach(x=>u[`bearTraps/signups/${x.kid}/lockedSpot`]=x.nv>0?x.nv:null); btCommit(u);
+}
+function btMove(kid){const p=btBT().signups[kid]; if(!p) return; const to=Number(p.trap)===1?2:1;
+  btCommit({[`bearTraps/signups/${kid}`]:{...p,trap:to,trapSource:"officer",lockedSpot:null}}); toast(`${p.name} moved to Trap ${to}`);}
+function btRemove(kid){btCommit({[`bearTraps/signups/${kid}`]:null});}
+function btClear(t){const u={}; for(const [k,p] of Object.entries(btBT().signups||{})) if(t===0||Number(p.trap)===t) u[`bearTraps/signups/${k}`]=null;
+  if(Object.keys(u).length) btCommit(u);}
+
+/* ---------- copy for alliance chat ---------- */
+function btChatText(t){const a=btAssign(t), lines=[`Bear Trap ${t} spots (${BT_TIME[t]} UTC)`];
+  a.spots.forEach((p,i)=>{if(p) lines.push(`${i}. ${p.name} ${btXY(t,i)}`);});
+  if(a.reserve.length) lines.push(`Reserve: ${a.reserve.map(p=>p.name).join(", ")}`);
+  return lines.join("\n");}
+
+/* ---------- map (built once, tiles updated per render) ---------- */
+const BT_NS="http://www.w3.org/2000/svg";
+const btP=(X,Y)=>[((X-BT_O[0])-(Y-BT_O[1]))*BT_S, -((X-BT_O[0])+(Y-BT_O[1]))*BT_S];
+function btTone(k){const h=118-k*88, sat=55-k*10;return {fill:`hsla(${h},${sat}%,${30-k*6}%,.55)`,stroke:`hsl(${h},${sat+15}%,${58-k*6}%)`};}
+function btEl(tag,attrs,parent){const e=document.createElementNS(BT_NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+/* square footprint centred on (X,Y) with half-size `half`, inset by g → screen polygon points */
+function btDiamond(X,Y,half,g){const a=btP(X-half+g,Y-half+g),b=btP(X+half-g,Y-half+g),c=btP(X+half-g,Y+half-g),d=btP(X-half+g,Y+half-g);return [a,b,c,d].map(p=>p.join(",")).join(" ");}
+const BT_TERR=[773.5,794.5,726.5,769.5]; /* cells X 774–794, Y 727–769 */
+const BT_RES=[["Iron",780,749],["Stone",787,746],["Wood",780,727]];
+function btFeatures(){ /* every footprint as [kind,label,cx,cy,half] — also used by the overlap test */
+  const f=[]; for(const t of [1,2]){const [cx,cy]=BT_CENTER[t]; f.push(["trap",`Trap ${t}`,cx,cy,1.5]);
+    BT_BANNER_OFF.forEach(([dx,dy])=>f.push(["banner","",cx+dx,cy+dy,.5]));
+    for(let n=1;n<=BT_N;n++){const s=btSpot(t,n);f.push(["city",`${t}-${n}`,s.cx,s.cy,1]);}}
+  f.push(["hq","HQ",784,748,1.5]); f.push(["banner","",791,748,.5]); f.push(["banner","",777,748,.5]);
+  BT_RES.forEach(([n,x,y])=>f.push(["res",n,x+.5,y+.5,1])); return f;}
+let BT_SVG=null; const BT_TILES={};
+function btBuildMap(){
+  const svg=btEl("svg",{class:"bt-svg",xmlns:BT_NS,role:"img","aria-label":"Bear trap city plan"});
+  const g0=btEl("g",{},svg);
+  for(let x=BT_TERR[0];x<=BT_TERR[1];x++){const a=btP(x,BT_TERR[2]),b=btP(x,BT_TERR[3]);btEl("line",{class:"bt-grid-l",x1:a[0],y1:a[1],x2:b[0],y2:b[1]},g0);}
+  for(let y=BT_TERR[2];y<=BT_TERR[3];y++){const a=btP(BT_TERR[0],y),b=btP(BT_TERR[1],y);btEl("line",{class:"bt-grid-l",x1:a[0],y1:a[1],x2:b[0],y2:b[1]},g0);}
+  const tc=[[BT_TERR[0],BT_TERR[2]],[BT_TERR[1],BT_TERR[2]],[BT_TERR[1],BT_TERR[3]],[BT_TERR[0],BT_TERR[3]]].map(p=>btP(...p).join(",")).join(" ");
+  btEl("polygon",{class:"bt-terr",points:tc},g0);
+  for(const [kind,label,x,y,h] of btFeatures()){
+    if(kind==="city") continue; const [sx,sy]=btP(x,y);
+    if(kind==="res"){btEl("polygon",{class:"bt-res",points:btDiamond(x,y,h,.06)},svg);btEl("text",{class:"bt-rl",x:sx,y:sy},svg).textContent=label;}
+    if(kind==="banner"){btEl("polygon",{class:"bt-ban",points:btDiamond(x,y,h,.04)},svg);btEl("text",{class:"bt-bl",x:sx,y:sy},svg).textContent="Banner";}
+    if(kind==="hq"){btEl("polygon",{class:"bt-hq",points:btDiamond(x,y,h,.04)},svg);btEl("text",{class:"bt-hql",x:sx,y:sy-6},svg).textContent="Alliance";btEl("text",{class:"bt-hql",x:sx,y:sy+22},svg).textContent="HQ";}
+    if(kind==="trap"){btEl("polygon",{class:"bt-trap",points:btDiamond(x,y,h,.04)},svg);
+      btEl("text",{class:"bt-tl",x:sx,y:sy-14},svg).textContent="BEAR";
+      const lt=btEl("text",{class:"bt-tl",x:sx,y:sy+18},svg); lt.textContent=label.replace("Trap","TRAP");
+      btEl("text",{class:"bt-tt",x:sx,y:sy+46},svg).textContent=`${BT_TIME[label.slice(-1)]} UTC`;
+      const lk=btEl("text",{class:"bt-tl",x:sx,y:sy-46,style:"font-size:22px"},svg); lk.textContent="🔒"; lk.setAttribute("id",`bt-lock-${label.slice(-1)}`);}
+  }
+  for(const t of [1,2]) for(let n=1;n<=BT_N;n++){const s=btSpot(t,n),[sx,sy]=btP(s.cx,s.cy),tn=btTone(btBand(n)/6);
+    const g=btEl("g",{class:"bt-tile open","data-act":"bttile","data-t":t,"data-s":n},svg);
+    btEl("polygon",{points:btDiamond(s.cx,s.cy,1,.05),fill:tn.fill,stroke:tn.stroke},g);
+    const r=btEl("text",{class:"t-rank",x:sx,y:sy-22},g); r.textContent=`#${n}`;
+    const nm=btEl("text",{class:"t-open",x:sx,y:sy+2},g); nm.textContent="OPEN";
+    const sc=btEl("text",{class:"t-score",x:sx,y:sy+22},g); sc.textContent="";
+    BT_TILES[`${t}-${n}`]={g,nm,sc};}
+  return svg;
+}
+function btBounds(view){
+  let pts;
+  if(view===0) pts=[[BT_TERR[0],BT_TERR[2]],[BT_TERR[1],BT_TERR[2]],[BT_TERR[1],BT_TERR[3]],[BT_TERR[0],BT_TERR[3]]];
+  else{const [cx,cy]=BT_CENTER[view]; pts=[]; BT_OFF.forEach(([dx,dy])=>{for(const sx of [-1,1])for(const sy of [-1,1])pts.push([cx+dx+sx,cy+dy+sy]);});}
+  const xy=pts.map(p=>btP(...p)), pad=view===0?BT_S:BT_S*.6;
+  const x0=Math.min(...xy.map(p=>p[0]))-pad,x1=Math.max(...xy.map(p=>p[0]))+pad,y0=Math.min(...xy.map(p=>p[1]))-pad,y1=Math.max(...xy.map(p=>p[1]))+pad;
+  return `${x0} ${y0} ${x1-x0} ${y1-y0}`;
+}
+let BTVIEW=null, BTSEL=null, BTCONF=null;
+const btMyKid=()=>ls.get("allianceCC:btkid")||"";
+/* Map labels: decorated in-game names (small caps, superscripts, circled letters, symbol
+   look-alikes, ornaments) are turned into plain readable text. Tables, chat copy and the
+   tap-for-details line still show the exact in-game name. */
+const BT_LOOK={"ᴀ":"a","ʙ":"b","ᴄ":"c","ᴅ":"d","ᴇ":"e","ꜰ":"f","ɢ":"g","ʜ":"h","ɪ":"i","ᴊ":"j","ᴋ":"k","ʟ":"l","ᴍ":"m","ɴ":"n","ᴏ":"o","ᴘ":"p","ǫ":"q","ʀ":"r","ꜱ":"s","ᴛ":"t","ᴜ":"u","ᴠ":"v","ᴡ":"w","ʏ":"y","ᴢ":"z",
+ "ᗩ":"A","ᗷ":"B","ᑕ":"C","ᗪ":"D","ᗴ":"E","ᖴ":"F","ᘜ":"G","ᕼ":"H","ᒍ":"J","ᛕ":"K","ᒪ":"L","ᗰ":"M","ᑎ":"N","ᑭ":"P","ᑫ":"Q","ᖇ":"R","ᔕ":"S","ᑌ":"U","ᐯ":"V","ᗯ":"W","᙭":"X","ᘔ":"Z",
+ "Ꭺ":"A","Ᏼ":"B","Ꮯ":"C","Ꭰ":"D","Ꭼ":"E","Ꮐ":"G","Ꮋ":"H","Ꮖ":"I","Ꭻ":"J","Ꮶ":"K","Ꮮ":"L","Ꮇ":"M","Ꮑ":"N","Ꮎ":"O","Ꮲ":"P","Ꮢ":"R","Ꮪ":"S","Ꭲ":"T","Ꮩ":"V","Ꮃ":"W","Ꮓ":"Z",
+ "Ɐ":"A","ꓘ":"K","ꓤ":"R","ꓕ":"T","ᴚ":"R","Ʉ":"U","Ƀ":"B","Ɇ":"E","Ꞡ":"G","Ꝁ":"K","Ł":"L","Ø":"O","ø":"o","Ð":"D","đ":"d","ł":"l","ı":"i","ɑ":"a","ɛ":"e","ɩ":"i","ʋ":"u","ʊ":"u","ɔ":"o","ʌ":"v","ɣ":"y","ꞵ":"b"};
+const BT_KEEP=/[\p{Script=Latin}\p{Script=Hangul}\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Cyrillic}\p{Script=Greek}\p{Script=Arabic}\p{Script=Thai}\p{Script=Hebrew}\p{Script=Devanagari}\p{N}ー・ _.\-]/u;
+const btWide=c=>/[\p{Script=Hangul}\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(c);
+function btMapName(name){
+  const raw=String(name||"");
+  let s=[...raw.normalize("NFKC")].map(c=>BT_LOOK[c]??c).join("").normalize("NFKC");
+  s=[...s].map(c=>BT_KEEP.test(c)?c:" ").join("").replace(/[\s_.\-]{2,}/g," ").replace(/^[\s_.\-]+|[\s_.\-]+$/g,"");
+  if(!s) s=raw.trim();
+  /* fit the tile: count wide (Korean/CJK) characters as 2, about 13 columns */
+  let w=0,out="";for(const c of s){const cw=btWide(c)?2:1; if(w+cw>13){out=out.replace(/\s+$/,"")+"…";break;} out+=c; w+=cw;}
+  return out;
+}
+const btTrunc=btMapName;
+function btUpdateMap(){
+  if(!BT_SVG) BT_SVG=btBuildMap();
+  const me=btMyKid();
+  for(const t of [1,2]){const a=btAssign(t);
+    const lk=BT_SVG.querySelector(`#bt-lock-${t}`); if(lk) lk.style.display=btLocked(t)?"":"none";
+    for(let n=1;n<=BT_N;n++){const {g,nm,sc}=BT_TILES[`${t}-${n}`],p=a.spots[n];
+      g.classList.toggle("open",!p); g.classList.toggle("mine",!!(p&&me&&p.kid===me)); g.classList.toggle("sel",BTSEL===`${t}-${n}`);
+      nm.setAttribute("class",p?"t-name":"t-open"); nm.textContent=p?btTrunc(p.name):"OPEN"; sc.textContent=p?btFmt(p.score):"";}}
+  BT_SVG.setAttribute("viewBox",btBounds(BTVIEW));
+}
+function btDetail(){
+  if(!BTSEL) return `Tap a city to see its details.`;
+  const [t,n]=BTSEL.split("-").map(Number), p=btAssign(t).spots[n];
+  return `<b>Trap ${t} · Spot ${n}</b> · ${btXY(t,n)} · `+(p?`${esc(p.name)} · ${btFmt(p.score)}${p.scoreSource==="self"?" (self-reported)":""} · ID ${esc(p.kid)}`:"Open");
+}
+
+/* ---------- view ---------- */
+const btPhone=()=>window.matchMedia&&window.matchMedia("(max-width:700px)").matches;
+function btDefaultView(){const w=btWhere(btMyKid()); if(w) return w.t; return btPhone()?1:0;}
+function btPanel(t){
+  const a=btAssign(t), locked=btLocked(t), me=btMyKid(), filled=a.spots.filter(Boolean).length, tr=(btBT().traps||{})[t]||{};
+  const rows=a.spots.map((p,i)=>!p?"":`<tr class="${me&&p.kid===me?"mine":""}"><td class="n">${i}</td>
+    <td class="notranslate" translate="no">${esc(p.name)}</td>
+    <td class="s">${btFmt(p.score)}${p.scoreSource==="self"?'<span class="bt-flag self" title="Self-reported">self</span>':p.scoreSource==="override"?'<span class="bt-flag ovr" title="Set by an officer">set</span>':p.scoreSource==="sheet"?'<span class="bt-flag" title="Imported from sheet">sheet</span>':""}</td>
+    <td class="c">${btXY(t,i)}</td>
+    <td class="a">${unlocked?`<button class="bt-x" data-act="btedit" data-k="${p.kid}" title="Override score">✎</button><button class="bt-x mv" data-act="btmove" data-k="${p.kid}" title="Move to Trap ${t===1?2:1}">⇄</button><button class="bt-x" data-act="btrm" data-k="${p.kid}" title="Remove">×</button>`:""}</td></tr>`).join("");
+  const res=a.reserve.length?`<div class="bt-res-l"><b>Reserve (${a.reserve.length})</b> — moves up automatically when a spot opens:<br>${a.reserve.map((p,i)=>`<span class="${me&&p.kid===me?"bt-flag":""}" style="${me&&p.kid===me?"color:#f2b632;border-color:#f2b632":""}">${i+1}. ${esc(p.name)} (${btFmt(p.score)})</span>${unlocked?` <button class="bt-x mv" data-act="btmove" data-k="${p.kid}">→ T${t===1?2:1}</button><button class="bt-x" data-act="btrm" data-k="${p.kid}">×</button>`:""}`).join("<br>")}</div>`:"";
+  return `<div class="card bt-panel" id="bt-panel-${t}"><h2>Bear Trap ${t}${locked?' <span title="Spots locked">🔒</span>':""} ${btTimeHTML(t)}</h2>
+    <div class="bt-meta">${filled+a.reserve.length} signed up · ${BT_N-filled} open${a.reserve.length?` · ${a.reserve.length} in reserve`:""} · ${locked?`<span class="lk">Locked${tr.updatedBy?` by ${esc(tr.updatedBy)}`:""}</span> — spots held`:"Unlocked — re-ranks live"}</div>
+    ${filled?`<div class="bt-tblwrap"><table class="bt-tbl"><thead><tr><th>#</th><th>Governor</th><th>Mystic Trial</th><th>Coords</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="bt-meta">No sign-ups yet.</div>`}
+    ${res}
+    <div class="bt-tools"><button class="btn sm" data-act="btcopy" data-t="${t}">Copy for alliance chat</button>
+    ${unlocked?`<button class="btn sm ${locked?"gold":""}" data-act="btlock" data-t="${t}">${locked?"🔓 Unlock spots":"🔒 Lock spots"}</button>${locked?`<button class="btn sm" data-act="btrerank" data-t="${t}">Re-rank now</button>`:""}<button class="btn sm ghost" data-act="btclear" data-t="${t}">Clear Trap ${t}</button>`:""}</div></div>`;
+}
+function btConfCard(){
+  if(!BTCONF) return "";
+  const c=BTCONF; let body="";
+  if(c.kind==="rerank") body=c.diff.length?`<p>Re-ranking Trap ${c.t} by score moves ${c.diff.length} player${c.diff.length>1?"s":""}:</p><ul>${c.diff.map(d=>`<li>${esc(d.name)}: ${d.from} → <b>${d.to}</b></li>`).join("")}</ul><p>Spots stay locked afterwards.</p>`:`<p>Trap ${c.t} is already in score order. Nothing would move.</p>`;
+  if(c.kind==="clear") body=`<p>Remove all ${c.n} sign-up${c.n===1?"":"s"} from ${c.t?`Trap ${c.t}`:"both traps"}? This can't be undone.</p>`;
+  if(c.kind==="rm") body=`<p>Remove ${esc(c.name)} from Trap ${c.t}?</p>`;
+  return `<div class="card bt-conf" id="bt-conf"><h2>Confirm</h2>${body}<div class="row"><button class="btn gold sm" data-act="btconfok">${c.kind==="rerank"?(c.diff.length?"Apply re-rank":"OK"):"Remove"}</button><button class="btn sm ghost" data-act="btconfno">Cancel</button></div></div>`;
+}
+function viewBearTraps(){
+  if(BTVIEW===null) BTVIEW=btDefaultView();
+  const vb=(v,l)=>`<button class="${BTVIEW===v?"on":""}" data-act="btview" data-v="${v}">${l}</button>`;
+  const w=btWhere(btMyKid());
+  const mine=w?`<span class="tag" style="border-color:#f2b632;color:#f2b632">You: Trap ${w.t} · ${w.spot?`Spot ${w.spot} · ${btXY(w.t,w.spot)}`:`Reserve #${w.reserve}`} · ${BT_TIME[w.t]} UTC</span>`:"";
+  const panels=BTVIEW===0?btPanel(1)+`<div style="height:14px"></div>`+btPanel(2):btPanel(BTVIEW);
+  return `<div class="bt-top"><div class="bt-views">${vb(0,"Both traps")}${vb(1,"Trap 1")}${vb(2,"Trap 2")}</div>${mine}<span class="sp"></span>
+    <button class="btn gold" data-act="btsignup">🐻 Sign up for a trap</button>
+    <button class="btn sm" data-act="btcopyall">Copy both traps</button>
+    ${unlocked?`<button class="btn sm" data-act="btimport">Import from sheet</button>`:""}
+    ${unlocked?`<button class="btn sm ghost" data-act="btclear" data-t="0">Clear both</button>`:""}</div>
+    ${btConfCard()}
+    <div class="bt-grid"><div class="card bt-mapcard"><div class="bt-mapwrap"><div class="bt-mapbox ${BTVIEW?"zoom":""}" id="bt-mapbox"></div><div class="bt-zoom"><button data-act="btzoom" data-z="1" title="Zoom in" aria-label="Zoom in">+</button><button data-act="btzoom" data-z="-1" title="Zoom out" aria-label="Zoom out">−</button><button data-act="btzoom" data-z="0" title="Reset zoom" aria-label="Reset zoom" class="r">⟲</button></div></div><div class="bt-detail" id="bt-detail">${btDetail()}</div></div>
+    <div>${panels}</div></div>`;
+}
+/* zoom: the SVG is drawn at BTZOOM × the box width and the box scrolls; BTPOS keeps the view centre (0–1) across re-renders */
+const BT_ZOOMS=[1,1.5,2,3,4,6]; let BTZOOM=1, BTPOS=null;
+function btApplyZoom(box,keep){
+  const c=keep||BTPOS||{x:.5,y:.5};
+  BT_SVG.style.width=(BTZOOM*100)+"%";
+  BT_SVG.style.minWidth=box.classList.contains("zoom")&&btPhone()?(620*BTZOOM)+"px":"";
+  box.classList.toggle("zoomed",BTZOOM>1);
+  box.scrollLeft=c.x*box.scrollWidth-box.clientWidth/2; box.scrollTop=c.y*box.scrollHeight-box.clientHeight/2;
+  const z=document.querySelectorAll(".bt-zoom button"); if(z.length){z[0].disabled=BTZOOM>=BT_ZOOMS[BT_ZOOMS.length-1];z[1].disabled=BTZOOM<=1;}
+}
+function btCentre(box){return {x:(box.scrollLeft+box.clientWidth/2)/box.scrollWidth,y:(box.scrollTop+box.clientHeight/2)/box.scrollHeight};}
+function btZoom(dir,at){const box=document.getElementById("bt-mapbox"); if(!box) return;
+  const i=BT_ZOOMS.indexOf(BTZOOM), ni=dir===0?0:Math.max(0,Math.min(BT_ZOOMS.length-1,i+dir)); if(ni===i&&dir) return;
+  const keep=dir===0?{x:.5,y:.5}:(at||btCentre(box)); BTZOOM=BT_ZOOMS[ni]; btApplyZoom(box,keep); BTPOS=btCentre(box);}
+function btAfterRender(){const box=document.getElementById("bt-mapbox"); if(!box) return; btUpdateMap(); box.appendChild(BT_SVG);
+  btApplyZoom(box);
+  box.addEventListener("scroll",()=>{BTPOS=btCentre(box);},{passive:true});
+  /* ctrl/⌘ + wheel or trackpad pinch zooms toward the pointer */
+  box.addEventListener("wheel",e=>{if(!(e.ctrlKey||e.metaKey))return;e.preventDefault();const r=box.getBoundingClientRect();
+    const at={x:(box.scrollLeft+e.clientX-r.left)/box.scrollWidth,y:(box.scrollTop+e.clientY-r.top)/box.scrollHeight};
+    btZoom(e.deltaY<0?1:-1,at);},{passive:false});
+  /* drag to pan with a mouse (touch already scrolls natively) */
+  let drag=null;
+  box.addEventListener("pointerdown",e=>{if(e.pointerType!=="mouse"||BTZOOM<=1&&box.scrollWidth<=box.clientWidth)return;drag={x:e.clientX,y:e.clientY,l:box.scrollLeft,t:box.scrollTop,moved:false};});
+  box.addEventListener("pointermove",e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>4){drag.moved=true;box.classList.add("dragging");}
+    if(drag.moved){box.scrollLeft=drag.l-dx;box.scrollTop=drag.t-dy;}});
+  const end=()=>{if(drag&&drag.moved){box._justDragged=true;setTimeout(()=>box._justDragged=false,0);}drag=null;box.classList.remove("dragging");};
+  box.addEventListener("pointerup",end); box.addEventListener("pointerleave",end);
+}
+
+/* ---------- sign-up modal ---------- */
+/* Jeabslist lookups go through the proxy (jeabslist-proxy-worker.js) so no token is in this page.
+   Leave empty until the proxy is deployed — sign-ups then use self-reported name + score. */
+let BTM=null; /* {mode:"signup"|"edit", kid, trap, lookup, seq, done} */
+async function btFetchJSON(path){
+  const c=typeof AbortController!=="undefined"?new AbortController():null, tm=c?setTimeout(()=>c.abort(),10000):null;
+  try{const r=await fetch(JEABSLIST_PROXY_URL.replace(/\/+$/,"")+path,{signal:c?c.signal:undefined}); if(!r.ok) throw new Error("status "+r.status); return await r.json();}
+  finally{if(tm)clearTimeout(tm);}
+}
+async function btLookup(id){
+  /* 1) Jeabslist player profile: name + mystic_trial_score  2) standings board 20 for score  3) MightPulse for name */
+  let name="", score=null, err=null;
+  try{const p=await btFetchJSON(`/players/${id}`); name=(p&&p.name)||""; score=btReadScore(p&&p.mystic_trial_score);}catch(e){err=e;}
+  if(name&&score===null){ try{const d=await btFetchJSON(`/players/${id}/standings`); const st=(d&&Array.isArray(d.standings))?d.standings:[];
+    const row=st.find(s=>Number(s.board_type)===20||/mystic trial/i.test(String(s.label||s.board_name||""))); if(row) score=btReadScore(row.points);}catch(e){} }
+  if(!name){ try{const m=await btFetchJSON(`/mightpulse/players/${id}`); name=(m&&m.player&&m.player.nick_name)||"";}catch(e){} }
+  return {forId:id,name,score,scoreSource:score===null?"self":"jeabslist",failed:!name&&!!err};
+}
+function btCounts(t){return btAssign(t).spots.filter(Boolean).length;}
+function btOpenSignup(){
+  const kid=btMyKid(), ex=kid&&btBT().signups[kid];
+  BTM={mode:"signup",kid:kid||"",trap:ex?Number(ex.trap):null,lookup:null,seq:0,done:null};
+  btRenderModal(); if(kid) btStartLookup(true);
+}
+function btOpenEdit(kid){const p=btBT().signups[kid]; if(!p) return; BTM={mode:"edit",kid,trap:Number(p.trap)}; btRenderModal();}
+function btRenderModal(){
+  const m=document.getElementById("bt-modal"); if(!BTM){m.hidden=true;m.innerHTML="";return;}
+  m.hidden=false;
+  if(BTM.mode==="import"){
+    m.innerHTML=`<div class="modal" role="dialog" aria-label="Import from sheet"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Import from sheet</h2><button class="btn sm ghost" data-act="btmclose">✕</button></div>
+      <p class="bt-meta" style="margin-top:8px">In your sheet, select the rows (header row included) and copy, then paste here. Columns are found by their headers: <b>Name</b>, <b>ID</b>, <b>Mystic Trial</b>, <b>Trap</b> (other columns like TC Level are ignored).</p>
+      <div class="bt-f"><textarea id="bt-imp" placeholder="Name	ID	Mystic Trial	TC Level	Trap" style="min-height:180px;font-family:var(--mono);font-size:12px"></textarea></div>
+      <div class="bt-f"><label for="bt-impblank">Rows with no trap</label><select id="bt-impblank"><option value="0">Skip them</option><option value="1">Put in Trap 1</option><option value="2">Put in Trap 2</option></select></div>
+      <div class="bt-chk" id="bt-impprev">Paste rows to see a preview.</div>
+      <div class="bt-err" id="bt-err"></div>
+      <div class="row" style="justify-content:flex-end"><button class="btn gold" data-act="btimpgo">Import</button></div></div>`;
+    return;}
+  if(BTM.mode==="edit"){const p=btBT().signups[BTM.kid]||{};
+    m.innerHTML=`<div class="modal" role="dialog" aria-label="Override score"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Override score</h2><button class="btn sm ghost" data-act="btmclose">✕</button></div>
+      <p class="bt-meta" style="margin-top:8px">${esc(p.name)} · ID ${esc(BTM.kid)} · Trap ${p.trap} · currently ${btFmt(p.score)} (${p.scoreSource||"?"})</p>
+      <div class="bt-f"><label for="bt-ovr">Mystic Trial score</label><input id="bt-ovr" inputmode="numeric" value="${esc(p.score)}"></div>
+      <div class="bt-err" id="bt-err"></div><div class="row" style="justify-content:flex-end"><button class="btn gold" data-act="btovrsave">Save score</button></div></div>`;
+    return;}
+  if(BTM.done){const d=BTM.done;
+    m.innerHTML=`<div class="modal" role="dialog" aria-label="Signed up"><div class="row" style="justify-content:flex-end"><button class="btn sm ghost" data-act="btmclose">✕</button></div><div class="bt-done">
+      <div class="bt-meta">You're signed up, ${esc(d.name)}</div>
+      <div class="big">${d.spot?`Trap ${d.t} · Spot ${d.spot} · ${btXY(d.t,d.spot)}`:`Trap ${d.t} · Reserve #${d.reserve}`}</div>
+      <p>Trap ${d.t} runs at <b>${BT_TIME[d.t]} UTC</b> (${esc(btLocalTime(d.t))} your time).</p>
+      <p>${d.spot?(d.locked?"🔒 This trap is locked — your spot is held.":"This trap is unlocked — your spot can still change as others sign up. Check back before moving."):"All 48 spots are taken. You'll move up automatically when one opens."}</p>
+      ${d.note?`<p style="color:var(--yellow)">${esc(d.note)}</p>`:""}
+      <button class="btn gold" data-act="btmclose">Done</button></div></div>`;
+    return;}
+  const L=BTM.lookup, ex=btBT().signups[BTM.kid], offTrap=ex&&ex.trapSource==="officer";
+  const manualName=!JEABSLIST_PROXY_URL||(L&&!L.pending&&!L.name), manualScore=!JEABSLIST_PROXY_URL||(L&&!L.pending&&L.score===null);
+  const chk=!JEABSLIST_PROXY_URL?`<span class="bt-chk warn">Automatic lookup isn't set up yet — enter your name and Mystic Trial score below.</span>`
+    :!L?`<span class="bt-chk">Enter your Kingshot ID to look you up.</span>`
+    :L.pending?`<span class="bt-chk">Looking up ${esc(L.forId)}…</span>`
+    :L.name&&L.score!==null?`<span class="bt-chk found">✓ ${esc(L.name)} · Mystic Trial ${btFmt(L.score)}</span>`
+    :L.name?`<span class="bt-chk warn">✓ ${esc(L.name)} · Mystic Trial score unavailable — enter it below (marked self-reported).</span>`
+    :`<span class="bt-chk bad">Couldn't verify this ID. <a href="#" data-act="btretry">Retry</a>, or enter your name and score below (marked self-reported).</span>`;
+  const keep=id=>{const e=document.getElementById(id);return e?e.value:"";};
+  const vName=keep("bt-mname"), vScore=keep("bt-mscore");
+  m.innerHTML=`<div class="modal" role="dialog" aria-label="Bear trap sign-up"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🐻 Bear trap sign-up</h2><button class="btn sm ghost" data-act="btmclose">✕</button></div>
+    <p class="bt-meta" style="margin-top:8px">Spots go by Mystic Trial score — highest score gets spot 1, closest to the trap.</p>
+    <div class="bt-f"><label for="bt-id">Kingshot ID</label><input id="bt-id" inputmode="numeric" autocomplete="off" placeholder="e.g. 123456789" value="${esc(BTM.kid)}"><div id="bt-chk">${chk}</div></div>
+    ${manualName?`<div class="bt-f"><label for="bt-mname">Governor name</label><input id="bt-mname" maxlength="80" value="${esc(vName||(ex&&ex.name)||"")}"></div>`:""}
+    ${manualScore?`<div class="bt-f"><label for="bt-mscore">Mystic Trial score <span style="text-transform:none;letter-spacing:0">(self-reported)</span></label><input id="bt-mscore" inputmode="numeric" value="${esc(vScore||(ex?ex.score:""))}"></div>`:""}
+    <div class="bt-f"><label>Which trap?</label><div class="bt-pick">${[1,2].map(t=>`<button class="${BTM.trap===t?"on":""}" data-act="btpick" data-t="${t}">Trap ${t} · ${btCounts(t)}/48<span class="bt-pt">${BT_TIME[t]} UTC · ${esc(btLocalTime(t))} your time</span></button>`).join("")}</div>
+      ${offTrap?`<div class="bt-chk warn">An officer placed you in Trap ${ex.trap}. You'll stay there even if you pick the other trap.</div>`:""}</div>
+    <div class="bt-err" id="bt-err"></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn gold" data-act="btsubmit">Confirm sign-up</button></div></div>`;
+}
+let BT_DEB=null;
+function btStartLookup(now){
+  if(!BTM||BTM.mode!=="signup") return; const id=BTM.kid;
+  clearTimeout(BT_DEB);
+  if(!btValidId(id)){BTM.lookup=null;btRefreshCheck();return;}
+  if(!JEABSLIST_PROXY_URL) return;
+  if(BTM.lookup&&BTM.lookup.forId===id&&!BTM.lookup.failed) return;
+  BTM.lookup={forId:id,pending:true}; btRefreshCheck();
+  const go=()=>{const seq=++BTM.seq; btLookup(id).then(r=>{ if(!BTM||seq!==BTM.seq||BTM.kid!==id) return; BTM.lookup=r; btRenderModal(); btFocusEnd("bt-id"); });};
+  if(now) go(); else BT_DEB=setTimeout(go,500);
+}
+function btRefreshCheck(){ btRenderModal(); btFocusEnd("bt-id"); }
+function btFocusEnd(id){const e=document.getElementById(id); if(e&&document.activeElement!==e&&BTM&&!BTM.done&&id==="bt-id"&&BTM._typing){e.focus();const v=e.value;e.setSelectionRange(v.length,v.length);}}
+function btSubmit(){
+  const err=t=>{const e=document.getElementById("bt-err");if(e)e.textContent=t;};
+  const id=(document.getElementById("bt-id").value||"").trim();
+  if(!btValidId(id)) return err("Kingshot ID should be 6–12 digits.");
+  const L=BTM.lookup;
+  if(JEABSLIST_PROXY_URL){ if(!L||L.forId!==id) return err("Wait for the lookup to finish."); if(L.pending) return err("Still looking you up — one moment."); }
+  const nEl=document.getElementById("bt-mname"), sEl=document.getElementById("bt-mscore");
+  const name=((L&&L.forId===id&&L.name)||(nEl?nEl.value:"")).trim();
+  const score=(L&&L.forId===id&&L.score!==null&&L.score!==undefined)?L.score:btReadScore(sEl?sEl.value:"");
+  if(!name) return err("Enter your governor name."); if(name.length>80) return err("Name is too long.");
+  if(score===null) return err("Enter your Mystic Trial score (whole number).");
+  if(!BTM.trap) return err("Choose Trap 1 or Trap 2.");
+  const ex=btBT().signups[id]; let trap=BTM.trap, trapSource="player", note="";
+  if(ex&&ex.trapSource==="officer"){trap=Number(ex.trap);trapSource="officer";
+    if(BTM.trap!==trap) note=`An officer placed you in Trap ${trap}, so you're staying there. Ask an officer if you need to switch.`;}
+  const keepOvr=ex&&ex.scoreSource==="override";
+  const rec={name,score:keepOvr?+ex.score:score,scoreSource:keepOvr?"override":(L&&L.forId===id&&L.score!==null&&L.score!==undefined?"jeabslist":"self"),
+    trap,trapSource,lockedSpot:ex&&Number(ex.trap)===trap?(ex.lockedSpot??null):null,signedUpAt:ex&&ex.signedUpAt?ex.signedUpAt:Date.now()};
+  btCommit({[`bearTraps/signups/${id}`]:rec});
+  ls.set("allianceCC:btkid",id);
+  const w=btWhere(id)||{t:trap};
+  BTM.done={name,t:w.t,spot:w.spot,reserve:w.reserve,locked:btLocked(w.t),note};
+  if(TAB==="bears"){BTVIEW=btPhone()||BTVIEW!==0?w.t:BTVIEW;}
+  btRenderModal(); render();
+}
+function btSaveOverride(){
+  const v=btReadScore(document.getElementById("bt-ovr").value); if(v===null){document.getElementById("bt-err").textContent="Enter a whole number.";return;}
+  const p=btBT().signups[BTM.kid]; btCommit({[`bearTraps/signups/${BTM.kid}`]:{...p,score:v,scoreSource:"override"}}); BTM=null; btRenderModal(); render(); toast("Score updated");
+}
+/* ---------- import from sheet (paste) ----------
+   Google Sheets copies as tab-separated rows. Columns are matched by header name;
+   without a header row the order Name, ID, Mystic Trial, TC Level, Trap is assumed. */
+function btParseSheet(txt,blankTrap){
+  const rows=String(txt||"").split(/\r?\n/).map(l=>l.split(l.includes("\t")?"\t":",").map(c=>c.trim())).filter(r=>r.some(c=>c));
+  let col={name:0,id:1,score:2,trap:4}, start=0;
+  if(rows.length){const h=rows[0].map(c=>c.toLowerCase());
+    const f=re=>h.findIndex(c=>re.test(c));
+    if(f(/^(kingshot\s*)?id$|governor id|player id/)>=0){start=1;
+      col={name:f(/name|governor$/),id:f(/^(kingshot\s*)?id$|governor id|player id/),score:f(/mystic|score/),trap:f(/trap/)};}}
+  const out={recs:[],noTrap:[],bad:[],dup:0}, seen=new Set();
+  rows.slice(start).forEach((r,i)=>{
+    const name=(r[col.name]||"").trim(), id=(r[col.id]||"").replace(/\s/g,""), score=btReadScore(r[col.score]), tr=col.trap>=0?String(r[col.trap]||"").replace(/\D/g,""):"";
+    if(!btValidId(id)||!name||score===null){out.bad.push(`row ${i+1+start}${name?` (${name})`:""}`);return;}
+    if(seen.has(id)){out.dup++;return;} seen.add(id);
+    let trap=tr==="1"?1:tr==="2"?2:(+blankTrap||0);
+    if(!trap){out.noTrap.push(name);return;}
+    out.recs.push({id,name,score,trap,order:i});
+  });
+  return out;
+}
+function btImportPreview(){
+  const ta=document.getElementById("bt-imp"); if(!ta) return null;
+  const r=btParseSheet(ta.value,document.getElementById("bt-impblank").value), sg=btBT().signups||{};
+  const upd=r.recs.filter(x=>sg[x.id]).length, t1=r.recs.filter(x=>x.trap===1).length;
+  const el=document.getElementById("bt-impprev");
+  el.className="bt-chk"+(r.recs.length?" found":"");
+  el.innerHTML=!ta.value.trim()?"Paste rows to see a preview.":
+    `${r.recs.length} to import (${t1} Trap 1 · ${r.recs.length-t1} Trap 2) — ${r.recs.length-upd} new, ${upd} update existing`+
+    (r.noTrap.length?`<br><span style="color:var(--yellow)">${r.noTrap.length} skipped, no trap: ${esc(r.noTrap.slice(0,6).join(", "))}${r.noTrap.length>6?"…":""}</span>`:"")+
+    (r.bad.length?`<br><span style="color:var(--crimson)">${r.bad.length} unreadable (needs name, 6–12 digit ID, score): ${esc(r.bad.slice(0,5).join(", "))}${r.bad.length>5?"…":""}</span>`:"")+
+    (r.dup?`<br>${r.dup} duplicate ID${r.dup>1?"s":""} ignored (first row kept)`:"");
+  return r;
+}
+function btImportGo(){
+  const r=btImportPreview(); if(!r||!r.recs.length){document.getElementById("bt-err").textContent="Nothing to import yet.";return;}
+  const sg=btBT().signups||{}, now=Date.now(), u={};
+  r.recs.forEach(x=>{const ex=sg[x.id];
+    u[`bearTraps/signups/${x.id}`]={name:x.name,score:x.score,scoreSource:"sheet",trap:x.trap,trapSource:"officer",
+      lockedSpot:ex&&Number(ex.trap)===x.trap?(ex.lockedSpot??null):null,signedUpAt:ex&&ex.signedUpAt?ex.signedUpAt:now+x.order};});
+  btCommit(u); BTM=null; btRenderModal(); render(); toast(`Imported ${r.recs.length} players`);
+}
+/* bear-trap click handling (delegated) */
+document.addEventListener("click",e=>{
+  const a=e.target.closest("[data-act]"); if(!a) return; const act=a.dataset.act; if(!act.startsWith("bt")) return;
+  const t=+a.dataset.t, k=a.dataset.k;
+  if(act==="btview"){BTVIEW=+a.dataset.v;BTZOOM=1;BTPOS=null;render();return;}
+  if(act==="btzoom"){btZoom(+a.dataset.z);return;}
+  if(act==="bttile"){const bx=document.getElementById("bt-mapbox"); if(bx&&bx._justDragged) return;const id=`${a.dataset.t}-${a.dataset.s}`;BTSEL=BTSEL===id?null:id;btUpdateMap();document.getElementById("bt-detail").innerHTML=btDetail();return;}
+  if(act==="btcopy"){copyText(btChatText(t),`Bear Trap ${t} spots`);return;}
+  if(act==="btcopyall"){copyText(btChatText(1)+"\n\n"+btChatText(2),"Bear trap spots");return;}
+  if(act==="btsignup"){btOpenSignup();return;}
+  if(act==="btmclose"){BTM=null;btRenderModal();return;}
+  if(act==="btpick"){BTM.trap=t;[...document.querySelectorAll(".bt-pick button")].forEach(b=>b.classList.toggle("on",+b.dataset.t===t));return;}
+  if(act==="btretry"){e.preventDefault();if(BTM){BTM.lookup=null;btStartLookup(true);}return;}
+  if(act==="btsubmit"){btSubmit();return;}
+  if(act==="btovrsave"){if(!canEdit())return;btSaveOverride();return;}
+  if(act==="btimport"){if(!canEdit())return;BTM={mode:"import"};btRenderModal();return;}
+  if(act==="btimpgo"){if(!canEdit())return;btImportGo();return;}
+  if(act==="btconfno"){BTCONF=null;render();return;}
+  if(act==="btconfok"){if(!canEdit())return;const c=BTCONF;BTCONF=null;
+    if(c.kind==="rerank"&&c.diff.length){btApplyRerank(c.t);toast(`Trap ${c.t} re-ranked`);}
+    if(c.kind==="clear"){btClear(c.t);toast("Cleared");}
+    if(c.kind==="rm"){btRemove(c.kid);toast("Removed");}
+    render();return;}
+  if(!canEdit()) return; /* officer-only below */
+  if(act==="btedit"){btOpenEdit(k);return;}
+  if(act==="btmove"){btMove(k);render();return;}
+  if(act==="btrm"){const p=btBT().signups[k];BTCONF={kind:"rm",kid:k,name:p?p.name:k,t:p?p.trap:""};render();window.scrollTo({top:document.getElementById("bt-conf").offsetTop-20,behavior:"smooth"});return;}
+  if(act==="btlock"){btSetLock(t,!btLocked(t));toast(btLocked(t)?`Trap ${t} spots locked`:`Trap ${t} unlocked — re-ranking live`);render();return;}
+  if(act==="btrerank"){BTCONF={kind:"rerank",t,diff:btRerankDiff(t)};render();window.scrollTo({top:document.getElementById("bt-conf").offsetTop-20,behavior:"smooth"});return;}
+  if(act==="btclear"){const n=Object.values(btBT().signups||{}).filter(p=>t===0||Number(p.trap)===t).length;
+    if(!n){toast("Nothing to clear");return;} BTCONF={kind:"clear",t,n};render();window.scrollTo({top:document.getElementById("bt-conf").offsetTop-20,behavior:"smooth"});return;}
+});
+document.addEventListener("input",e=>{ if(e.target.id==="bt-imp") btImportPreview(); });
+document.addEventListener("change",e=>{ if(e.target.id==="bt-impblank") btImportPreview(); });
+document.addEventListener("input",e=>{ if(e.target.id==="bt-id"&&BTM){BTM.kid=e.target.value.replace(/\s/g,"");BTM._typing=true;
+  if(BTM.lookup&&BTM.lookup.forId!==BTM.kid){BTM.seq++;BTM.lookup=null;document.getElementById("bt-chk").innerHTML=btValidId(BTM.kid)?'<span class="bt-chk">Looking up…</span>':'<span class="bt-chk">Enter your Kingshot ID to look you up.</span>';}
+  if(btValidId(BTM.kid)) btStartLookup(false);} });
+document.getElementById("bt-modal").addEventListener("click",e=>{if(e.target.id==="bt-modal"){BTM=null;btRenderModal();}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&BTM){BTM=null;btRenderModal();}});
+
+/* ================== CLOCK ================== */
+function segs(ms,withDays){ms=Math.max(0,ms);const d=Math.floor(ms/DAY),h=Math.floor(ms%DAY/H),m=Math.floor(ms%H/6e4),s=Math.floor(ms%6e4/1e3);
+  const S=(v,u)=>`<span class="seg"><span class="num">${pad(v)}</span><span class="unit">${u}</span></span>`;
+  return (withDays?S(d,"days"):"")+S(h,"hrs")+S(m,"min")+S(s,"sec");}
+function tick(){const n=new Date(),now=n.getTime();
+  document.getElementById("utc").textContent=`${pad(n.getUTCHours())}:${pad(n.getUTCMinutes())} UTC`;
+  document.getElementById("clockA").innerHTML=segs(dayStart(now)+DAY-now,false);
+
+  if(TAB==="today"&&VIEWDAY<dayStart(n.getTime())&&tick.lastDay!==dayStart(n.getTime())){VIEWDAY=dayStart(n.getTime());render();}
+  tick.lastDay=dayStart(n.getTime());}
+initStore(); setInterval(tick,1000); tick();
+</script>
+</body>
+</html>
