@@ -178,7 +178,7 @@ pre.brief{white-space:pre-wrap;background:rgba(255,255,255,.03);border:1px solid
 .bt-mapbox{background:#0b1222;border:1px solid #1a2440;border-radius:12px;overflow:auto;-webkit-overflow-scrolling:touch}
 .bt-mapbox svg{display:block;width:100%;height:auto;max-width:none}
 .bt-mapwrap{position:relative}
-.bt-mapbox{max-height:78vh}
+.bt-mapbox{max-height:78vh;touch-action:pan-x pan-y;overscroll-behavior:contain}
 .bt-mapbox.zoomed{cursor:grab}
 .bt-mapbox.dragging{cursor:grabbing;user-select:none}
 .bt-zoom{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:2}
@@ -186,7 +186,6 @@ pre.brief{white-space:pre-wrap;background:rgba(255,255,255,.03);border:1px solid
 .bt-zoom button.r{font-size:15px;color:var(--text-mid)}
 .bt-zoom button:hover:not(:disabled){border-color:#f2b632}
 .bt-zoom button:disabled{opacity:.35;cursor:default}
-@media(max-width:700px){.bt-mapbox.zoom svg{min-width:620px}}
 .bt-detail{font-family:var(--mono);font-size:11.5px;color:var(--text-mid);margin-top:8px;min-height:18px}
 .bt-detail b{color:#f2b632;font-weight:600}
 .bt-svg .bt-grid-l{stroke:#1a2440;stroke-width:1}
@@ -1126,34 +1125,56 @@ function viewBearTraps(){
     <div>${panels}</div></div>`;
 }
 /* zoom: the SVG is drawn at BTZOOM × the box width and the box scrolls; BTPOS keeps the view centre (0–1) across re-renders */
-const BT_ZOOMS=[1,1.5,2,3,4,6]; let BTZOOM=1, BTPOS=null;
-function btApplyZoom(box,keep){
-  const c=keep||BTPOS||{x:.5,y:.5};
-  BT_SVG.style.width=(BTZOOM*100)+"%";
-  BT_SVG.style.minWidth=box.classList.contains("zoom")&&btPhone()?(620*BTZOOM)+"px":"";
-  box.classList.toggle("zoomed",BTZOOM>1);
-  box.scrollLeft=c.x*box.scrollWidth-box.clientWidth/2; box.scrollTop=c.y*box.scrollHeight-box.clientHeight/2;
-  const z=document.querySelectorAll(".bt-zoom button"); if(z.length){z[0].disabled=BTZOOM>=BT_ZOOMS[BT_ZOOMS.length-1];z[1].disabled=BTZOOM<=1;}
+/* zoom: at 1× the whole map/trap fits the box (width and height); BTZOOM (1–6, continuous) scales it
+   and the box scrolls. BTPOS keeps the view centre (0–1) across re-renders. */
+const BT_ZMIN=1, BT_ZMAX=6; let BTZOOM=1, BTPOS=null;
+function btBaseWidth(box){
+  const vb=(BT_SVG.getAttribute("viewBox")||"0 0 1 1").split(" ").map(Number), aspect=vb[2]/vb[3];
+  const maxH=Math.max(260,window.innerHeight*0.72);
+  return Math.floor(Math.min(box.clientWidth,maxH*aspect));
+}
+function btApplyZoom(box,keep,anchor){
+  const c=keep||BTPOS||{x:.5,y:.5}, w=btBaseWidth(box)*BTZOOM;
+  BT_SVG.style.width=w+"px"; BT_SVG.style.minWidth="";
+  BT_SVG.style.margin=w<box.clientWidth?"0 auto":"0";
+  box.classList.toggle("zoomed",BTZOOM>1.01);
+  /* anchor = {px,py}: keep content point c under that screen offset (pinch / wheel); otherwise centre it */
+  const ax=anchor?anchor.px:box.clientWidth/2, ay=anchor?anchor.py:box.clientHeight/2;
+  box.scrollLeft=c.x*box.scrollWidth-ax; box.scrollTop=c.y*box.scrollHeight-ay;
+  const z=document.querySelectorAll(".bt-zoom button"); if(z.length){z[0].disabled=BTZOOM>=BT_ZMAX-.01;z[1].disabled=BTZOOM<=BT_ZMIN+.01;}
 }
 function btCentre(box){return {x:(box.scrollLeft+box.clientWidth/2)/box.scrollWidth,y:(box.scrollTop+box.clientHeight/2)/box.scrollHeight};}
-function btZoom(dir,at){const box=document.getElementById("bt-mapbox"); if(!box) return;
-  const i=BT_ZOOMS.indexOf(BTZOOM), ni=dir===0?0:Math.max(0,Math.min(BT_ZOOMS.length-1,i+dir)); if(ni===i&&dir) return;
-  const keep=dir===0?{x:.5,y:.5}:(at||btCentre(box)); BTZOOM=BT_ZOOMS[ni]; btApplyZoom(box,keep); BTPOS=btCentre(box);}
+function btSetZoom(z,at,anchor){const box=document.getElementById("bt-mapbox"); if(!box) return;
+  BTZOOM=Math.max(BT_ZMIN,Math.min(BT_ZMAX,z)); btApplyZoom(box,at||btCentre(box),anchor); BTPOS=btCentre(box);}
+function btZoom(dir,at,anchor){ if(dir===0){BTZOOM=1;BTPOS=null;const box=document.getElementById("bt-mapbox");if(box){btApplyZoom(box,{x:.5,y:.5});BTPOS=btCentre(box);}return;}
+  btSetZoom(BTZOOM*(dir>0?1.5:1/1.5),at,anchor);}
 function btAfterRender(){const box=document.getElementById("bt-mapbox"); if(!box) return; btUpdateMap(); box.appendChild(BT_SVG);
   btApplyZoom(box);
   box.addEventListener("scroll",()=>{BTPOS=btCentre(box);},{passive:true});
+  const pt=(cx,cy)=>{const r=box.getBoundingClientRect();const px=cx-r.left,py=cy-r.top;
+    return {at:{x:(box.scrollLeft+px)/box.scrollWidth,y:(box.scrollTop+py)/box.scrollHeight},anchor:{px,py}};};
   /* ctrl/⌘ + wheel or trackpad pinch zooms toward the pointer */
-  box.addEventListener("wheel",e=>{if(!(e.ctrlKey||e.metaKey))return;e.preventDefault();const r=box.getBoundingClientRect();
-    const at={x:(box.scrollLeft+e.clientX-r.left)/box.scrollWidth,y:(box.scrollTop+e.clientY-r.top)/box.scrollHeight};
-    btZoom(e.deltaY<0?1:-1,at);},{passive:false});
+  box.addEventListener("wheel",e=>{if(!(e.ctrlKey||e.metaKey))return;e.preventDefault();const q=pt(e.clientX,e.clientY);
+    btSetZoom(BTZOOM*Math.exp(-e.deltaY*0.01),q.at,q.anchor);},{passive:false});
+  /* two-finger pinch on phones/tablets zooms the map (not the page); one finger scrolls it */
+  let pinch=null;
+  const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+  const mid=t=>[(t[0].clientX+t[1].clientX)/2,(t[0].clientY+t[1].clientY)/2];
+  box.addEventListener("touchstart",e=>{if(e.touches.length===2){e.preventDefault();const [mx,my]=mid(e.touches);pinch={d0:dist(e.touches),z0:BTZOOM,at:pt(mx,my).at,moved:false};}},{passive:false});
+  box.addEventListener("touchmove",e=>{if(!pinch||e.touches.length!==2)return;e.preventDefault();
+    const d=dist(e.touches),[mx,my]=mid(e.touches),r=box.getBoundingClientRect();
+    if(Math.abs(d-pinch.d0)>3)pinch.moved=true;
+    btSetZoom(pinch.z0*d/pinch.d0,pinch.at,{px:mx-r.left,py:my-r.top});},{passive:false});
+  box.addEventListener("touchend",e=>{if(pinch&&e.touches.length<2){if(pinch.moved){box._justDragged=true;setTimeout(()=>box._justDragged=false,350);}pinch=null;}});
   /* drag to pan with a mouse (touch already scrolls natively) */
   let drag=null;
-  box.addEventListener("pointerdown",e=>{if(e.pointerType!=="mouse"||BTZOOM<=1&&box.scrollWidth<=box.clientWidth)return;drag={x:e.clientX,y:e.clientY,l:box.scrollLeft,t:box.scrollTop,moved:false};});
+  box.addEventListener("pointerdown",e=>{if(e.pointerType!=="mouse"||BTZOOM<=1.01&&box.scrollWidth<=box.clientWidth)return;drag={x:e.clientX,y:e.clientY,l:box.scrollLeft,t:box.scrollTop,moved:false};});
   box.addEventListener("pointermove",e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>4){drag.moved=true;box.classList.add("dragging");}
     if(drag.moved){box.scrollLeft=drag.l-dx;box.scrollTop=drag.t-dy;}});
   const end=()=>{if(drag&&drag.moved){box._justDragged=true;setTimeout(()=>box._justDragged=false,0);}drag=null;box.classList.remove("dragging");};
   box.addEventListener("pointerup",end); box.addEventListener("pointerleave",end);
 }
+let BT_RZ=null; window.addEventListener("resize",()=>{clearTimeout(BT_RZ);BT_RZ=setTimeout(()=>{const box=document.getElementById("bt-mapbox");if(box&&BT_SVG)btApplyZoom(box);},150);});
 
 /* ---------- sign-up modal ---------- */
 /* Jeabslist lookups go through the proxy (jeabslist-proxy-worker.js) so no token is in this page.
