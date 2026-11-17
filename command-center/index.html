@@ -972,13 +972,6 @@ function btApplyRerank(t){
 function btMove(kid){const p=btBT().signups[kid]; if(!p) return; const to=Number(p.trap)===1?2:1;
   btCommit({[`bearTraps/signups/${kid}`]:{...p,trap:to,trapSource:"officer",lockedSpot:null}}); toast(`${p.name} moved to Trap ${to}`);}
 function btRemove(kid){btCommit({[`bearTraps/signups/${kid}`]:null});}
-/* move every Trap 1 player to Trap 2 and vice versa (with each trap's lock state); unassigned players untouched */
-function btSwapPlayers(){const bt=btBT(), u={};
-  for(const [k,p] of Object.entries(bt.signups||{})){const t=Number(p.trap); if(t===1||t===2) u[`bearTraps/signups/${k}`]={...p,trap:t===1?2:1};}
-  const tr=bt.traps||{}, a=tr[1]||null, b=tr[2]||null;
-  u["bearTraps/traps/1"]=b?{...b,updatedBy:btWho(),updatedAt:Date.now()}:{locked:false,updatedBy:btWho(),updatedAt:Date.now()};
-  u["bearTraps/traps/2"]=a?{...a,updatedBy:btWho(),updatedAt:Date.now()}:{locked:false,updatedBy:btWho(),updatedAt:Date.now()};
-  btCommit(u);}
 function btClear(t){const u={}; for(const [k,p] of Object.entries(btBT().signups||{})) if(t===0||Number(p.trap)===t) u[`bearTraps/signups/${k}`]=null;
   if(Object.keys(u).length) btCommit(u);}
 
@@ -1098,10 +1091,9 @@ function btConfCard(){
   if(!BTCONF) return "";
   const c=BTCONF; let body="";
   if(c.kind==="rerank") body=c.diff.length?`<p>Re-ranking Trap ${c.t} by score moves ${c.diff.length} player${c.diff.length>1?"s":""}:</p><ul>${c.diff.map(d=>`<li>${esc(d.name)}: ${d.from} → <b>${d.to}</b></li>`).join("")}</ul><p>Spots stay locked afterwards.</p>`:`<p>Trap ${c.t} is already in score order. Nothing would move.</p>`;
-  if(c.kind==="swap") body=`<p>Move all ${c.n1} Trap 1 player${c.n1===1?"":"s"} to Trap 2 and all ${c.n2} Trap 2 player${c.n2===1?"":"s"} to Trap 1? Each group keeps its order and lock state. Unassigned players aren't affected.</p>`;
   if(c.kind==="clear") body=`<p>Remove all ${c.n} sign-up${c.n===1?"":"s"} from ${c.t?`Trap ${c.t}`:"both traps"}? This can't be undone.</p>`;
   if(c.kind==="rm") body=`<p>Remove ${esc(c.name)} ${[1,2].includes(Number(c.t))?`from Trap ${c.t}`:"from the Unassigned list"}?</p>`;
-  return `<div class="card bt-conf" id="bt-conf"><h2>Confirm</h2>${body}<div class="row"><button class="btn gold sm" data-act="btconfok">${c.kind==="rerank"?(c.diff.length?"Apply re-rank":"OK"):c.kind==="swap"?"Swap players":"Remove"}</button><button class="btn sm ghost" data-act="btconfno">Cancel</button></div></div>`;
+  return `<div class="card bt-conf" id="bt-conf"><h2>Confirm</h2>${body}<div class="row"><button class="btn gold sm" data-act="btconfok">${c.kind==="rerank"?(c.diff.length?"Apply re-rank":"OK"):"Remove"}</button><button class="btn sm ghost" data-act="btconfno">Cancel</button></div></div>`;
 }
 /* players imported (or kept) without a trap — not ranked until an officer or the player picks one */
 function btUnassignedList(){return Object.entries(btBT().signups||{}).filter(([k,p])=>p&&Number(p.trap)!==1&&Number(p.trap)!==2&&btValidId(k))
@@ -1127,7 +1119,7 @@ function viewBearTraps(){
     <button class="btn gold" data-act="btsignup">🐻 Sign up for a trap</button>
     <button class="btn sm" data-act="btcopyall">Copy both traps</button>
     ${unlocked?`<button class="btn sm" data-act="btimport">Import from sheet</button>`:""}
-    ${unlocked?`<button class="btn sm" data-act="btswap">⇄ Swap players between traps</button><button class="btn sm ghost" data-act="btclear" data-t="0">Clear both</button>`:""}</div>
+    ${unlocked?`<button class="btn sm ghost" data-act="btclear" data-t="0">Clear both</button>`:""}</div>
     ${btConfCard()}
     <div class="bt-grid"><div class="card bt-mapcard"><div class="bt-mapwrap"><div class="bt-mapbox ${BTVIEW?"zoom":""}" id="bt-mapbox"></div><div class="bt-zoom"><button data-act="btzoom" data-z="1" title="Zoom in" aria-label="Zoom in">+</button><button data-act="btzoom" data-z="-1" title="Zoom out" aria-label="Zoom out">−</button><button data-act="btzoom" data-z="0" title="Reset zoom" aria-label="Reset zoom" class="r">⟲</button></div></div><div class="bt-detail" id="bt-detail">${btDetail()}</div></div>
     <div>${panels}</div></div>`;
@@ -1323,8 +1315,6 @@ function btParseSheet(txt,blankTrap){
 function btImportPreview(){
   const ta=document.getElementById("bt-imp"); if(!ta) return null;
   const r=btParseSheet(ta.value,document.getElementById("bt-impblank").value), sg=btBT().signups||{};
-  r.recs.forEach(x=>{if(!x.trap){const ex=sg[x.id]; if(ex&&[1,2].includes(Number(ex.trap))) x.trap=Number(ex.trap);}});
-  r.noTrap=r.noTrap.filter(n=>!r.recs.some(x=>x.name===n&&x.trap));
   const upd=r.recs.filter(x=>sg[x.id]).length, t1=r.recs.filter(x=>x.trap===1).length, t2=r.recs.filter(x=>x.trap===2).length, t0=r.recs.length-t1-t2, skip=document.getElementById("bt-impblank").value==="skip";
   const el=document.getElementById("bt-impprev");
   el.className="bt-chk"+(r.recs.length?" found":"");
@@ -1339,9 +1329,8 @@ function btImportGo(){
   const r=btImportPreview(); if(!r||!r.recs.length){document.getElementById("bt-err").textContent="Nothing to import yet.";return;}
   const sg=btBT().signups||{}, now=Date.now(), u={};
   r.recs.forEach(x=>{const ex=sg[x.id];
-    /* blank trap in the sheet never pulls an already-placed player out of their trap */
-    const trap=x.trap||(ex&&[1,2].includes(Number(ex.trap))?Number(ex.trap):0);
-    x.trap=trap;
+    /* the sheet's Trap column decides; a blank cell follows the "Rows with no trap" choice */
+    const trap=x.trap;
     u[`bearTraps/signups/${x.id}`]={name:x.name,score:x.score,scoreSource:"sheet",trap,trapSource:trap?"officer":"player",
       lockedSpot:ex&&Number(ex.trap)===x.trap?(ex.lockedSpot??null):null,signedUpAt:ex&&ex.signedUpAt?ex.signedUpAt:now+x.order};});
   btCommit(u); BTM=null; btRenderModal(); render(); toast(`Imported ${r.recs.length} players`);
@@ -1368,7 +1357,6 @@ document.addEventListener("click",e=>{
   if(act==="btconfok"){if(!canEdit())return;const c=BTCONF;BTCONF=null;
     if(c.kind==="rerank"&&c.diff.length){btApplyRerank(c.t);toast(`Trap ${c.t} re-ranked`);}
     if(c.kind==="clear"){btClear(c.t);toast("Cleared");}
-    if(c.kind==="swap"){btSwapPlayers();toast("Players swapped between traps");}
     if(c.kind==="rm"){btRemove(c.kid);toast("Removed");}
     render();return;}
   if(!canEdit()) return; /* officer-only below */
@@ -1376,7 +1364,6 @@ document.addEventListener("click",e=>{
   if(act==="btmove"){btMove(k);render();return;}
   if(act==="btassign"){const p=btBT().signups[k]; if(!p) return; btCommit({[`bearTraps/signups/${k}`]:{...p,trap:t,trapSource:"officer",lockedSpot:null}}); toast(`${p.name} → Trap ${t}`); render(); return;}
   if(act==="btrm"){const p=btBT().signups[k];BTCONF={kind:"rm",kid:k,name:p?p.name:k,t:p?p.trap:""};render();window.scrollTo({top:document.getElementById("bt-conf").offsetTop-20,behavior:"smooth"});return;}
-  if(act==="btswap"){const sg=Object.values(btBT().signups||{});BTCONF={kind:"swap",n1:sg.filter(p=>Number(p.trap)===1).length,n2:sg.filter(p=>Number(p.trap)===2).length};render();window.scrollTo({top:document.getElementById("bt-conf").offsetTop-20,behavior:"smooth"});return;}
   if(act==="btlock"){btSetLock(t,!btLocked(t));toast(btLocked(t)?`Trap ${t} spots locked`:`Trap ${t} unlocked — re-ranking live`);render();return;}
   if(act==="btrerank"){BTCONF={kind:"rerank",t,diff:btRerankDiff(t)};render();window.scrollTo({top:document.getElementById("bt-conf").offsetTop-20,behavior:"smooth"});return;}
   if(act==="btclear"){const n=Object.values(btBT().signups||{}).filter(p=>t===0||Number(p.trap)===t).length;
