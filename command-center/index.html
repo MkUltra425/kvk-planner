@@ -287,7 +287,7 @@ pre.brief{white-space:pre-wrap;background:rgba(255,255,255,.03);border:1px solid
    FIREBASE: paste your Firebase web config to share checkmarks/owners/playbooks
    across leadership in real time. Leave null to run in this browser only.
    You can reuse the KvK War Room project; data lives under /allianceCC/<ALLIANCE_KEY>. */
-const FIREBASE_CONFIG = {apiKey:"AIzaSyBu26l53s3uQzTqNum-1Sulx6g_UBfl7qU",authDomain:"kvk-planner-1884.firebaseapp.com",databaseURL:"https://kvk-planner-1884-default-rtdb.firebaseio.com",projectId:"kvk-planner-1884",storageBucket:"kvk-planner-1884.firebasestorage.app",messagingSenderId:"856858420056",appId:"1:856858420056:web:6e1b9c1323ec63ae18bb2d"};; /* e.g. {apiKey:"...",authDomain:"...",databaseURL:"https://xxx.firebaseio.com",projectId:"..."} */
+const FIREBASE_CONFIG = {apiKey:"AIzaSyBu26l53s3uQzTqNum-1Sulx6g_UBfl7qU",authDomain:"kvk-planner-1884.firebaseapp.com",databaseURL:"https://kvk-planner-1884-default-rtdb.firebaseio.com",projectId:"kvk-planner-1884",storageBucket:"kvk-planner-1884.firebasestorage.app",messagingSenderId:"856858420056",appId:"1:856858420056:web:6e1b9c1323ec63ae18bb2d"}; /* e.g. {apiKey:"...",authDomain:"...",databaseURL:"https://xxx.firebaseio.com",projectId:"..."} */
 const ALLIANCE_KEY = "wfp1884";
 const EDIT_PASSPHRASE = "madham";   /* set e.g. "madham" to require it before checking tasks or editing */
 const WAR_ROOM_URL = "https://1884kvk.com";
@@ -888,7 +888,7 @@ const BT_TIME={1:"16:00",2:"13:00"};
 function btLocalTime(t){const [h,m]=BT_TIME[t].split(":").map(Number), n=new Date(), d=new Date(Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate(),h,m));
   try{return d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});}catch(e){return "";}}
 const btTimeHTML=t=>`<span class="bt-time">⏰ ${BT_TIME[t]} UTC<span class="bt-loc"> · ${esc(btLocalTime(t))} your time</span></span>`;
-const BT_CENTER={1:[784,759],2:[784,737]};
+const BT_CENTER={1:[784,737],2:[784,759]};
 const BT_OFF=[[3.5,1.5],[3.5,-1.5],[1.5,-3.5],[-1.5,-3.5],[-3.5,-1.5],[-3.5,1.5],[-1.5,3.5],[1.5,3.5],[3.5,3.5],[3.5,-3.5],[-3.5,-3.5],[-3.5,3.5],[5.5,1.5],[5.5,-1.5],[1.5,-5.5],[-1.5,-5.5],[-5.5,-1.5],[-5.5,1.5],[-1.5,5.5],[1.5,5.5],[5.5,3.5],[5.5,-3.5],[3.5,-5.5],[-3.5,-5.5],[-5.5,-3.5],[-5.5,3.5],[-3.5,5.5],[3.5,5.5],[7.5,1.5],[7.5,-1.5],[1.5,-7.5],[-1.5,-7.5],[-7.5,-1.5],[-7.5,1.5],[-1.5,7.5],[1.5,7.5],[5.5,5.5],[5.5,-5.5],[-5.5,-5.5],[-5.5,5.5],[7.5,3.5],[7.5,-3.5],[3.5,-7.5],[-3.5,-7.5],[-7.5,-3.5],[-7.5,3.5],[-3.5,7.5],[3.5,7.5]];
 const BT_BANNER_OFF=[[7,7],[0,7],[7,0],[0,5],[5,0],[2,2],[0,3],[3,0],[-7,7],[-2,2],[2,-2],[7,-7],[-3,0],[0,-3],[-2,-2],[-5,0],[0,-5],[-7,0],[0,-7],[-7,-7]];
 const BT_BANDS=[8,12,20,28,36,40,48]; /* last spot of each distance band */
@@ -926,7 +926,7 @@ function btAssign(t,bt){
   }
   return {spots,reserve,ranked};
 }
-function btWhere(kid,bt){bt=bt||btBT();const p=(bt.signups||{})[kid];if(!p)return null;const t=Number(p.trap),a=btAssign(t,bt);
+function btWhere(kid,bt){bt=bt||btBT();const p=(bt.signups||{})[kid];if(!p)return null;const t=Number(p.trap);if(t!==1&&t!==2)return {t:0,unassigned:true};const a=btAssign(t,bt);
   const n=a.spots.findIndex(x=>x&&x.kid===kid); if(n>0) return {t,spot:n};
   const r=a.reserve.findIndex(x=>x.kid===kid); return r>=0?{t,reserve:r+1}:null;}
 
@@ -1093,15 +1093,29 @@ function btConfCard(){
   const c=BTCONF; let body="";
   if(c.kind==="rerank") body=c.diff.length?`<p>Re-ranking Trap ${c.t} by score moves ${c.diff.length} player${c.diff.length>1?"s":""}:</p><ul>${c.diff.map(d=>`<li>${esc(d.name)}: ${d.from} → <b>${d.to}</b></li>`).join("")}</ul><p>Spots stay locked afterwards.</p>`:`<p>Trap ${c.t} is already in score order. Nothing would move.</p>`;
   if(c.kind==="clear") body=`<p>Remove all ${c.n} sign-up${c.n===1?"":"s"} from ${c.t?`Trap ${c.t}`:"both traps"}? This can't be undone.</p>`;
-  if(c.kind==="rm") body=`<p>Remove ${esc(c.name)} from Trap ${c.t}?</p>`;
+  if(c.kind==="rm") body=`<p>Remove ${esc(c.name)} ${[1,2].includes(Number(c.t))?`from Trap ${c.t}`:"from the Unassigned list"}?</p>`;
   return `<div class="card bt-conf" id="bt-conf"><h2>Confirm</h2>${body}<div class="row"><button class="btn gold sm" data-act="btconfok">${c.kind==="rerank"?(c.diff.length?"Apply re-rank":"OK"):"Remove"}</button><button class="btn sm ghost" data-act="btconfno">Cancel</button></div></div>`;
+}
+/* players imported (or kept) without a trap — not ranked until an officer or the player picks one */
+function btUnassignedList(){return Object.entries(btBT().signups||{}).filter(([k,p])=>p&&Number(p.trap)!==1&&Number(p.trap)!==2&&btValidId(k))
+  .map(([k,p])=>({...p,kid:k,score:+p.score||0})).sort((a,b)=>b.score-a.score||(+a.signedUpAt||0)-(+b.signedUpAt||0));}
+function btUnassigned(){
+  const L=btUnassignedList(); if(!L.length) return "";
+  const me=btMyKid();
+  return `<div style="height:14px"></div><div class="card bt-panel" id="bt-unassigned"><h2>Unassigned <span class="bt-meta" style="margin:0 0 0 auto">${L.length} not in a trap</span></h2>
+    <div class="bt-meta">Not ranked yet.${unlocked?" Assign each player to a trap.":" Sign up again and pick a trap to get a spot."}</div>
+    <div class="bt-tblwrap"><table class="bt-tbl"><thead><tr><th>Governor</th><th>Mystic Trial</th><th>ID</th><th></th></tr></thead><tbody>
+    ${L.map(p=>`<tr class="${me&&p.kid===me?"mine":""}"><td class="notranslate" translate="no">${esc(p.name)}</td><td class="s">${btFmt(p.score)}</td><td class="c">${esc(p.kid)}</td>
+      <td class="a">${unlocked?`<button class="bt-x mv" data-act="btassign" data-k="${p.kid}" data-t="1">→ T1</button><button class="bt-x mv" data-act="btassign" data-k="${p.kid}" data-t="2">→ T2</button><button class="bt-x" data-act="btrm" data-k="${p.kid}" title="Remove">×</button>`:""}</td></tr>`).join("")}
+    </tbody></table></div>
+    <div class="bt-tools"><button class="btn sm" data-act="btcopyun">Copy list</button></div></div>`;
 }
 function viewBearTraps(){
   if(BTVIEW===null) BTVIEW=btDefaultView();
   const vb=(v,l)=>`<button class="${BTVIEW===v?"on":""}" data-act="btview" data-v="${v}">${l}</button>`;
   const w=btWhere(btMyKid());
-  const mine=w?`<span class="tag" style="border-color:#f2b632;color:#f2b632">You: Trap ${w.t} · ${w.spot?`Spot ${w.spot} · ${btXY(w.t,w.spot)}`:`Reserve #${w.reserve}`} · ${BT_TIME[w.t]} UTC</span>`:"";
-  const panels=BTVIEW===0?btPanel(1)+`<div style="height:14px"></div>`+btPanel(2):btPanel(BTVIEW);
+  const mine=w&&w.unassigned?`<span class="tag" style="border-color:#f2b632;color:#f2b632">You: not in a trap yet</span>`:w?`<span class="tag" style="border-color:#f2b632;color:#f2b632">You: Trap ${w.t} · ${w.spot?`Spot ${w.spot} · ${btXY(w.t,w.spot)}`:`Reserve #${w.reserve}`} · ${BT_TIME[w.t]} UTC</span>`:"";
+  const panels=(BTVIEW===0?btPanel(1)+`<div style="height:14px"></div>`+btPanel(2):btPanel(BTVIEW))+btUnassigned();
   return `<div class="bt-top"><div class="bt-views">${vb(0,"Both traps")}${vb(1,"Trap 1")}${vb(2,"Trap 2")}</div>${mine}<span class="sp"></span>
     <button class="btn gold" data-act="btsignup">🐻 Sign up for a trap</button>
     <button class="btn sm" data-act="btcopyall">Copy both traps</button>
@@ -1173,7 +1187,7 @@ function btRenderModal(){
     m.innerHTML=`<div class="modal" role="dialog" aria-label="Import from sheet"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Import from sheet</h2><button class="btn sm ghost" data-act="btmclose">✕</button></div>
       <p class="bt-meta" style="margin-top:8px">In your sheet, select the rows (header row included) and copy, then paste here. Columns are found by their headers: <b>Name</b>, <b>ID</b>, <b>Mystic Trial</b>, <b>Trap</b> (other columns like TC Level are ignored).</p>
       <div class="bt-f"><textarea id="bt-imp" placeholder="Name	ID	Mystic Trial	TC Level	Trap" style="min-height:180px;font-family:var(--mono);font-size:12px"></textarea></div>
-      <div class="bt-f"><label for="bt-impblank">Rows with no trap</label><select id="bt-impblank"><option value="0">Skip them</option><option value="1">Put in Trap 1</option><option value="2">Put in Trap 2</option></select></div>
+      <div class="bt-f"><label for="bt-impblank">Rows with no trap</label><select id="bt-impblank"><option value="0">Add to the Unassigned list</option><option value="skip">Skip them</option><option value="1">Put in Trap 1</option><option value="2">Put in Trap 2</option></select></div>
       <div class="bt-chk" id="bt-impprev">Paste rows to see a preview.</div>
       <div class="bt-err" id="bt-err"></div>
       <div class="row" style="justify-content:flex-end"><button class="btn gold" data-act="btimpgo">Import</button></div></div>`;
@@ -1270,8 +1284,9 @@ function btParseSheet(txt,blankTrap){
     const name=(r[col.name]||"").trim(), id=(r[col.id]||"").replace(/\s/g,""), score=btReadScore(r[col.score]), tr=col.trap>=0?String(r[col.trap]||"").replace(/\D/g,""):"";
     if(!btValidId(id)||!name||score===null){out.bad.push(`row ${i+1+start}${name?` (${name})`:""}`);return;}
     if(seen.has(id)){out.dup++;return;} seen.add(id);
-    let trap=tr==="1"?1:tr==="2"?2:(+blankTrap||0);
-    if(!trap){out.noTrap.push(name);return;}
+    let trap=tr==="1"?1:tr==="2"?2:(blankTrap==="skip"?-1:(+blankTrap||0));
+    if(trap<1) out.noTrap.push(name);
+    if(trap<0) return;
     out.recs.push({id,name,score,trap,order:i});
   });
   return out;
@@ -1279,12 +1294,14 @@ function btParseSheet(txt,blankTrap){
 function btImportPreview(){
   const ta=document.getElementById("bt-imp"); if(!ta) return null;
   const r=btParseSheet(ta.value,document.getElementById("bt-impblank").value), sg=btBT().signups||{};
-  const upd=r.recs.filter(x=>sg[x.id]).length, t1=r.recs.filter(x=>x.trap===1).length;
+  r.recs.forEach(x=>{if(!x.trap){const ex=sg[x.id]; if(ex&&[1,2].includes(Number(ex.trap))) x.trap=Number(ex.trap);}});
+  r.noTrap=r.noTrap.filter(n=>!r.recs.some(x=>x.name===n&&x.trap));
+  const upd=r.recs.filter(x=>sg[x.id]).length, t1=r.recs.filter(x=>x.trap===1).length, t2=r.recs.filter(x=>x.trap===2).length, t0=r.recs.length-t1-t2, skip=document.getElementById("bt-impblank").value==="skip";
   const el=document.getElementById("bt-impprev");
   el.className="bt-chk"+(r.recs.length?" found":"");
   el.innerHTML=!ta.value.trim()?"Paste rows to see a preview.":
-    `${r.recs.length} to import (${t1} Trap 1 · ${r.recs.length-t1} Trap 2) — ${r.recs.length-upd} new, ${upd} update existing`+
-    (r.noTrap.length?`<br><span style="color:var(--yellow)">${r.noTrap.length} skipped, no trap: ${esc(r.noTrap.slice(0,6).join(", "))}${r.noTrap.length>6?"…":""}</span>`:"")+
+    `${r.recs.length} to import (${t1} Trap 1 · ${t2} Trap 2${t0?` · ${t0} Unassigned`:""}) — ${r.recs.length-upd} new, ${upd} update existing`+
+    (r.noTrap.length?`<br><span style="color:var(--yellow)">${r.noTrap.length} ${skip?"skipped":"unassigned"}, no trap: ${esc(r.noTrap.slice(0,6).join(", "))}${r.noTrap.length>6?"…":""}</span>`:"")+
     (r.bad.length?`<br><span style="color:var(--crimson)">${r.bad.length} unreadable (needs name, 6–12 digit ID, score): ${esc(r.bad.slice(0,5).join(", "))}${r.bad.length>5?"…":""}</span>`:"")+
     (r.dup?`<br>${r.dup} duplicate ID${r.dup>1?"s":""} ignored (first row kept)`:"");
   return r;
@@ -1293,7 +1310,10 @@ function btImportGo(){
   const r=btImportPreview(); if(!r||!r.recs.length){document.getElementById("bt-err").textContent="Nothing to import yet.";return;}
   const sg=btBT().signups||{}, now=Date.now(), u={};
   r.recs.forEach(x=>{const ex=sg[x.id];
-    u[`bearTraps/signups/${x.id}`]={name:x.name,score:x.score,scoreSource:"sheet",trap:x.trap,trapSource:"officer",
+    /* blank trap in the sheet never pulls an already-placed player out of their trap */
+    const trap=x.trap||(ex&&[1,2].includes(Number(ex.trap))?Number(ex.trap):0);
+    x.trap=trap;
+    u[`bearTraps/signups/${x.id}`]={name:x.name,score:x.score,scoreSource:"sheet",trap,trapSource:trap?"officer":"player",
       lockedSpot:ex&&Number(ex.trap)===x.trap?(ex.lockedSpot??null):null,signedUpAt:ex&&ex.signedUpAt?ex.signedUpAt:now+x.order};});
   btCommit(u); BTM=null; btRenderModal(); render(); toast(`Imported ${r.recs.length} players`);
 }
@@ -1305,6 +1325,7 @@ document.addEventListener("click",e=>{
   if(act==="btzoom"){btZoom(+a.dataset.z);return;}
   if(act==="bttile"){const bx=document.getElementById("bt-mapbox"); if(bx&&bx._justDragged) return;const id=`${a.dataset.t}-${a.dataset.s}`;BTSEL=BTSEL===id?null:id;btUpdateMap();document.getElementById("bt-detail").innerHTML=btDetail();return;}
   if(act==="btcopy"){copyText(btChatText(t),`Bear Trap ${t} spots`);return;}
+  if(act==="btcopyun"){copyText("Not in a bear trap yet:\n"+btUnassignedList().map(p=>p.name).join("\n"),"Unassigned");return;}
   if(act==="btcopyall"){copyText(btChatText(1)+"\n\n"+btChatText(2),"Bear trap spots");return;}
   if(act==="btsignup"){btOpenSignup();return;}
   if(act==="btmclose"){BTM=null;btRenderModal();return;}
@@ -1323,6 +1344,7 @@ document.addEventListener("click",e=>{
   if(!canEdit()) return; /* officer-only below */
   if(act==="btedit"){btOpenEdit(k);return;}
   if(act==="btmove"){btMove(k);render();return;}
+  if(act==="btassign"){const p=btBT().signups[k]; if(!p) return; btCommit({[`bearTraps/signups/${k}`]:{...p,trap:t,trapSource:"officer",lockedSpot:null}}); toast(`${p.name} → Trap ${t}`); render(); return;}
   if(act==="btrm"){const p=btBT().signups[k];BTCONF={kind:"rm",kid:k,name:p?p.name:k,t:p?p.trap:""};render();window.scrollTo({top:document.getElementById("bt-conf").offsetTop-20,behavior:"smooth"});return;}
   if(act==="btlock"){btSetLock(t,!btLocked(t));toast(btLocked(t)?`Trap ${t} spots locked`:`Trap ${t} unlocked — re-ranking live`);render();return;}
   if(act==="btrerank"){BTCONF={kind:"rerank",t,diff:btRerankDiff(t)};render();window.scrollTo({top:document.getElementById("bt-conf").offsetTop-20,behavior:"smooth"});return;}
