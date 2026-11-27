@@ -366,6 +366,24 @@
   .ms-time{font-family:'JetBrains Mono',monospace;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:clip;}
   .ms-name{color:var(--text-hi);overflow:hidden;display:flex;align-items:center;gap:6px;}
   .ms-name-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .ms-name-tap{cursor:pointer;}
+  .ms-name-tap .ms-name-text{text-decoration:underline dotted;text-underline-offset:3px;text-decoration-color:var(--text-dim);}
+  .ms-name-tap:hover .ms-name-text,.ms-name-tap:focus-visible .ms-name-text{color:var(--teal);}
+  .ms-bd-modal{max-width:560px;font-family:'Inter',sans-serif;color:var(--text-hi);}
+  .ms-bd-sub{font-size:12.5px;color:var(--text-mid);margin:-6px 0 14px;line-height:1.5;}
+  .ms-bd-section{margin-bottom:16px;}
+  .ms-bd-title{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;}
+  .ms-bd-table{width:100%;border-collapse:collapse;font-size:12.5px;color:var(--text-hi);}
+  .ms-bd-table th{font-size:10.5px;font-weight:600;color:var(--text-dim);text-align:left;padding:4px 6px;border-bottom:1px solid var(--glass-border);text-transform:uppercase;letter-spacing:0.04em;}
+  .ms-bd-table td{padding:5px 6px;border-bottom:1px solid var(--glass-border);vertical-align:top;}
+  .ms-bd-table .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .ms-bd-table .nowrap{white-space:nowrap;}
+  @media (max-width:480px){.ms-bd-modal{padding:18px 14px;}.ms-bd-table{font-size:12px;}.ms-bd-table td,.ms-bd-table th{padding:5px 4px;}}
+  .ms-bd-total td{font-weight:700;border-bottom:none;}
+  .ms-bd-started{color:var(--text-dim);font-size:11.5px;}
+  .ms-bd-note{font-size:12px;color:var(--text-mid);line-height:1.5;margin-top:8px;}
+  .ms-bd-note.warn{color:#e0a85a;}
+  .ms-bd-note.dim{color:var(--text-dim);font-size:11.5px;}
   .ms-name-text-lg{font-size:14px;font-weight:700;}
   .ms-avatar{width:18px;height:18px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:var(--glass-border);display:block;}
   .ms-avatar-fallback{width:18px;height:18px;border-radius:50%;flex:0 0 auto;background:var(--glass-border);}
@@ -4311,6 +4329,7 @@ function msSimWarAcademy(state, tcTier){
     if(state.gold + EPS >= row.stageGold && state.days + EPS >= days){
       state.gold -= row.stageGold; state.goldSpent += row.stageGold;
       state.days -= days; state.daysSpent += days;
+      state.steps.push({kind:'wa', name:'War Academy', from:state.waLevel, to:row.level, gold:row.stageGold, dust:0, days:days, partial:false});
       state.waLevel = row.level;
       state.waResearchPct = row.researchSpeedPct;
       if(row.waTier) state.waTier = row.waTier;
@@ -4321,6 +4340,7 @@ function msSimWarAcademy(state, tcTier){
       var partial = Math.min(state.days, days);
       state.days -= partial; state.daysSpent += partial;
       state.waStarted = row.level;
+      state.steps.push({kind:'wa', name:'War Academy', from:state.waLevel, to:row.level, gold:row.stageGold, dust:0, days:partial, partial:true});
     }
     break;
   }
@@ -4350,6 +4370,7 @@ function msSimResearch(state){
         state.goldConverted += batches * TG_TO_DUST_BATCH_TG;
         state.dust += batches * TG_TO_DUST_BATCH_DUST;
         state.dustFromConversion += batches * TG_TO_DUST_BATCH_DUST;
+        state.steps.push({kind:'convert', name:'Truegold \u2192 Dust', gold:batches * TG_TO_DUST_BATCH_TG, dust:batches * TG_TO_DUST_BATCH_DUST, days:0, partial:false});
       }
     }
     var days = (r.hours / 24) / (1 + (RESEARCH_SPEED_BONUS_PCT + state.waResearchPct - 0.5) / 100);
@@ -4358,6 +4379,7 @@ function msSimResearch(state){
       state.days -= days; state.daysSpent += days; state.researchDaysSpent += days;
       done[r.tree + '|' + r.tech] = r.lv;
       state.researchSteps++;
+      state.steps.push({kind:'research', tree:r.tree, name:r.tech, from:r.lv - 1, to:r.lv, gold:0, dust:r.dust, days:days, partial:false});
       if(r.lv === 1 && /^Truegold (Infantry|Archers|Cavalry)$/.test(r.tech)) state.t11Unlocked.push(r.tree);
       continue;
     }
@@ -4366,6 +4388,7 @@ function msSimResearch(state){
       var partial = Math.min(state.days, days);
       state.days -= partial; state.daysSpent += partial; state.researchDaysSpent += partial;
       state.researchStarted = r.tree + ' ' + r.tech + ' Lv ' + r.lv;
+      state.steps.push({kind:'research', tree:r.tree, name:r.tech, from:r.lv - 1, to:r.lv, gold:0, dust:r.dust, days:partial, partial:true});
     }
     break;
   }
@@ -4379,7 +4402,10 @@ function msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, 
     days: Math.max(0, parseFloat(speedupDaysAvailable) || 0),
     dust: Math.max(0, parseFloat(dustAvailable) || 0),
     goldSpent: 0, daysSpent: 0, dustSpent: 0, researchDaysSpent: 0,
-    goldConverted: 0, dustFromConversion: 0,
+    goldConverted: 0, dustFromConversion: 0, steps: [],
+    startGold: Math.max(0, parseFloat(truegoldAvailable) || 0),
+    startDays: Math.max(0, parseFloat(speedupDaysAvailable) || 0),
+    startDust: Math.max(0, parseFloat(dustAvailable) || 0),
     waTier: 0, waLevel: 'none', waResearchPct: 0, waStarted: null,
     researchDone: {}, researchSteps: 0, researchStarted: null, t11Unlocked: []
   };
@@ -4408,6 +4434,11 @@ function msSimConstructionPath(state, townHallLevel){
   var remainingDays = state.days;
   var totalGoldSpent = 0, totalDaysSpent = 0;
   state.buildingsDone = true;
+  // Each building's level going in: its last row at or below the baseline.
+  var curLevel = {};
+  for(var k=0; k<UPGRADE_QUEUE.length; k++){
+    if(UPGRADE_QUEUE[k].order <= startOrder) curLevel[UPGRADE_QUEUE[k].building] = UPGRADE_QUEUE[k].level;
+  }
 
   for(var i=0; i<UPGRADE_QUEUE.length; i++){
     var step = UPGRADE_QUEUE[i];
@@ -4432,6 +4463,10 @@ function msSimConstructionPath(state, townHallLevel){
     remainingDays -= daysUsedWhole;
     totalGoldSpent += goldUsedWhole;
     totalDaysSpent += daysUsedWhole;
+    if(wholeStages > 0){
+      state.steps.push({kind:'building', name:step.building, from:curLevel[step.building] || null, to:step.level, gold:goldUsedWhole, dust:0, days:daysUsedWhole, partial:false});
+      curLevel[step.building] = step.level;
+    }
 
     if(wholeStages < stagesInTier){
       if(remainingGold + EPS >= stageGold){
@@ -4440,6 +4475,7 @@ function msSimConstructionPath(state, townHallLevel){
         var partialDays = Math.min(remainingDays, stageDays);
         totalDaysSpent += partialDays;
         remainingDays -= partialDays;
+        state.steps.push({kind:'building', name:step.building, from:curLevel[step.building] || null, to:step.level, gold:stageGold, dust:0, days:partialDays, partial:true});
       }
       state.buildingsDone = false;
       break; // stop entirely at the first step that can't fully complete
@@ -6868,7 +6904,133 @@ function msCurrentAppointedHtml(key){
 // scheduler row. CSV-imported players and unmatched applicants have no
 // avatarUrl, so they fall back to a plain placeholder circle. The <img>
 // itself falls back the same way if the URL 404s or fails to load.
-function msNameCellHtml(p){
+// --- Day 1: tap a name for the full KvK Potential breakdown --------------
+// Re-runs msSimulateDay1 for an applicant and lists everything it spent:
+// points by resource, each building's from/to level, War Academy,
+// research by tech, and any Truegold converted to Dust.
+function msFmtDays(d){
+  var mins = Math.round((d || 0) * 1440);
+  var days = Math.floor(mins / 1440), hrs = Math.floor((mins % 1440) / 60), m = mins % 60;
+  if(days) return days + 'd ' + hrs + 'h';
+  if(hrs) return hrs + 'h ' + m + 'm';
+  return m + 'm';
+}
+function msFmtLevel(lvl){
+  if(lvl === null || lvl === undefined || lvl === '') return '—';
+  return /^\d+$/.test(String(lvl)) ? 'Lv ' + lvl : String(lvl);
+}
+function msGroupBreakdownSteps(steps, kinds){
+  var groups = [], byKey = {};
+  steps.forEach(function(st){
+    if(kinds.indexOf(st.kind) === -1) return;
+    var key = st.kind + '|' + (st.tree || '') + '|' + st.name;
+    var g = byKey[key];
+    if(!g){
+      g = byKey[key] = {kind:st.kind, tree:st.tree, name:st.name, from:st.from, to:null, started:null, gold:0, dust:0, days:0};
+      groups.push(g);
+    }
+    if(st.partial) g.started = st.to; else g.to = st.to;
+    g.gold += st.gold; g.dust += st.dust; g.days += st.days;
+  });
+  return groups;
+}
+function msBreakdownLevelText(g, isResearch){
+  var fmt = isResearch ? function(v){ return 'Lv ' + v; } : msFmtLevel;
+  var txt = g.to !== null ? fmt(g.from) + ' → ' + fmt(g.to) : fmt(g.from);
+  if(g.started !== null) txt += ' <span class="ms-bd-started">(+ starts ' + msEsc(fmt(g.started)) + ')</span>';
+  return txt;
+}
+function msBreakdownTable(title, groups, cols){
+  if(!groups.length) return '';
+  var html = '<div class="ms-bd-section"><div class="ms-bd-title">' + msEsc(title) + '</div><table class="ms-bd-table"><thead><tr>';
+  var cls = function(c){ return c.num ? ' class="num"' : (c.nowrap ? ' class="nowrap"' : ''); };
+  cols.forEach(function(c){ html += '<th' + cls(c) + '>' + msEsc(c.h) + '</th>'; });
+  html += '</tr></thead><tbody>';
+  groups.forEach(function(g){
+    html += '<tr>';
+    cols.forEach(function(c){ html += '<td' + cls(c) + '>' + c.v(g) + '</td>'; });
+    html += '</tr>';
+  });
+  return html + '</tbody></table></div>';
+}
+function msDay1BreakdownHtml(p){
+  var level = p.currentLevel || p.tcLevel || 0;
+  var r = msSimulateDay1(level, p.tg || 0, parseFloat(p.sp) || 0, p.dust || 0);
+  var tgPts = r.goldSpent * TRUEGOLD_PTS, dustPts = r.dustSpent * TRUEGOLD_DUST_PTS, spPts = r.daysSpent * SPEEDUP_PTS_PER_DAY;
+  var row = function(label, qty, pts){
+    return '<tr><td>' + label + '</td><td class="num">' + qty + '</td><td class="num">' + msFmtNumFull(pts) + '</td></tr>';
+  };
+  var html = '<div class="ms-bd-sub">TC ' + msEsc(level ? String(level) : 'unknown') + ' · has ' +
+    msFmtNumFull(r.startGold) + ' Truegold, ' + msFmtNumFull(r.startDust) + ' Dust, ' + msEsc(msFmtDays(r.startDays)) + ' speedups</div>';
+  html += '<div class="ms-bd-section"><div class="ms-bd-title">KvK Potential</div><table class="ms-bd-table"><thead><tr><th>Used</th><th class="num">Amount</th><th class="num">Points</th></tr></thead><tbody>' +
+    row('Truegold (×' + msFmtNumFull(TRUEGOLD_PTS) + ')', msFmtNumFull(r.goldSpent), tgPts) +
+    row('Truegold Dust (×' + msFmtNumFull(TRUEGOLD_DUST_PTS) + ')', msFmtNumFull(r.dustSpent), dustPts) +
+    row('Speedups (30 per min)', msEsc(msFmtDays(r.daysSpent)), spPts) +
+    '<tr class="ms-bd-total"><td>Total</td><td></td><td class="num">' + msFmtNumFull(r.pts) + '</td></tr></tbody></table>';
+  html += '<div class="ms-bd-note">Speedups: ' + msEsc(msFmtDays(r.constructionDaysSpent)) + ' buildings, ' +
+    msEsc(msFmtDays(r.daysSpent - r.constructionDaysSpent - r.researchDaysSpent)) + ' War Academy, ' + msEsc(msFmtDays(r.researchDaysSpent)) + ' research.' +
+    (r.goldConverted ? ' Includes ' + msFmtNumFull(r.goldConverted) + ' Truegold converted to ' + msFmtNumFull(r.dustFromConversion) + ' Dust (converted Truegold scores nothing on its own).' : '') +
+    ' Left over: ' + msFmtNumFull(Math.floor(r.gold + 1e-9)) + ' Truegold, ' + msFmtNumFull(Math.floor(r.dust + 1e-9)) + ' Dust, ' + msEsc(msFmtDays(r.days)) + ' speedups.</div>';
+  if(Math.round(p.pts || 0) !== r.pts){
+    html += '<div class="ms-bd-note warn">The schedule shows ' + msFmtNumFull(p.pts || 0) + ', worked out when they applied. The numbers here use the current calculator.</div>';
+  }
+  html += '</div>';
+  var lvlCol = function(isResearch){ return {h:'Level', nowrap:true, v:function(g){ return msBreakdownLevelText(g, isResearch); }}; };
+  var tgCol = {h:'Truegold', num:true, v:function(g){ return msFmtNumFull(g.gold); }};
+  var dustCol = {h:'Dust', num:true, v:function(g){ return msFmtNumFull(g.dust); }};
+  var spCol = {h:'Speedups', num:true, v:function(g){ return msEsc(msFmtDays(g.days)); }};
+  html += msBreakdownTable('1. Buildings', msGroupBreakdownSteps(r.steps, ['building']),
+    [{h:'Building', v:function(g){ return msEsc(g.name); }}, lvlCol(false), tgCol, spCol]);
+  html += msBreakdownTable('2. War Academy', msGroupBreakdownSteps(r.steps, ['wa']),
+    [{h:'Building', v:function(g){ return msEsc(g.name); }}, lvlCol(false), tgCol, spCol]);
+  html += msBreakdownTable('3. War Academy research', msGroupBreakdownSteps(r.steps, ['research']),
+    [{h:'Tech', v:function(g){ return msEsc(g.tree + ' · ' + g.name.replace(/^Truegold /, '')); }}, lvlCol(true), dustCol, spCol]);
+  if(r.goldConverted){
+    html += '<div class="ms-bd-note">Truegold converted to Dust when research needed it: ' + msFmtNumFull(r.goldConverted) + ' Truegold → ' + msFmtNumFull(r.dustFromConversion) + ' Dust.</div>';
+  }
+  if(!r.steps.length) html += '<div class="ms-bd-note">Nothing could be upgraded or researched with these resources.</div>';
+  html += '<div class="ms-bd-note dim">Assumes War Academy starts at TG 1 with no research, construction speed ' + CONSTRUCTION_SPEED_BONUS_PCT +
+    '% plus Double Time, and research speed ' + RESEARCH_SPEED_BONUS_PCT + '% plus War Academy’s bonus.</div>';
+  return html;
+}
+function msOpenBreakdown(pid){
+  var p = msFindSchedulerPlayer(pid);
+  if(!p) return;
+  var back = document.getElementById('msBreakdownBackdrop');
+  if(!back){
+    back = document.createElement('div');
+    back.id = 'msBreakdownBackdrop';
+    back.className = 'ms-apply-modal-backdrop';
+    back.innerHTML = '<div class="ms-apply-modal ms-bd-modal" role="dialog" aria-modal="true" aria-labelledby="msBreakdownTitle">' +
+      '<div class="ms-apply-modal-head"><h3 id="msBreakdownTitle" class="notranslate" translate="no"></h3>' +
+      '<button class="ms-apply-modal-close" type="button" aria-label="Close">&times;</button></div><div id="msBreakdownBody"></div></div>';
+    document.body.appendChild(back);
+    back.addEventListener('click', function(e){
+      if(e.target === back || e.target.closest('.ms-apply-modal-close')) back.classList.remove('open');
+    });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') back.classList.remove('open'); });
+  }
+  document.getElementById('msBreakdownTitle').textContent = p.name || 'Player';
+  document.getElementById('msBreakdownBody').innerHTML = msDay1BreakdownHtml(p);
+  back.classList.add('open');
+}
+// Capture phase so a tap on the name doesn't also trigger the row's own
+// tap (NO SLOT rows open the slot comparison).
+document.addEventListener('click', function(e){
+  var el = e.target.closest && e.target.closest('[data-ms-breakdown]');
+  if(!el) return;
+  e.preventDefault(); e.stopPropagation();
+  msOpenBreakdown(el.getAttribute('data-ms-breakdown'));
+}, true);
+document.addEventListener('keydown', function(e){
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  var el = e.target.closest && e.target.closest('[data-ms-breakdown]');
+  if(!el) return;
+  e.preventDefault(); e.stopPropagation();
+  msOpenBreakdown(el.getAttribute('data-ms-breakdown'));
+}, true);
+
+function msNameCellHtml(p, key){
   var avatarHtml;
   if(p.avatarUrl){
     avatarHtml = '<img class="ms-avatar" src="' + msEsc(p.avatarUrl) + '" alt="" loading="lazy" ' +
@@ -6878,6 +7040,11 @@ function msNameCellHtml(p){
     avatarHtml = '<span class="ms-avatar-fallback"></span>';
   }
   var tag = p.carried ? ' <span style="color:var(--teal);font-size:9px;">NA&rarr;CM</span>' : '';
+  if(key === 'd1' && p.source === 'apply'){
+    return '<span class="ms-name ms-name-tap notranslate" translate="no" role="button" tabindex="0" data-ms-breakdown="' + msEsc(String(p.id)) +
+      '" title="Show KvK Potential breakdown" aria-label="Show KvK Potential breakdown for ' + msEsc(p.name || 'this player') + '">' + avatarHtml +
+      '<span class="ms-name-text">' + msEsc(p.name) + tag + '</span></span>';
+  }
   return '<span class="ms-name notranslate" translate="no">' + avatarHtml +
     '<span class="ms-name-text">' + msEsc(p.name) + tag + '</span></span>';
 }
@@ -6885,7 +7052,7 @@ function msNameCellHtml(p){
 function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var vals = msRowValues(key, p);
   var timeInner = isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : ('<span class="notranslate" translate="no">' + timeLabel + '</span>');
-  var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' + msNameCellHtml(p);
+  var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' + msNameCellHtml(p, key);
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
   cellsHtml += '<span class="ms-choose-cell"></span>';
   if(EDIT_MODE){
@@ -7172,7 +7339,7 @@ function kaApplySlotHtml(key){
 function kaRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var vals = msRowValues(key, p);
   var timeInner = isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : ('<span class="notranslate" translate="no">' + timeLabel + '</span>');
-  var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' + msNameCellHtml(p);
+  var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' + msNameCellHtml(p, key);
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
   cellsHtml += '<span class="ms-choose-cell"></span>';
   if(EDIT_MODE){
