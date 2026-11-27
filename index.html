@@ -3668,8 +3668,8 @@ function msCalcPts(tg){ return (parseInt(tg)||0) * 2000; }
 // possible KvK Potential score. See conversation for full spec — the key
 // rule: Truegold registers points the instant a stage is STARTED (even if
 // it doesn't finish), while speedup-days register for whatever partial
-// amount is actually used. Tempered Truegold isn't wired in yet (nothing
-// before TG6 needs it) but the structure leaves room to add it.
+// amount is actually used. Tempered Truegold (30,000 pts each) follows the
+// same rule as Truegold via each row's optional stageTtg field.
 // Simulates spending a player's on-hand Truegold + speedup-days optimally
 // down the fixed, ordered per-substage building-upgrade path, to compute
 // their maximum possible KvK Potential score. Sourced directly from the
@@ -3677,6 +3677,18 @@ function msCalcPts(tg){ return (parseInt(tg)||0) * 2000; }
 // not collapsed into tiers) — order is the exact build sequence, and
 // townHallLevel matches the Jeabslist API's town_hall_level field exactly,
 // so a player's reported level maps onto this queue with no guesswork.
+//
+// War Academy rows (from war_academy_upgrades.csv) go last, after every
+// other building, so adding them can only ever raise a score: the
+// simulation stops at the first stage it can't finish, so slotting them
+// mid-path would end some runs earlier. Each row's townHallLevel is the
+// Town Center level that unlocks it (WA TG N-1 .. TG N needs TC TG N).
+// Their stageDays is the CSV's Upgrade Time, ASSUMED to be base time (same
+// speed bonuses as every other row). WA TG 5-1 and up needs TC TG 6+,
+// which this queue can't build yet, so those rows (the only ones costing
+// Tempered Truegold) count only for players whose own TC level is already
+// there. TC TG 6/7/8 are ASSUMED to be levels 60/65/70, following the
+// 5-levels-per-tier pattern above.
 var UPGRADE_QUEUE = [
   {order:1, building:"Town Center", level:"25", townHallLevel:25, stageGold:0, stageDays:18.3486, stagesInTier:1},
   {order:2, building:"Barracks", level:"25", townHallLevel:25, stageGold:0, stageDays:2.7521, stagesInTier:1},
@@ -3894,7 +3906,43 @@ var UPGRADE_QUEUE = [
   {order:214, building:"Infirmary", level:"TG 4-2", townHallLevel:52, stageGold:67, stageDays:1.9597, stagesInTier:1},
   {order:215, building:"Infirmary", level:"TG 4-3", townHallLevel:53, stageGold:67, stageDays:1.9597, stagesInTier:1},
   {order:216, building:"Infirmary", level:"TG 4-4", townHallLevel:54, stageGold:67, stageDays:1.9597, stagesInTier:1},
-  {order:217, building:"Infirmary", level:"TG 5", townHallLevel:55, stageGold:67, stageDays:1.9597, stagesInTier:1}
+  {order:217, building:"Infirmary", level:"TG 5", townHallLevel:55, stageGold:67, stageDays:1.9597, stagesInTier:1},
+  {order:218, building:"War Academy", level:"TG 1", townHallLevel:35, stageGold:0, stageTtg:0, stageDays:0, stagesInTier:1},
+  {order:219, building:"War Academy", level:"TG 1-1", townHallLevel:40, stageGold:71, stageTtg:0, stageDays:1.8, stagesInTier:1},
+  {order:220, building:"War Academy", level:"TG 1-2", townHallLevel:40, stageGold:71, stageTtg:0, stageDays:1.8, stagesInTier:1},
+  {order:221, building:"War Academy", level:"TG 1-3", townHallLevel:40, stageGold:71, stageTtg:0, stageDays:1.8, stagesInTier:1},
+  {order:222, building:"War Academy", level:"TG 1-4", townHallLevel:40, stageGold:71, stageTtg:0, stageDays:1.8, stagesInTier:1},
+  {order:223, building:"War Academy", level:"TG 2", townHallLevel:40, stageGold:71, stageTtg:0, stageDays:1.8, stagesInTier:1},
+  {order:224, building:"War Academy", level:"TG 2-1", townHallLevel:45, stageGold:107, stageTtg:0, stageDays:2.2, stagesInTier:1},
+  {order:225, building:"War Academy", level:"TG 2-2", townHallLevel:45, stageGold:107, stageTtg:0, stageDays:2.2, stagesInTier:1},
+  {order:226, building:"War Academy", level:"TG 2-3", townHallLevel:45, stageGold:107, stageTtg:0, stageDays:2.2, stagesInTier:1},
+  {order:227, building:"War Academy", level:"TG 2-4", townHallLevel:45, stageGold:107, stageTtg:0, stageDays:2.2, stagesInTier:1},
+  {order:228, building:"War Academy", level:"TG 3", townHallLevel:45, stageGold:107, stageTtg:0, stageDays:2.2, stagesInTier:1},
+  {order:229, building:"War Academy", level:"TG 3-1", townHallLevel:50, stageGold:126, stageTtg:0, stageDays:2.4, stagesInTier:1},
+  {order:230, building:"War Academy", level:"TG 3-2", townHallLevel:50, stageGold:126, stageTtg:0, stageDays:2.4, stagesInTier:1},
+  {order:231, building:"War Academy", level:"TG 3-3", townHallLevel:50, stageGold:126, stageTtg:0, stageDays:2.4, stagesInTier:1},
+  {order:232, building:"War Academy", level:"TG 3-4", townHallLevel:50, stageGold:126, stageTtg:0, stageDays:2.4, stagesInTier:1},
+  {order:233, building:"War Academy", level:"TG 4", townHallLevel:50, stageGold:126, stageTtg:0, stageDays:2.4, stagesInTier:1},
+  {order:234, building:"War Academy", level:"TG 4-1", townHallLevel:55, stageGold:150, stageTtg:0, stageDays:2.8, stagesInTier:1},
+  {order:235, building:"War Academy", level:"TG 4-2", townHallLevel:55, stageGold:150, stageTtg:0, stageDays:2.8, stagesInTier:1},
+  {order:236, building:"War Academy", level:"TG 4-3", townHallLevel:55, stageGold:150, stageTtg:0, stageDays:2.8, stagesInTier:1},
+  {order:237, building:"War Academy", level:"TG 4-4", townHallLevel:55, stageGold:150, stageTtg:0, stageDays:2.8, stagesInTier:1},
+  {order:238, building:"War Academy", level:"TG 5", townHallLevel:55, stageGold:150, stageTtg:0, stageDays:2.8, stagesInTier:1},
+  {order:239, building:"War Academy", level:"TG 5-1", townHallLevel:60, stageGold:90, stageTtg:4, stageDays:3, stagesInTier:1},
+  {order:240, building:"War Academy", level:"TG 5-2", townHallLevel:60, stageGold:90, stageTtg:4, stageDays:3, stagesInTier:1},
+  {order:241, building:"War Academy", level:"TG 5-3", townHallLevel:60, stageGold:90, stageTtg:4, stageDays:3, stagesInTier:1},
+  {order:242, building:"War Academy", level:"TG 5-4", townHallLevel:60, stageGold:90, stageTtg:4, stageDays:3, stagesInTier:1},
+  {order:243, building:"War Academy", level:"TG 6", townHallLevel:60, stageGold:45, stageTtg:9, stageDays:3, stagesInTier:1},
+  {order:244, building:"War Academy", level:"TG 6-1", townHallLevel:65, stageGold:108, stageTtg:6, stageDays:3.6, stagesInTier:1},
+  {order:245, building:"War Academy", level:"TG 6-2", townHallLevel:65, stageGold:108, stageTtg:6, stageDays:3.6, stagesInTier:1},
+  {order:246, building:"War Academy", level:"TG 6-3", townHallLevel:65, stageGold:108, stageTtg:6, stageDays:3.6, stagesInTier:1},
+  {order:247, building:"War Academy", level:"TG 6-4", townHallLevel:65, stageGold:108, stageTtg:6, stageDays:3.6, stagesInTier:1},
+  {order:248, building:"War Academy", level:"TG 7", townHallLevel:65, stageGold:54, stageTtg:13, stageDays:3.6, stagesInTier:1},
+  {order:249, building:"War Academy", level:"TG 7-1", townHallLevel:70, stageGold:108, stageTtg:9, stageDays:4, stagesInTier:1},
+  {order:250, building:"War Academy", level:"TG 7-2", townHallLevel:70, stageGold:108, stageTtg:9, stageDays:4, stagesInTier:1},
+  {order:251, building:"War Academy", level:"TG 7-3", townHallLevel:70, stageGold:108, stageTtg:9, stageDays:4, stagesInTier:1},
+  {order:252, building:"War Academy", level:"TG 7-4", townHallLevel:70, stageGold:108, stageTtg:9, stageDays:4, stagesInTier:1},
+  {order:253, building:"War Academy", level:"TG 8", townHallLevel:70, stageGold:54, stageTtg:18, stageDays:4, stagesInTier:1}
 ];
 
 // GATING_BUILDINGS are the buildings assumed to always finish together as
@@ -3907,6 +3955,12 @@ var UPGRADE_QUEUE = [
 // UPGRADE_QUEUE itself (not hand-maintained) so it can never drift out of
 // sync with the data above.
 var GATING_BUILDINGS = {"Town Center":true, "Embassy":true, "Stable":true, "Barracks":true, "Range":true};
+// Buildings a player's level doesn't report directly, ASSUMED to keep pace
+// with their Town Center: every row of theirs at or below the player's
+// town_hall_level is treated as already built. Kept out of
+// GATING_BUILDINGS so they don't shift LEVEL_BASELINE_ORDER (which would
+// change how Command Center/Infirmary are counted for TC 56+ players).
+var KEEPS_PACE_BUILDINGS = {"War Academy":true};
 var LEVEL_BASELINE_ORDER = {};
 (function buildLevelBaselineOrder(){
   for(var i=0; i<UPGRADE_QUEUE.length; i++){
@@ -3953,19 +4007,33 @@ var CONSTRUCTION_SPEED_BONUS_PCT = 121.6;
 var CONSTRUCTION_SPEED_DIVISOR = 1 + (CONSTRUCTION_SPEED_BONUS_PCT / 100);
 var DOUBLE_TIME_DECREE_MULTIPLIER = 0.8; // -20% Construction Time Reduction
 
-function msCalcConstructionPts(townHallLevel, truegoldAvailable, speedupDaysAvailable){
+var TRUEGOLD_PTS = 2000;
+var TEMPERED_TRUEGOLD_PTS = 30000;
+
+function msCalcConstructionPts(townHallLevel, truegoldAvailable, speedupDaysAvailable, temperedTruegoldAvailable){
   var EPS = 1e-9;
   var startOrder = msBaselineOrderForLevel(townHallLevel);
+  var playerLevel = parseInt(townHallLevel, 10) || 0;
+  // Highest Town Center level built so far (the player's own, then
+  // whatever the simulation itself finishes). A keeps-pace row above it
+  // can't be started yet.
+  var reachedLevel = playerLevel;
   var remainingGold = Math.max(0, parseFloat(truegoldAvailable) || 0);
+  var remainingTtg = Math.max(0, parseFloat(temperedTruegoldAvailable) || 0);
   var remainingDays = Math.max(0, parseFloat(speedupDaysAvailable) || 0);
-  var totalGoldSpent = 0, totalDaysSpent = 0;
+  var totalGoldSpent = 0, totalTtgSpent = 0, totalDaysSpent = 0;
 
   for(var i=0; i<UPGRADE_QUEUE.length; i++){
     var step = UPGRADE_QUEUE[i];
     if(step.order <= startOrder) continue;
+    if(KEEPS_PACE_BUILDINGS[step.building]){
+      if(step.townHallLevel <= playerLevel) continue; // assumed already built
+      if(step.townHallLevel > reachedLevel) break;    // needs a TC tier not built yet
+    }
 
     var stagesInTier = step.stagesInTier;
     var stageGold = step.stageGold;
+    var stageTtg = step.stageTtg || 0;
     // Raw CSV-sourced build time, reduced by the additive speed-up pool
     // and then by Double Time Decree's separate flat reduction, to
     // reflect the real-world time (and therefore real speedup-days)
@@ -3974,29 +4042,36 @@ function msCalcConstructionPts(townHallLevel, truegoldAvailable, speedupDaysAvai
 
 
     var maxByGold = (stageGold > 0) ? Math.floor((remainingGold + EPS) / stageGold) : stagesInTier;
+    var maxByTtg = (stageTtg > 0) ? Math.floor((remainingTtg + EPS) / stageTtg) : stagesInTier;
     var maxByDays = (stageDays > 0) ? Math.floor((remainingDays + EPS) / stageDays) : stagesInTier;
-    var wholeStages = Math.max(0, Math.min(maxByGold, maxByDays, stagesInTier));
+    var wholeStages = Math.max(0, Math.min(maxByGold, maxByTtg, maxByDays, stagesInTier));
 
     var goldUsedWhole = wholeStages * stageGold;
+    var ttgUsedWhole = wholeStages * stageTtg;
     var daysUsedWhole = wholeStages * stageDays;
     remainingGold -= goldUsedWhole;
+    remainingTtg -= ttgUsedWhole;
     remainingDays -= daysUsedWhole;
     totalGoldSpent += goldUsedWhole;
+    totalTtgSpent += ttgUsedWhole;
     totalDaysSpent += daysUsedWhole;
 
     if(wholeStages < stagesInTier){
-      if(remainingGold + EPS >= stageGold){
+      if(remainingGold + EPS >= stageGold && remainingTtg + EPS >= stageTtg){
         totalGoldSpent += stageGold;
         remainingGold -= stageGold;
+        totalTtgSpent += stageTtg;
+        remainingTtg -= stageTtg;
         var partialDays = Math.min(remainingDays, stageDays);
         totalDaysSpent += partialDays;
         remainingDays -= partialDays;
       }
       break; // stop entirely at the first step that can't fully complete
     }
+    if(step.building === "Town Center" && step.townHallLevel > reachedLevel) reachedLevel = step.townHallLevel;
   }
 
-  return Math.round((totalGoldSpent * 2000) + (totalDaysSpent * 1440 * 30));
+  return Math.round((totalGoldSpent * TRUEGOLD_PTS) + (totalTtgSpent * TEMPERED_TRUEGOLD_PTS) + (totalDaysSpent * 1440 * 30));
 }
 
 // All applicants use an assumed 200% profile Training Speed, including
