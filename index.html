@@ -353,14 +353,6 @@
     50%{background:rgba(79,209,197,.19);box-shadow:inset 3px 0 0 var(--teal),inset 0 0 0 1px rgba(79,209,197,.52),0 0 12px rgba(79,209,197,.12);}
   }
   .ms-row.ms-slot-candidate{opacity:1;animation:ms-slot-candidate-pulse 1.45s ease-in-out infinite;}
-  .ms-choose-cell{display:flex;align-items:center;justify-content:center;min-width:0;}
-  .ms-choose-btn{
-    width:100%;min-height:28px;padding:5px 4px;border:1px solid rgba(79,209,197,.55);border-radius:7px;
-    background:rgba(79,209,197,.14);color:var(--teal);font:inherit;font-size:9px;font-weight:700;
-    line-height:1;cursor:pointer;touch-action:manipulation;
-  }
-  .ms-choose-btn:hover{background:rgba(79,209,197,.24);border-color:var(--teal);}
-  .ms-choose-btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
   .ms-row.current{background:rgba(95,191,122,0.14);border-left:2px solid var(--green);}
   .ms-row.current .ms-time{color:var(--green);font-weight:700;}
   .ms-time{font-family:'JetBrains Mono',monospace;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:clip;}
@@ -4784,11 +4776,6 @@ function msCalcD4Pts(sp, t9, t10, t11, speedPct){
 }
 
 function msAvail(p, i, key){
-  var forcedApplies=p.forcedSlot !== null && p.forcedSlot !== undefined &&
-    (!p.forcedSlotKey || p.forcedSlotKey===key);
-  if(forcedApplies){
-    return Number(p.forcedSlot) === Number(i);
-  }
   var s = i*30, e = s+30;
   function ov(ws, we){
     if(ws===null || we===null) return false;
@@ -4823,22 +4810,8 @@ function msDirectPlaceBySlot(players,key){
   var csvPlayers = players.filter(function(p){ return p.source !== 'apply'; });
   var applyPlayers = players.filter(function(p){ return p.source === 'apply'; });
 
-  // A viewer's explicit Choose action is the one exception to imported-slot
-  // precedence: place forced players first so they can replace a lower
-  // scoring occupant selected through the comparison UI.
-  var forcedPlayers = players.filter(function(p){
-    return p.forcedSlot !== null && p.forcedSlot !== undefined &&
-      (!p.forcedSlotKey || p.forcedSlotKey===key) &&
-      Number(p.forcedSlot) >= 0 && Number(p.forcedSlot) < MS_SLOTS;
-  }).sort(function(a,b){ return (b.pts||0)-(a.pts||0) || a.entryOrder-b.entryOrder; });
-  forcedPlayers.forEach(function(p){
-    var slot = Number(p.forcedSlot);
-    if(!sc[slot]) sc[slot] = p;
-  });
-
   csvPlayers.forEach(function(p){
-    var isForced=p.forcedSlot!==null&&p.forcedSlot!==undefined&&(!p.forcedSlotKey||p.forcedSlotKey===key);
-    if(!isForced&&p.slotIndex !== null && p.slotIndex !== undefined && p.slotIndex >= 0 && p.slotIndex < MS_SLOTS && !sc[p.slotIndex]){
+    if(p.slotIndex !== null && p.slotIndex !== undefined && p.slotIndex >= 0 && p.slotIndex < MS_SLOTS && !sc[p.slotIndex]){
       sc[p.slotIndex] = p;
     }
   });
@@ -6653,12 +6626,9 @@ function msColsFor(key){
 
 function msGridStyle(key){
   var delCol = EDIT_MODE ? (msIsNarrow() ? ' 18px' : ' 22px') : '';
-  // The Choose column only takes space while a NO SLOT player is selected
-  // (msApplyNoSlotHighlights sets --ms-choose-w), so the other columns spread evenly.
-  var chooseCol = 'var(--ms-choose-w,0px)';
   return msColsFor(key).map(function(c){
     return c.w.indexOf('fr') !== -1 ? 'minmax(0,' + c.w + ')' : c.w;
-  }).join(' ') + ' ' + chooseCol + delCol;
+  }).join(' ') + delCol;
 }
 
 function msTcValueHtml(p){
@@ -6674,10 +6644,6 @@ function msRequestedHtml(p,key){
   if(p.s1!=null&&p.e1!=null)ranges.push(msMinToTime(p.s1)+'–'+msMinToTime(p.e1));
   if(p.s2!=null&&p.e2!=null)ranges.push(msMinToTime(p.s2)+'–'+msMinToTime(p.e2));
   var text=ranges.length?ranges.join(', '):'—';
-  var forced=Number(p.forcedSlot);
-  if(p.forcedSlot!==null&&p.forcedSlot!==undefined&&(!p.forcedSlotKey||p.forcedSlotKey===key)&&isFinite(forced)&&forced>=0&&forced<MS_SLOTS){
-    text+=' (forced → '+msSlotLabelShort(forced)+')';
-  }
   return '<span class="ms-requested" title="'+msEsc(text)+'">'+msEsc(text)+'</span>';
 }
 
@@ -6739,59 +6705,15 @@ function msSafePts(value){
 function msApplyNoSlotHighlights(root,key){
   if(!root)return;
   var selected=msNoSlotHighlightByKey[key]||null;
-  root.style.setProperty('--ms-choose-w',selected?(msIsNarrow()?'52px':'62px'):'0px');
   root.querySelectorAll('.ms-row[data-slot]').forEach(function(row){
     var hasLowerPotential=!!selected&&msSafePts(row.getAttribute('data-pts'))<selected.pts;
-    // The visual recommendation always remains score-based. Editors may
-    // still override that recommendation by choosing any real slot.
-    var canChoose=!!selected&&(hasLowerPotential||EDIT_MODE);
     row.classList.toggle('ms-slot-candidate',hasLowerPotential);
-    var chooseCell=row.querySelector('.ms-choose-cell');
-    if(chooseCell){
-      chooseCell.innerHTML=canChoose
-        ? '<button type="button" class="ms-choose-btn" data-ms-choose-key="'+msEsc(key)+'" data-ms-choose-slot="'+msEsc(row.getAttribute('data-slot'))+'">Choose</button>'
-        : '';
-    }
   });
   root.querySelectorAll('.ms-row.noslot[data-pid]').forEach(function(row){
     var active=!!selected&&String(row.getAttribute('data-pid'))===String(selected.pid);
     row.classList.toggle('ms-noslot-selected',active);
     row.setAttribute('aria-pressed',active?'true':'false');
   });
-}
-
-function msStoredPlayerForForcedSlot(key,pid){
-  function find(list){
-    return (list||[]).find(function(p){return String(p.id)===String(pid);})||null;
-  }
-  if(key==='d4cm')return find(msPlayers.d4)||find(msPlayers.d4cm);
-  return find(msPlayers[key]);
-}
-
-function msRerenderSchedulerViews(key){
-  if(msCurrentRenderedKey===key&&document.getElementById('msBody'))msRenderBody(key);
-  if(typeof kaCurrentRenderedKey!=='undefined'&&kaCurrentRenderedKey===key)renderKingApptView();
-}
-
-function msChooseForcedSlot(key,slot){
-  var selected=msNoSlotHighlightByKey[key];
-  slot=Number(slot);
-  if(!selected||!isFinite(slot)||slot<0||slot>=MS_SLOTS){
-    flag('That slot is no longer available to choose.');
-    return;
-  }
-  var player=msStoredPlayerForForcedSlot(key,selected.pid);
-  if(!player){
-    flag('Could not find that player record.');
-    return;
-  }
-  player.forcedSlot=slot;
-  player.forcedSlotKey=key;
-  msNoSlotHighlightByKey[key]=null;
-  msRecalcAll();
-  msSyncAndSave();
-  msRerenderSchedulerViews(key);
-  flag((player.name||'Player')+' assigned to '+msSlotLabelShort(slot)+' UTC.');
 }
 
 function msRefreshNoSlotHighlights(key){
@@ -6801,15 +6723,6 @@ function msRefreshNoSlotHighlights(key){
 
 function msWireNoSlotHighlights(root,key){
   if(!root)return;
-  if(!root._msChooseListener){
-    root.addEventListener('click',function(event){
-      var btn=event.target&&event.target.closest?event.target.closest('[data-ms-choose-slot]'):null;
-      if(!btn)return;
-      event.stopPropagation();
-      msChooseForcedSlot(btn.getAttribute('data-ms-choose-key'),btn.getAttribute('data-ms-choose-slot'));
-    });
-    root._msChooseListener=true;
-  }
   root.querySelectorAll('.ms-row.noslot[data-pid]').forEach(function(row){
     function toggleSelection(event){
       if(event&&event.target&&event.target.closest&&event.target.closest('button'))return;
@@ -6882,7 +6795,6 @@ function msRenderBody(key){
   html += '<div class="ms-list">';
   html += '<div class="ms-head-row" style="grid-template-columns:' + gridStyle + '">';
   cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:center"':'') + '>' + c.h + '</span>'; });
-  html += '<span aria-hidden="true"></span>';
   if(EDIT_MODE) html += '<span></span>';
   html += '</div>';
 
@@ -6898,7 +6810,6 @@ function msRenderBody(key){
       rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" data-pts="0" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time notranslate" translate="no">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
         cols.slice(2).map(function(){ return '<span></span>'; }).join('') +
-        '<span class="ms-choose-cell"></span>' +
         (EDIT_MODE ? '<span></span>' : '') + '</div>';
     }
   }
@@ -7398,7 +7309,6 @@ function msRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var timeInner = isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : ('<span class="notranslate" translate="no">' + timeLabel + '</span>');
   var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' + msNameCellHtml(p, key);
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
-  cellsHtml += '<span class="ms-choose-cell"></span>';
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '" data-carried="' + (p.carried ? '1' : '0') + '">\u00d7</button>';
   }
@@ -7655,12 +7565,9 @@ function kaActiveKey(){
 
 function kaGridStyle(key){
   var delCol = EDIT_MODE ? (msIsNarrow() ? ' 18px' : ' 22px') : '';
-  // The Choose column only takes space while a NO SLOT player is selected
-  // (msApplyNoSlotHighlights sets --ms-choose-w), so the other columns spread evenly.
-  var chooseCol = 'var(--ms-choose-w,0px)';
   return msColsFor(key).map(function(c){
     return c.w.indexOf('fr') !== -1 ? 'minmax(0,' + c.w + ')' : c.w;
-  }).join(' ') + ' ' + chooseCol + delCol;
+  }).join(' ') + delCol;
 }
 
 function kaApplySlotHtml(key){
@@ -7687,7 +7594,6 @@ function kaRowHtml(key, gridStyle, timeLabel, p, isNoSlot, slotIdx, isCurrent){
   var timeInner = isNoSlot ? '<span class="ms-noslot-tag">NO SLOT</span>' : ('<span class="notranslate" translate="no">' + timeLabel + '</span>');
   var cellsHtml = '<span class="ms-time">' + timeInner + '</span>' + msNameCellHtml(p, key);
   vals.forEach(function(v){ cellsHtml += '<span class="ms-val">' + v + '</span>'; });
-  cellsHtml += '<span class="ms-choose-cell"></span>';
   if(EDIT_MODE){
     cellsHtml += '<button class="ms-del" data-pid="' + p.id + '">\u00d7</button>';
   }
@@ -7742,7 +7648,6 @@ function renderKingApptView(){
   html += '<div class="ms-list">';
   html += '<div class="ms-head-row" style="grid-template-columns:' + gridStyle + '">';
   cols.forEach(function(c, i){ html += '<span' + (i>1 ? ' style="text-align:center"':'') + '>' + c.h + '</span>'; });
-  html += '<span aria-hidden="true"></span>';
   if(EDIT_MODE) html += '<span></span>';
   html += '</div>';
 
@@ -7758,7 +7663,6 @@ function renderKingApptView(){
       rows += '<div class="ms-row em' + (isCurrent ? ' current' : '') + '" data-slot="' + i + '" data-pts="0" style="grid-template-columns:' + gridStyle + '">' +
         '<span class="ms-time notranslate" translate="no">' + t + '</span><span class="ms-name">\u2014 open \u2014</span>' +
         cols.slice(2).map(function(){ return '<span></span>'; }).join('') +
-        '<span class="ms-choose-cell"></span>' +
         (EDIT_MODE ? '<span></span>' : '') + '</div>';
     }
   }
