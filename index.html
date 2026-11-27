@@ -998,14 +998,13 @@
   }
   .today-upcoming-date span{color:var(--text-hi);font-weight:600;}
   .today-upcoming-icon{font-size:30px;margin-top:10px;line-height:1;}
-  .today-upcoming-priorities{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
-  .today-upcoming-priority{
-    display:inline-flex;align-items:center;gap:4px;padding:2px 7px 2px 3px;border-radius:7px;
+  .today-upcoming-priorities{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .today-upcoming-priorities:empty{display:none;}
+  .today-upcoming-priority-icn{
+    width:22px;height:22px;border-radius:6px;object-fit:contain;
     background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);
-    font-size:11px;color:var(--text-mid);line-height:1.2;
+    padding:2px;
   }
-  .today-upcoming-priority .item-icn.today-upcoming-priority-icn{width:20px;height:20px;vertical-align:0;}
-  .today-upcoming-priority-none{font-size:11.5px;color:var(--text-dim);}
   .today-upcoming-main{flex:1;min-width:0;}
   .today-upcoming-phase{font-size:13.5px;color:var(--text-hi);font-weight:600;}
   .today-upcoming-detail{margin-top:8px;}
@@ -3512,18 +3511,33 @@ var DAY_PRIORITY_ITEMS = {
   'Troop training': ['training_speedup','charms'],
   'Power boost': ['intel','learning_speedup','gathering','advanced_taming_mark','common_taming_mark','growth_manual','nutrient_potion','promotion_medallion','mithril','widget','forgehammer','governor_gear']
 };
-function dayItemFocusText(phase){
-  var items = DAY_PRIORITY_ITEMS[phase];
-  if(!items) return null;
-  if(!items.length) return 'No items are saved for today. Hold everything for the day it is assigned to.';
-  var names = items.map(function(k){ return ITEM_LABELS[k] || k; });
-  return 'Use today: ' + names.join(', ') + '.';
-}
-// The FOCUS TODAY paragraph of a day summary always shows the item plan above.
+// Rewrites the bullets under the summary's "Item Focus:" heading (or the
+// older FOCUS TODAY paragraph) so they always match DAY_PRIORITY_ITEMS.
 function summaryWithItemFocus(summary, phase){
-  var focus = dayItemFocusText(phase);
-  if(!focus) return summary;
-  return String(summary || '').replace(/(^|\n)(FOCUS TODAY[^\n]*\n)([\s\S]*?)(?=\n\s*\n|$)/, function(m, pre, head){ return pre + head + focus; });
+  var items = DAY_PRIORITY_ITEMS[phase];
+  if(!items) return summary;
+  var names = items.length ? items.map(function(k){ return ITEM_LABELS[k] || k; }) : ['None today. Hold items for their assigned day.'];
+  var lines = String(summary || '').split('\n');
+  for(var i = 0; i < lines.length; i++){
+    var s = lines[i].trim();
+    if(/^(#{1,3}\s+)?(\*\*)?\s*item focus\s*:?\s*(\*\*)?\s*:?$/i.test(s)){
+      var j = i + 1;
+      while(j < lines.length && (!lines[j].trim() || /^[-\u2022]\s+/.test(lines[j].trim()))){
+        if(!lines[j].trim() && j + 1 < lines.length && !/^[-\u2022]\s+/.test(lines[j + 1].trim()) && j > i + 1) break;
+        j++;
+      }
+      while(j > i + 1 && !lines[j - 1].trim()) j--;
+      lines.splice.apply(lines, [i + 1, j - i - 1].concat(names.map(function(n){ return '- ' + n; })));
+      return lines.join('\n');
+    }
+    if(/^FOCUS TODAY/i.test(s)){
+      var k = i + 1;
+      while(k < lines.length && lines[k].trim()) k++;
+      lines.splice(i + 1, k - i - 1, names.join(', ') + '.');
+      return lines.join('\n');
+    }
+  }
+  return summary;
 }
 
 function todayListHtml(){
@@ -3577,10 +3591,10 @@ function todayListHtml(){
     var priorities = DAY_PRIORITY_ITEMS[d.phase];
     if(priorities){
       html += '<div class="today-upcoming-priorities">';
-      if(!priorities.length) html += '<span class="today-upcoming-priority-none">No items today. Hold them for their day.</span>';
       priorities.forEach(function(key){
+        var src = ITEM_ICONS[key];
         var label = ITEM_LABELS[key] || key;
-        html += '<span class="today-upcoming-priority">' + itemIconHtml(key, label, 'today-upcoming-priority-icn') + '<span>' + msEsc(label) + '</span></span>';
+        if(src) html += '<img class="today-upcoming-priority-icn" src="' + src + '" alt="' + msEsc(label) + '" title="' + msEsc(label) + '">';
       });
       html += '</div>';
     }
