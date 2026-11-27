@@ -3943,9 +3943,10 @@ function msBaselineOrderForLevel(townHallLevel){
 // Fixed alliance-default speed loadout applied uniformly to every
 // applicant, rather than asking each one for their own personal speed
 // stats. Two genuinely separate mechanics stack here:
-//   1) Additive "Construction Speed Up %" bonuses: Base 81.6% + Wolf Pet
-//      Skill 15% + Chief Minister appointment 10% + Ground Works 10% +
-//      KvK Bonus 5% = 121.6% total, applied as base time / (1 + 121.6%).
+//   1) Additive "Construction Speed Up %" bonuses: Base 86.7% (Michael's
+//      profile Construction Speed, Nov 2026) + Wolf Pet Skill 15% + Chief
+//      Minister appointment 10% + Ground Works 10% + KvK Bonus 5% = 126.7%
+//      total, applied as base time / (1 + 126.7%).
 //   2) Double Time Decree is a SEPARATE flat -20% time reduction (not an
 //      additive "Speed Up %" — the source tool labels it differently and
 //      excludes it from the 121.6% figure), applied as a second,
@@ -3954,7 +3955,7 @@ function msBaselineOrderForLevel(townHallLevel){
 // This only affects TIME — Saul's skill also reduces Truegold/RSS cost,
 // which is a separate mechanic UPGRADE_QUEUE's stageGold doesn't model,
 // so that portion is intentionally left out here.
-var CONSTRUCTION_SPEED_BONUS_PCT = 121.6;
+var CONSTRUCTION_SPEED_BONUS_PCT = 126.7;
 var CONSTRUCTION_SPEED_DIVISOR = 1 + (CONSTRUCTION_SPEED_BONUS_PCT / 100);
 var DOUBLE_TIME_DECREE_MULTIPLIER = 0.8; // -20% Construction Time Reduction
 
@@ -3969,8 +3970,10 @@ var DOUBLE_TIME_DECREE_MULTIPLIER = 0.8; // -20% Construction Time Reduction
 //  - War Academy can't pass the player's current Town Center tier
 //    (WA TG N-1 .. TG N needs TC TG N), and stops at TG 5.
 //  - CSV upgrade/research times are base times. Construction uses the same
-//    speed bonuses as the path above. Research uses only War Academy's own
-//    Research Speed % plus RESEARCH_SPEED_BONUS_PCT (no personal stats).
+//    speed bonuses as the path above. Research uses RESEARCH_SPEED_BONUS_PCT
+//    (Michael's profile Research Speed, which already includes his War
+//    Academy at TG 1) plus whatever War Academy adds above TG 1's 0.5%.
+//    No Day 1 buff (Chief Minister, Double Time, pet) is applied to research.
 //  - Gold (the research currency) is never the limit.
 //  - Research speedups come out of the same Speedups (Days) pool.
 // Data: war_academy_upgrades.csv and war_academy_research.csv.
@@ -4267,7 +4270,7 @@ var WA_RESEARCH_ORDER = [
 // Truegold Cavalry, then everything left in the Infantry, Archer and
 // Cavalry trees, each step after its prerequisites.
 
-var RESEARCH_SPEED_BONUS_PCT = 0;
+var RESEARCH_SPEED_BONUS_PCT = 69.0;
 var TRUEGOLD_PTS = 2000;
 var TRUEGOLD_DUST_PTS = 1000;
 var SPEEDUP_PTS_PER_DAY = 1440 * 30;
@@ -4326,7 +4329,7 @@ function msSimResearch(state){
       if((done[r.tree + '|' + r.req[j][0]] || 0) < r.req[j][1]){ ok = false; break; }
     }
     if(!ok) continue;
-    var days = (r.hours / 24) / (1 + (RESEARCH_SPEED_BONUS_PCT + state.waResearchPct) / 100);
+    var days = (r.hours / 24) / (1 + (RESEARCH_SPEED_BONUS_PCT + state.waResearchPct - 0.5) / 100);
     if(state.dust + EPS >= r.dust && state.days + EPS >= days){
       state.dust -= r.dust; state.dustSpent += r.dust;
       state.days -= days; state.daysSpent += days; state.researchDaysSpent += days;
