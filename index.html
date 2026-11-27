@@ -1434,8 +1434,19 @@
           </div>
 
           <div class="ms-apply-field">
-            <label>Speedups (Days) *</label>
+            <label id="msApplySpeedupsLabel">Speedups (Days) *</label>
             <input type="text" inputmode="decimal" id="msApplySpeedups" placeholder="e.g. 20">
+          </div>
+
+          <div id="msApplySpTypedWrap" style="display:none;">
+            <div class="ms-apply-field">
+              <label>Construction Speedups (Days) *</label>
+              <input type="text" inputmode="decimal" id="msApplySpConstruction" placeholder="e.g. 20 (0 if none)">
+            </div>
+            <div class="ms-apply-field">
+              <label>Research Speedups (Days) *</label>
+              <input type="text" inputmode="decimal" id="msApplySpResearch" placeholder="e.g. 20 (0 if none)">
+            </div>
           </div>
 
           <div class="ms-apply-field" id="msApplyTruegoldWrap">
@@ -4001,7 +4012,9 @@ var DOUBLE_TIME_DECREE_MULTIPLIER = 0.8; // -20% Construction Time Reduction
 //    Bonus 5%, Fresh Ideas King Skill 10%) plus whatever War Academy adds
 //    above TG 1's 0.5%.
 //  - Gold (the research currency) is never the limit.
-//  - Research speedups come out of the same Speedups (Days) pool.
+//  - Speedups are entered as General, Construction and Research. Buildings
+//    and War Academy use Construction speedups, then General; research
+//    uses Research speedups, then whatever General is left.
 // Data: war_academy_upgrades.csv and war_academy_research.csv.
 var WA_UPGRADES = [
   {level:"TG 1-1", tcTier:2, waTier:null, stageGold:71, stageDays:1.8, researchSpeedPct:0.6},
@@ -4398,15 +4411,44 @@ function msSimResearch(state){
 
 // Full Day 1 simulation: War Academy, then research, then the construction
 // path. Returns the breakdown; msCalcConstructionPts returns just points.
+// Speedups come as {general, construction, research} days. A plain number
+// (applications from before the split) counts as all General.
+function msNormalizeSpeedups(sp){
+  var num = function(v){ return Math.max(0, parseFloat(v) || 0); };
+  if(sp && typeof sp === 'object') return {general:num(sp.general), construction:num(sp.construction), research:num(sp.research)};
+  return {general:num(sp), construction:0, research:0};
+}
+// A saved Day 1 application's speedups, in the shape above.
+function msDay1Speedups(p){
+  if(p.spGeneral !== undefined || p.spConstruction !== undefined || p.spResearch !== undefined){
+    return {general:p.spGeneral || 0, construction:p.spConstruction || 0, research:p.spResearch || 0};
+  }
+  return parseFloat(p.sp) || 0;
+}
+// Spends from a typed pool (Construction or Research speedups) first, then
+// General, and records how much of each went.
+function msSettleSpeedups(state, typed, available){
+  var used = available - state.days;
+  var fromTyped = Math.min(state.spLeft[typed], used);
+  state.spLeft[typed] -= fromTyped;
+  state.spLeft.general -= (used - fromTyped);
+  state.spUsed[typed] += fromTyped;
+  state.spUsed[typed === 'construction' ? 'generalOnConstruction' : 'generalOnResearch'] += used - fromTyped;
+}
+
 function msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, dustAvailable){
+  var spIn = msNormalizeSpeedups(speedupDaysAvailable);
   var state = {
     gold: Math.max(0, parseFloat(truegoldAvailable) || 0),
-    days: Math.max(0, parseFloat(speedupDaysAvailable) || 0),
+    days: 0,
+    spIn: spIn,
+    spLeft: {general:spIn.general, construction:spIn.construction, research:spIn.research},
+    spUsed: {construction:0, generalOnConstruction:0, research:0, generalOnResearch:0},
     dust: Math.max(0, parseFloat(dustAvailable) || 0),
     goldSpent: 0, daysSpent: 0, dustSpent: 0, researchDaysSpent: 0,
     goldConverted: 0, dustFromConversion: 0, steps: [],
     startGold: Math.max(0, parseFloat(truegoldAvailable) || 0),
-    startDays: Math.max(0, parseFloat(speedupDaysAvailable) || 0),
+    startDays: spIn.general + spIn.construction + spIn.research,
     startDust: Math.max(0, parseFloat(dustAvailable) || 0),
     waTier: 0, waLevel: 'none', waResearchPct: 0, waStarted: null,
     researchDone: {}, researchSteps: 0, researchStarted: null, t11Unlocked: []
@@ -4414,6 +4456,10 @@ function msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, 
   // A TC 55+ player is assumed to already have every building, War
   // Academy included, at max TG 5, so everything goes to research.
   state.allMaxed = (parseInt(townHallLevel, 10) || 0) >= MAX_TG5_LEVEL;
+  // Construction (buildings + War Academy) uses Construction speedups,
+  // then General.
+  var constructionPool = state.spLeft.construction + state.spLeft.general;
+  state.days = constructionPool;
   if(state.allMaxed){
     state.buildingsDone = true;
     state.tcLevelReached = MAX_TG5_LEVEL;
@@ -4430,8 +4476,14 @@ function msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, 
     msSimWarAcademy(state, msTcTierForLevel(tcLevelNow));
   }
   state.waGoldSpent = state.goldSpent - state.constructionGoldSpent;
+  msSettleSpeedups(state, 'construction', constructionPool);
   state.canConvert = state.buildingsDone && state.waTier >= 5;
+  // Research uses Research speedups, then whatever General is left.
+  var researchPool = state.spLeft.research + state.spLeft.general;
+  state.days = researchPool;
   msSimResearch(state);
+  msSettleSpeedups(state, 'research', researchPool);
+  state.days = state.spLeft.general + state.spLeft.construction + state.spLeft.research;
   state.pts = Math.round(state.goldSpent * TRUEGOLD_PTS + state.dustSpent * TRUEGOLD_DUST_PTS + state.daysSpent * SPEEDUP_PTS_PER_DAY);
   return state;
 }
@@ -4752,7 +4804,7 @@ function msRetrySchedulerTc(key,pid,rerender){
     p.tcLevel=tc;p.currentLevel=tc;p.levelSource='api-retry-'+result.source;
     p.avatarUrl=data&&data.avatar_url?data.avatar_url:null;
     p.allianceName=allianceName;
-    if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,parseFloat(p.sp)||0,p.dust||0);
+    if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,msDay1Speedups(p),p.dust||0);
     delete msTcRetrying[pid];delete msTcRetryErrors[pid];
     msRecalcAll();msSyncAndSave();rerender();
     flag('TC level updated for '+p.name+'.');
@@ -4775,7 +4827,7 @@ function msManualSchedulerPlayer(pid,rerender){
   if(!/^\d+$/.test(enteredTc)||parseInt(enteredTc,10)<=0){flag('Enter a valid TC level.');return;}
   var tc=parseInt(enteredTc,10);
   p.name=enteredName;p.tcLevel=tc;p.currentLevel=tc;p.levelSource='manual';
-  if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,parseFloat(p.sp)||0,p.dust||0);
+  if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,msDay1Speedups(p),p.dust||0);
   delete msTcRetryErrors[pid];
   msRecalcAll();msSyncAndSave();rerender();
   flag('Player details updated manually.');
@@ -5826,6 +5878,8 @@ function msOpenApplyModal(key){
   document.getElementById('msApplyManualTc').value = '';
   document.getElementById('msApplyManualWrap').style.display = 'none';
   document.getElementById('msApplySpeedups').value = '';
+  document.getElementById('msApplySpConstruction').value = '';
+  document.getElementById('msApplySpResearch').value = '';
   document.getElementById('msApplyTruegold').value = '';
   document.getElementById('msApplyDust').value = '';
   document.getElementById('msApplyT9').value = '';
@@ -5836,6 +5890,9 @@ function msOpenApplyModal(key){
   document.getElementById('msApplyAutoCalcHint').style.display = isConstruction ? 'block' : 'none';
   document.getElementById('msApplyTruegoldWrap').style.display = isNobleAdvisor ? 'none' : 'block';
   document.getElementById('msApplyDustWrap').style.display = isConstruction ? 'block' : 'none';
+  document.getElementById('msApplySpTypedWrap').style.display = isConstruction ? 'block' : 'none';
+  document.getElementById('msApplySpeedupsLabel').textContent = isConstruction ? 'General Speedups (Days) *' : 'Speedups (Days) *';
+  document.getElementById('msApplySpeedups').placeholder = isConstruction ? 'e.g. 20 (0 if none)' : 'e.g. 20';
   document.getElementById('msApplyT9Wrap').style.display = isNobleAdvisor ? 'block' : 'none';
   var check = document.getElementById('msApplyIdCheck');
   if(check){ check.textContent = ''; check.className = 'ms-apply-idcheck'; }
@@ -5870,8 +5927,12 @@ function msPrefillFromPriorApplication(kingshotId){
     input.value=String(value);changed=true;
   }
 
-  var speedupDays=parseFloat(prior.sp);
+  var speedupDays=prior.spGeneral!==undefined?prior.spGeneral:parseFloat(prior.sp);
   fillIfEmpty('msApplySpeedups',isNaN(speedupDays)?null:speedupDays);
+  if(key==='d1'){
+    fillIfEmpty('msApplySpConstruction',prior.spConstruction);
+    fillIfEmpty('msApplySpResearch',prior.spResearch);
+  }
   fillIfEmpty('msApplyTruegold',prior.tg);
   fillIfEmpty('msApplyDust',prior.dust);
   fillIfEmpty('msApplyT9',prior.t9);
@@ -5888,6 +5949,20 @@ function msPrefillFromPriorApplication(kingshotId){
 
   if(changed)flag('Previous application details filled in.');
   return changed;
+}
+
+// Day 1 (Dust field visible) asks for General, Construction and Research
+// speedups; every other position has one Speedups field.
+function msSpeedupFieldsError(spRaw, spcRaw, sprRaw, isDay1){
+  var fields = isDay1
+    ? [['General Speedups', spRaw], ['Construction Speedups', spcRaw], ['Research Speedups', sprRaw]]
+    : [['Speedups', spRaw]];
+  for(var i=0; i<fields.length; i++){
+    if(!fields[i][1]) return 'Please enter your ' + fields[i][0] + ' (Days)' + (isDay1 ? ', 0 if none.' : '.');
+    var v = parseFloat(fields[i][1]);
+    if(isNaN(v) || v < 0) return fields[i][0] + ' must be a positive number.';
+  }
+  return '';
 }
 
 function msApplyShowError(msg){
@@ -5945,6 +6020,8 @@ function msApplyGoToStep2(){
   var spRaw = document.getElementById('msApplySpeedups').value.trim();
   var tgRaw = document.getElementById('msApplyTruegold').value.trim();
   var dustRaw = document.getElementById('msApplyDust').value.trim();
+  var spcRaw = document.getElementById('msApplySpConstruction').value.trim();
+  var sprRaw = document.getElementById('msApplySpResearch').value.trim();
   var t9Raw = document.getElementById('msApplyT9').value.trim();
 
   // Required fields depend on the position (msOpenApplyModal toggles the
@@ -5959,9 +6036,9 @@ function msApplyGoToStep2(){
   var manualError=msManualPlayerError(kingshotId);
   if(manualError){msApplyShowError(manualError);return;}
 
-  if(!spRaw){ msApplyShowError('Please enter your Speedups (Days).'); return; }
+  var spTypedErr = msSpeedupFieldsError(spRaw, spcRaw, sprRaw, dustVisible);
+  if(spTypedErr){ msApplyShowError(spTypedErr); return; }
   var sp = parseFloat(spRaw);
-  if(isNaN(sp) || sp < 0){ msApplyShowError('Speedups must be a positive number.'); return; }
 
   if(truegoldVisible){
     if(!tgRaw){ msApplyShowError('Please enter your Truegold Quantity.'); return; }
@@ -5996,6 +6073,8 @@ function msSubmitApplication(){
   var spRaw = document.getElementById('msApplySpeedups').value.trim();
   var tgRaw = document.getElementById('msApplyTruegold').value.trim();
   var dustRaw = document.getElementById('msApplyDust').value.trim();
+  var spcRaw = document.getElementById('msApplySpConstruction').value.trim();
+  var sprRaw = document.getElementById('msApplySpResearch').value.trim();
   var t9Raw = document.getElementById('msApplyT9').value.trim();
 
   var truegoldVisible = document.getElementById('msApplyTruegoldWrap').style.display !== 'none';
@@ -6006,9 +6085,11 @@ function msSubmitApplication(){
   var manualError=msManualPlayerError(kingshotId);
   if(manualError){msSetApplyStep(1);msApplyShowError(manualError);return;}
 
-  if(!spRaw){ msSetApplyStep(1); msApplyShowError('Please enter your Speedups (Days).'); return; }
+  var spTypedErr = msSpeedupFieldsError(spRaw, spcRaw, sprRaw, dustVisible);
+  if(spTypedErr){ msSetApplyStep(1); msApplyShowError(spTypedErr); return; }
   var sp = parseFloat(spRaw);
-  if(isNaN(sp) || sp < 0){ msSetApplyStep(1); msApplyShowError('Speedups must be a positive number.'); return; }
+  var spc = dustVisible ? parseFloat(spcRaw) : 0;
+  var spr = dustVisible ? parseFloat(sprRaw) : 0;
 
   var tg = 0;
   if(truegoldVisible){
@@ -6068,11 +6149,12 @@ function msSubmitApplication(){
     // string-label collapsing needed.
     var currentLevel = resolvedTc ? parseInt(resolvedTc, 10) : 0;
     if(isNaN(currentLevel)) currentLevel = 0; // conservative fallback if level is unknown
-    p.sp = sp + 'd';
+    p.spGeneral = sp; p.spConstruction = spc; p.spResearch = spr;
+    p.sp = (Math.round((sp + spc + spr) * 100) / 100) + 'd';
     p.currentLevel = currentLevel;
     p.levelSource = lookup ? 'api' : (manual ? 'manual' : 'unknown-fallback');
     p.dust = dust;
-    p.pts = msCalcConstructionPts(currentLevel, tg, sp, dust);
+    p.pts = msCalcConstructionPts(currentLevel, tg, {general:sp, construction:spc, research:spr}, dust);
   } else if(key === 'd4'){
     // Noble Advisor — T11 isn't unlocked yet, so always pass t10:0, t11:false.
     // Assume the same profile Training Speed for everyone, including
@@ -6970,22 +7052,26 @@ function msBreakdownTable(title, groups, cols){
 }
 function msDay1BreakdownHtml(p){
   var level = p.currentLevel || p.tcLevel || 0;
-  var r = msSimulateDay1(level, p.tg || 0, parseFloat(p.sp) || 0, p.dust || 0);
+  var r = msSimulateDay1(level, p.tg || 0, msDay1Speedups(p), p.dust || 0);
   var tgPts = r.goldSpent * TRUEGOLD_PTS, dustPts = r.dustSpent * TRUEGOLD_DUST_PTS, spPts = r.daysSpent * SPEEDUP_PTS_PER_DAY;
   var row = function(label, qty, pts){
     return '<tr><td>' + label + '</td><td class="num">' + qty + '</td><td class="num">' + msFmtNumFull(pts) + '</td></tr>';
   };
   var html = '<div class="ms-bd-sub">TC ' + msEsc(level ? String(level) : 'unknown') + ' · has ' +
-    msFmtNumFull(r.startGold) + ' Truegold, ' + msFmtNumFull(r.startDust) + ' Dust, ' + msEsc(msFmtDays(r.startDays)) + ' speedups</div>';
+    msFmtNumFull(r.startGold) + ' Truegold, ' + msFmtNumFull(r.startDust) + ' Dust<br>Speedups: ' + msEsc(msFmtDays(r.spIn.general)) + ' general, ' +
+    msEsc(msFmtDays(r.spIn.construction)) + ' construction, ' + msEsc(msFmtDays(r.spIn.research)) + ' research</div>';
   html += '<div class="ms-bd-section"><div class="ms-bd-title">KvK Potential</div><table class="ms-bd-table"><thead><tr><th>Used</th><th class="num">Amount</th><th class="num">Points</th></tr></thead><tbody>' +
     row('Truegold (×' + msFmtNumFull(TRUEGOLD_PTS) + ')', msFmtNumFull(r.goldSpent), tgPts) +
     row('Truegold Dust (×' + msFmtNumFull(TRUEGOLD_DUST_PTS) + ')', msFmtNumFull(r.dustSpent), dustPts) +
     row('Speedups (30 per min)', msEsc(msFmtDays(r.daysSpent)), spPts) +
     '<tr class="ms-bd-total"><td>Total</td><td></td><td class="num">' + msFmtNumFull(r.pts) + '</td></tr></tbody></table>';
   html += '<div class="ms-bd-note">Speedups: ' + msEsc(msFmtDays(r.constructionDaysSpent)) + ' buildings, ' +
-    msEsc(msFmtDays(r.daysSpent - r.constructionDaysSpent - r.researchDaysSpent)) + ' War Academy, ' + msEsc(msFmtDays(r.researchDaysSpent)) + ' research.' +
+    msEsc(msFmtDays(r.daysSpent - r.constructionDaysSpent - r.researchDaysSpent)) + ' War Academy, ' + msEsc(msFmtDays(r.researchDaysSpent)) + ' research. ' +
+    'Construction used ' + msEsc(msFmtDays(r.spUsed.construction)) + ' construction + ' + msEsc(msFmtDays(r.spUsed.generalOnConstruction)) + ' general; research used ' +
+    msEsc(msFmtDays(r.spUsed.research)) + ' research + ' + msEsc(msFmtDays(r.spUsed.generalOnResearch)) + ' general.' +
     (r.goldConverted ? ' Includes ' + msFmtNumFull(r.goldConverted) + ' Truegold converted to ' + msFmtNumFull(r.dustFromConversion) + ' Dust (converted Truegold scores nothing on its own).' : '') +
-    ' Left over: ' + msFmtNumFull(Math.floor(r.gold + 1e-9)) + ' Truegold, ' + msFmtNumFull(Math.floor(r.dust + 1e-9)) + ' Dust, ' + msEsc(msFmtDays(r.days)) + ' speedups.</div>';
+    ' Left over: ' + msFmtNumFull(Math.floor(r.gold + 1e-9)) + ' Truegold, ' + msFmtNumFull(Math.floor(r.dust + 1e-9)) + ' Dust, ' +
+    msEsc(msFmtDays(r.spLeft.general)) + ' general, ' + msEsc(msFmtDays(r.spLeft.construction)) + ' construction and ' + msEsc(msFmtDays(r.spLeft.research)) + ' research speedups.</div>';
   if(Math.round(p.pts || 0) !== r.pts){
     html += '<div class="ms-bd-note warn">The schedule shows ' + msFmtNumFull(p.pts || 0) + ', worked out when they applied. The numbers here use the current calculator.</div>';
   }
