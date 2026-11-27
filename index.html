@@ -378,6 +378,7 @@
   .ms-bd-table td{padding:5px 6px;border-bottom:1px solid var(--glass-border);vertical-align:top;}
   .ms-bd-table .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
   .ms-bd-table .nowrap{white-space:nowrap;}
+  .ms-bd-table .num.ctr{text-align:center;}
   @media (max-width:480px){.ms-bd-modal{padding:18px 14px;}.ms-bd-table{font-size:12px;}.ms-bd-table td,.ms-bd-table th{padding:5px 4px;}}
   .ms-bd-total td{font-weight:700;border-bottom:none;}
   .ms-bd-table tr.has-rss td{border-bottom:none;}
@@ -441,7 +442,10 @@
   .ms-head-row .item-icn{vertical-align:middle;margin:-4px 0;}
   .score-icn{flex:0 0 22px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;align-self:center;}
   .score-icn .item-icn{width:22px;height:22px;vertical-align:0;}
-  .ms-bd-rss-item{white-space:nowrap;}
+  .ms-bd-rss-pills{display:flex;flex-wrap:wrap;gap:4px;}
+  .ms-bd-rss-item{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;padding:2px 7px 2px 3px;border-radius:7px;
+    background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);font-size:11.5px;color:var(--text-mid);line-height:1.2;font-variant-numeric:tabular-nums;}
+  .ms-bd-rss-item .item-icn.sm{width:18px;height:18px;vertical-align:0;}
   .ms-current-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:0;}
   .ms-current-stat{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:7px 8px;min-width:0;}
   .ms-current-stat-label{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -7240,7 +7244,7 @@ function msBreakdownLevelText(g, isResearch){
 }
 var MS_RSS_TYPES = [['bread','Bread'],['wood','Wood'],['stone','Stone'],['iron','Iron']];
 function msRssText(g){
-  return MS_RSS_TYPES.map(function(t){ return '<span class="ms-bd-rss-item">' + itemIconHtml(t[0], t[1], 'sm') + ' ' + msFmtPower(g[t[0]]) + '</span>'; }).join(' \u00b7 ');
+  return '<div class="ms-bd-rss-pills">' + MS_RSS_TYPES.map(function(t){ return '<span class="ms-bd-rss-item">' + itemIconHtml(t[0], t[1], 'sm') + '<span>' + msFmtPower(g[t[0]]).replace(/\.00(?=[KMB])/, '').replace(/(\.\d)0(?=[KMB])/, '$1') + '</span></span>'; }).join('') + '</div>';
 }
 // Bread/Wood/Stone/Iron totals by section (costs from
 // building_upgrade_costs.csv, war_academy_upgrades.csv and
@@ -7256,11 +7260,11 @@ function msBreakdownRssHtml(r){
   });
   var row = function(label, o, cls){
     return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + label + '</td>' + MS_RSS_TYPES.map(function(t){
-      return '<td class="num">' + msFmtPower(o[t[0]]) + '</td>';
+      return '<td class="num ctr">' + msFmtPower(o[t[0]]) + '</td>';
     }).join('') + '</tr>';
   };
   var html = '<div class="ms-bd-section"><div class="ms-bd-title">Resources used</div><table class="ms-bd-table"><thead><tr><th></th>' +
-    MS_RSS_TYPES.map(function(t){ return '<th class="num">' + itemIconHtml(t[0], t[1]) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    MS_RSS_TYPES.map(function(t){ return '<th class="num ctr">' + itemIconHtml(t[0], t[1]) + '</th>'; }).join('') + '</tr></thead><tbody>' +
     row('Buildings', sums.building) + row('War Academy', sums.wa) + row('Research', sums.research) + row('Total', sums.total, 'ms-bd-total') + '</tbody></table>';
   return html + '</div>';
 }
@@ -7268,7 +7272,7 @@ function msBreakdownRssHtml(r){
 function msBreakdownTable(title, groups, cols){
   if(!groups.length) return '';
   var html = '<div class="ms-bd-section"><div class="ms-bd-title">' + msEsc(title) + '</div><table class="ms-bd-table"><thead><tr>';
-  var cls = function(c){ return c.num ? ' class="num"' : (c.nowrap ? ' class="nowrap"' : ''); };
+  var cls = function(c){ return c.num ? (c.icon ? ' class="num ctr"' : ' class="num"') : (c.nowrap ? ' class="nowrap"' : ''); };
   cols.forEach(function(c){ html += '<th' + cls(c) + '>' + (c.icon ? itemIconHtml(c.icon, c.h) : msEsc(c.h)) + '</th>'; });
   html += '</tr></thead><tbody>';
   groups.forEach(function(g){
