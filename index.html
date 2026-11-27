@@ -3962,8 +3962,11 @@ var DOUBLE_TIME_DECREE_MULTIPLIER = 0.8; // -20% Construction Time Reduction
 // --- Day 1: War Academy + War Academy research --------------------------
 // Day 1 combines construction and research in the same 30-minute slot.
 // Assumed order (from the alliance's plan): upgrade War Academy as far as
-// Truegold allows (up to TG 5), then research with Truegold Dust, then put
-// any Truegold left into the regular construction path above.
+// Truegold allows (up to TG 5), convert all remaining Truegold to Truegold
+// Dust (10 Truegold -> 13 Dust, whole batches only), then research with the
+// Dust. Converted Truegold scores nothing itself; only Dust spent on
+// research scores. The regular construction path above only gets the few
+// Truegold left over from rounding to batches of 10.
 // ASSUMPTIONS (guesses, adjust if wrong):
 //  - Every applicant's War Academy starts at TG 1 (just unlocked) with no
 //    War Academy research done yet; their level only reports Town Center.
@@ -4274,6 +4277,8 @@ var RESEARCH_SPEED_BONUS_PCT = 69.0;
 var TRUEGOLD_PTS = 2000;
 var TRUEGOLD_DUST_PTS = 1000;
 var SPEEDUP_PTS_PER_DAY = 1440 * 30;
+var TG_TO_DUST_BATCH_TG = 10;
+var TG_TO_DUST_BATCH_DUST = 13;
 
 function msTcTierForLevel(townHallLevel){
   var n = parseInt(townHallLevel, 10);
@@ -4356,10 +4361,18 @@ function msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, 
     days: Math.max(0, parseFloat(speedupDaysAvailable) || 0),
     dust: Math.max(0, parseFloat(dustAvailable) || 0),
     goldSpent: 0, daysSpent: 0, dustSpent: 0, researchDaysSpent: 0,
+    goldConverted: 0, dustFromConversion: 0,
     waTier: 0, waLevel: 'none', waResearchPct: 0, waStarted: null,
     researchDone: {}, researchSteps: 0, researchStarted: null, t11Unlocked: []
   };
   msSimWarAcademy(state, msTcTierForLevel(townHallLevel));
+  if(state.waTier){
+    var batches = Math.floor((state.gold + 1e-9) / TG_TO_DUST_BATCH_TG);
+    state.goldConverted = batches * TG_TO_DUST_BATCH_TG;
+    state.dustFromConversion = batches * TG_TO_DUST_BATCH_DUST;
+    state.gold -= state.goldConverted;
+    state.dust += state.dustFromConversion;
+  }
   msSimResearch(state);
   var waGold = state.goldSpent, waAndResearchDays = state.daysSpent;
   msSimConstructionPath(state, townHallLevel);
