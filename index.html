@@ -1425,6 +1425,11 @@
             <input type="text" inputmode="decimal" id="msApplyTruegold" placeholder="e.g. 1500">
           </div>
 
+          <div class="ms-apply-field" id="msApplyDustWrap" style="display:none;">
+            <label>Truegold Dust Quantity *</label>
+            <input type="text" inputmode="decimal" id="msApplyDust" placeholder="e.g. 3000 (0 if none)">
+          </div>
+
           <div class="ms-apply-field" id="msApplyT9Wrap" style="display:none;">
             <div class="ms-field-label-row">
               <label for="msApplyT9">T9 Troop Count <span class="ms-field-optional">(optional)</span></label>
@@ -3938,9 +3943,10 @@ function msBaselineOrderForLevel(townHallLevel){
 // Fixed alliance-default speed loadout applied uniformly to every
 // applicant, rather than asking each one for their own personal speed
 // stats. Two genuinely separate mechanics stack here:
-//   1) Additive "Construction Speed Up %" bonuses: Base 81.6% + Wolf Pet
-//      Skill 15% + Chief Minister appointment 10% + Ground Works 10% +
-//      KvK Bonus 5% = 121.6% total, applied as base time / (1 + 121.6%).
+//   1) Additive "Construction Speed Up %" bonuses: Base 86.7% (Michael's
+//      profile Construction Speed, Nov 2026) + Wolf Pet Skill 15% + Chief
+//      Minister appointment 10% + Ground Works 10% + KvK Bonus 5% = 126.7%
+//      total, applied as base time / (1 + 126.7%).
 //   2) Double Time Decree is a SEPARATE flat -20% time reduction (not an
 //      additive "Speed Up %" — the source tool labels it differently and
 //      excludes it from the 121.6% figure), applied as a second,
@@ -3949,16 +3955,459 @@ function msBaselineOrderForLevel(townHallLevel){
 // This only affects TIME — Saul's skill also reduces Truegold/RSS cost,
 // which is a separate mechanic UPGRADE_QUEUE's stageGold doesn't model,
 // so that portion is intentionally left out here.
-var CONSTRUCTION_SPEED_BONUS_PCT = 121.6;
+var CONSTRUCTION_SPEED_BONUS_PCT = 126.7;
 var CONSTRUCTION_SPEED_DIVISOR = 1 + (CONSTRUCTION_SPEED_BONUS_PCT / 100);
 var DOUBLE_TIME_DECREE_MULTIPLIER = 0.8; // -20% Construction Time Reduction
 
-function msCalcConstructionPts(townHallLevel, truegoldAvailable, speedupDaysAvailable){
+// --- Day 1: War Academy + War Academy research --------------------------
+// Day 1 combines construction and research in the same 30-minute slot.
+// Assumed order (from the alliance's plan):
+//  1) Spend Truegold + speedups on the regular construction path above,
+//     taking every building to TG 5.
+//  2) Upgrade War Academy as far as the Town Center tier now allows (max TG 5).
+//  3) Research with Truegold Dust. Only once ALL buildings (War Academy
+//     included) are at TG 5, convert leftover Truegold to Dust (10 Truegold
+//     -> 13 Dust, whole batches), and only as much as the next research
+//     step needs. Converted Truegold scores nothing itself; only Dust spent
+//     on research scores.
+// ASSUMPTIONS (guesses, adjust if wrong):
+//  - Every applicant's War Academy starts at TG 1 (just unlocked) with no
+//    War Academy research done yet; their level only reports Town Center.
+//  - War Academy can't pass the player's current Town Center tier
+//    (WA TG N-1 .. TG N needs TC TG N), and stops at TG 5.
+//  - CSV upgrade/research times are base times. Construction uses the same
+//    speed bonuses as the path above. Research uses RESEARCH_SPEED_BONUS_PCT
+//    (Michael's profile Research Speed, which already includes his War
+//    Academy at TG 1) plus Day 1 research buffs (Chief Minister 10%, KvK
+//    Bonus 5%, Fresh Ideas King Skill 10%) plus whatever War Academy adds
+//    above TG 1's 0.5%.
+//  - Gold (the research currency) is never the limit.
+//  - Research speedups come out of the same Speedups (Days) pool.
+// Data: war_academy_upgrades.csv and war_academy_research.csv.
+var WA_UPGRADES = [
+  {level:"TG 1-1", tcTier:2, waTier:null, stageGold:71, stageDays:1.8, researchSpeedPct:0.6},
+  {level:"TG 1-2", tcTier:2, waTier:null, stageGold:71, stageDays:1.8, researchSpeedPct:0.7},
+  {level:"TG 1-3", tcTier:2, waTier:null, stageGold:71, stageDays:1.8, researchSpeedPct:0.8},
+  {level:"TG 1-4", tcTier:2, waTier:null, stageGold:71, stageDays:1.8, researchSpeedPct:0.9},
+  {level:"TG 2", tcTier:2, waTier:2, stageGold:71, stageDays:1.8, researchSpeedPct:1},
+  {level:"TG 2-1", tcTier:3, waTier:null, stageGold:107, stageDays:2.2, researchSpeedPct:1.1},
+  {level:"TG 2-2", tcTier:3, waTier:null, stageGold:107, stageDays:2.2, researchSpeedPct:1.2},
+  {level:"TG 2-3", tcTier:3, waTier:null, stageGold:107, stageDays:2.2, researchSpeedPct:1.3},
+  {level:"TG 2-4", tcTier:3, waTier:null, stageGold:107, stageDays:2.2, researchSpeedPct:1.4},
+  {level:"TG 3", tcTier:3, waTier:3, stageGold:107, stageDays:2.2, researchSpeedPct:1.5},
+  {level:"TG 3-1", tcTier:4, waTier:null, stageGold:126, stageDays:2.4, researchSpeedPct:1.6},
+  {level:"TG 3-2", tcTier:4, waTier:null, stageGold:126, stageDays:2.4, researchSpeedPct:1.7},
+  {level:"TG 3-3", tcTier:4, waTier:null, stageGold:126, stageDays:2.4, researchSpeedPct:1.8},
+  {level:"TG 3-4", tcTier:4, waTier:null, stageGold:126, stageDays:2.4, researchSpeedPct:1.9},
+  {level:"TG 4", tcTier:4, waTier:4, stageGold:126, stageDays:2.4, researchSpeedPct:2},
+  {level:"TG 4-1", tcTier:5, waTier:null, stageGold:150, stageDays:2.8, researchSpeedPct:2.1},
+  {level:"TG 4-2", tcTier:5, waTier:null, stageGold:150, stageDays:2.8, researchSpeedPct:2.2},
+  {level:"TG 4-3", tcTier:5, waTier:null, stageGold:150, stageDays:2.8, researchSpeedPct:2.3},
+  {level:"TG 4-4", tcTier:5, waTier:null, stageGold:150, stageDays:2.8, researchSpeedPct:2.4},
+  {level:"TG 5", tcTier:5, waTier:5, stageGold:150, stageDays:2.8, researchSpeedPct:2.5}
+];
+var WA_RESEARCH_ORDER = [
+  {tree:"Infantry", tech:"Truegold Battalion", lv:1, waTier:1, req:[], dust:16, gold:5000, hours:8},
+  {tree:"Infantry", tech:"Truegold Battalion", lv:2, waTier:1, req:[], dust:25, gold:8000, hours:12.8},
+  {tree:"Infantry", tech:"Truegold Battalion", lv:3, waTier:1, req:[], dust:41, gold:13000, hours:20.8},
+  {tree:"Infantry", tech:"Truegold Battalion", lv:4, waTier:1, req:[], dust:68, gold:21000, hours:34},
+  {tree:"Infantry", tech:"Truegold Battalion", lv:5, waTier:1, req:[], dust:108, gold:33000, hours:54},
+  {tree:"Infantry", tech:"Truegold Shields", lv:1, waTier:1, req:[["Truegold Battalion", 3]], dust:40, gold:10000, hours:20},
+  {tree:"Infantry", tech:"Truegold Shields", lv:2, waTier:2, req:[["Truegold Battalion", 3]], dust:56, gold:14000, hours:28},
+  {tree:"Infantry", tech:"Truegold Shields", lv:3, waTier:2, req:[["Truegold Battalion", 3]], dust:74, gold:18000, hours:37},
+  {tree:"Infantry", tech:"Truegold Shields", lv:4, waTier:2, req:[["Truegold Battalion", 4]], dust:102, gold:25000, hours:51},
+  {tree:"Infantry", tech:"Truegold Shields", lv:5, waTier:3, req:[["Truegold Battalion", 5]], dust:136, gold:34000, hours:68},
+  {tree:"Infantry", tech:"Truegold Shields", lv:6, waTier:3, req:[["Truegold Battalion", 5]], dust:184, gold:46000, hours:92},
+  {tree:"Infantry", tech:"Truegold Shields", lv:7, waTier:4, req:[["Truegold Battalion", 5]], dust:248, gold:62000, hours:124},
+  {tree:"Infantry", tech:"Truegold Shields", lv:8, waTier:5, req:[["Truegold Battalion", 5]], dust:334, gold:83000, hours:167},
+  {tree:"Infantry", tech:"Truegold Blades", lv:1, waTier:1, req:[["Truegold Battalion", 3]], dust:40, gold:10000, hours:20},
+  {tree:"Infantry", tech:"Truegold Blades", lv:2, waTier:2, req:[["Truegold Battalion", 3]], dust:56, gold:14000, hours:28},
+  {tree:"Infantry", tech:"Truegold Blades", lv:3, waTier:2, req:[["Truegold Battalion", 3]], dust:74, gold:18000, hours:37},
+  {tree:"Infantry", tech:"Truegold Blades", lv:4, waTier:2, req:[["Truegold Battalion", 4]], dust:102, gold:25000, hours:51},
+  {tree:"Infantry", tech:"Truegold Blades", lv:5, waTier:3, req:[["Truegold Battalion", 5]], dust:136, gold:34000, hours:68},
+  {tree:"Infantry", tech:"Truegold Blades", lv:6, waTier:3, req:[["Truegold Battalion", 5]], dust:184, gold:46000, hours:92},
+  {tree:"Infantry", tech:"Truegold Blades", lv:7, waTier:4, req:[["Truegold Battalion", 5]], dust:248, gold:62000, hours:124},
+  {tree:"Infantry", tech:"Truegold Blades", lv:8, waTier:5, req:[["Truegold Battalion", 5]], dust:334, gold:83000, hours:167},
+  {tree:"Infantry", tech:"Truegold Plating", lv:1, waTier:3, req:[["Truegold Shields", 6]], dust:54, gold:15000, hours:18.92},
+  {tree:"Infantry", tech:"Truegold Plating", lv:2, waTier:3, req:[["Truegold Shields", 6]], dust:66, gold:18000, hours:23.27},
+  {tree:"Infantry", tech:"Truegold Plating", lv:3, waTier:4, req:[["Truegold Shields", 6]], dust:81, gold:22000, hours:28},
+  {tree:"Infantry", tech:"Truegold Plating", lv:4, waTier:4, req:[["Truegold Shields", 6]], dust:97, gold:27000, hours:34},
+  {tree:"Infantry", tech:"Truegold Plating", lv:5, waTier:4, req:[["Truegold Shields", 6]], dust:118, gold:33000, hours:41},
+  {tree:"Infantry", tech:"Truegold Plating", lv:6, waTier:4, req:[["Truegold Shields", 6]], dust:145, gold:40000, hours:51},
+  {tree:"Infantry", tech:"Truegold Plating", lv:7, waTier:5, req:[["Truegold Shields", 7]], dust:178, gold:49000, hours:62},
+  {tree:"Infantry", tech:"Truegold Plating", lv:8, waTier:5, req:[["Truegold Shields", 8]], dust:216, gold:60000, hours:75},
+  {tree:"Infantry", tech:"Truegold Plating", lv:9, waTier:5, req:[["Truegold Shields", 8]], dust:270, gold:75000, hours:94},
+  {tree:"Infantry", tech:"Truegold Plating", lv:10, waTier:5, req:[["Truegold Shields", 8]], dust:324, gold:90000, hours:113},
+  {tree:"Infantry", tech:"Truegold Plating", lv:11, waTier:5, req:[["Truegold Shields", 8]], dust:388, gold:100000, hours:136},
+  {tree:"Infantry", tech:"Truegold Plating", lv:12, waTier:5, req:[["Truegold Shields", 8]], dust:480, gold:130000, hours:168},
+  {tree:"Infantry", tech:"Truegold Legionaries", lv:1, waTier:4, req:[["Truegold Blades", 6], ["Truegold Shields", 6]], dust:83, gold:23000, hours:29},
+  {tree:"Infantry", tech:"Truegold Legionaries", lv:2, waTier:4, req:[["Truegold Blades", 6], ["Truegold Shields", 6]], dust:102, gold:28000, hours:36},
+  {tree:"Infantry", tech:"Truegold Legionaries", lv:3, waTier:4, req:[["Truegold Blades", 6], ["Truegold Shields", 6]], dust:125, gold:34000, hours:44},
+  {tree:"Infantry", tech:"Truegold Legionaries", lv:4, waTier:5, req:[["Truegold Blades", 6], ["Truegold Shields", 6]], dust:150, gold:41000, hours:52},
+  {tree:"Infantry", tech:"Truegold Legionaries", lv:5, waTier:5, req:[["Truegold Blades", 6], ["Truegold Shields", 6]], dust:184, gold:51000, hours:64},
+  {tree:"Infantry", tech:"Truegold Legionaries", lv:6, waTier:5, req:[["Truegold Blades", 6], ["Truegold Shields", 6]], dust:225, gold:62000, hours:79},
+  {tree:"Infantry", tech:"Truegold Legionaries", lv:7, waTier:5, req:[["Truegold Blades", 7], ["Truegold Shields", 7]], dust:276, gold:76000, hours:96},
+  {tree:"Infantry", tech:"Truegold Legionaries", lv:8, waTier:5, req:[["Truegold Blades", 8], ["Truegold Shields", 8]], dust:334, gold:93000, hours:117},
+  {tree:"Infantry", tech:"Truegold Legionaries", lv:9, waTier:5, req:[["Truegold Blades", 8], ["Truegold Shields", 8]], dust:418, gold:110000, hours:146},
+  {tree:"Infantry", tech:"Truegold Legionaries", lv:10, waTier:5, req:[["Truegold Blades", 8], ["Truegold Shields", 8]], dust:502, gold:130000, hours:176},
+  {tree:"Infantry", tech:"Truegold Legionaries", lv:11, waTier:5, req:[["Truegold Blades", 8], ["Truegold Shields", 8]], dust:602, gold:160000, hours:211},
+  {tree:"Infantry", tech:"Truegold Legionaries", lv:12, waTier:5, req:[["Truegold Blades", 8], ["Truegold Shields", 8]], dust:744, gold:200000, hours:261},
+  {tree:"Infantry", tech:"Truegold Mauls", lv:1, waTier:3, req:[["Truegold Blades", 6]], dust:54, gold:15000, hours:18.92},
+  {tree:"Infantry", tech:"Truegold Mauls", lv:2, waTier:3, req:[["Truegold Blades", 6]], dust:66, gold:18000, hours:23.27},
+  {tree:"Infantry", tech:"Truegold Mauls", lv:3, waTier:4, req:[["Truegold Blades", 6]], dust:81, gold:22000, hours:28},
+  {tree:"Infantry", tech:"Truegold Mauls", lv:4, waTier:4, req:[["Truegold Blades", 6]], dust:97, gold:27000, hours:34},
+  {tree:"Infantry", tech:"Truegold Mauls", lv:5, waTier:4, req:[["Truegold Blades", 6]], dust:118, gold:33000, hours:41},
+  {tree:"Infantry", tech:"Truegold Mauls", lv:6, waTier:4, req:[["Truegold Blades", 6]], dust:145, gold:40000, hours:51},
+  {tree:"Infantry", tech:"Truegold Mauls", lv:7, waTier:5, req:[["Truegold Blades", 7]], dust:178, gold:49000, hours:62},
+  {tree:"Infantry", tech:"Truegold Mauls", lv:8, waTier:5, req:[["Truegold Blades", 8]], dust:216, gold:60000, hours:75},
+  {tree:"Infantry", tech:"Truegold Mauls", lv:9, waTier:5, req:[["Truegold Blades", 8]], dust:270, gold:75000, hours:94},
+  {tree:"Infantry", tech:"Truegold Mauls", lv:10, waTier:5, req:[["Truegold Blades", 8]], dust:324, gold:90000, hours:113},
+  {tree:"Infantry", tech:"Truegold Mauls", lv:11, waTier:5, req:[["Truegold Blades", 8]], dust:388, gold:100000, hours:136},
+  {tree:"Infantry", tech:"Truegold Mauls", lv:12, waTier:5, req:[["Truegold Blades", 8]], dust:480, gold:130000, hours:168},
+  {tree:"Infantry", tech:"Truegold Infantry", lv:1, waTier:5, req:[["Truegold Mauls", 12], ["Truegold Plating", 12], ["Truegold Legionaries", 12]], dust:2200, gold:1000000, hours:2192},
+  {tree:"Archer", tech:"Truegold Battalion", lv:1, waTier:1, req:[], dust:16, gold:5000, hours:8},
+  {tree:"Archer", tech:"Truegold Battalion", lv:2, waTier:1, req:[], dust:25, gold:8000, hours:12.8},
+  {tree:"Archer", tech:"Truegold Battalion", lv:3, waTier:1, req:[], dust:41, gold:13000, hours:20.8},
+  {tree:"Archer", tech:"Truegold Battalion", lv:4, waTier:1, req:[], dust:68, gold:21000, hours:34},
+  {tree:"Archer", tech:"Truegold Battalion", lv:5, waTier:1, req:[], dust:108, gold:33000, hours:54},
+  {tree:"Archer", tech:"Truegold Bracers", lv:1, waTier:1, req:[["Truegold Battalion", 3]], dust:40, gold:10000, hours:20},
+  {tree:"Archer", tech:"Truegold Bracers", lv:2, waTier:2, req:[["Truegold Battalion", 3]], dust:56, gold:14000, hours:28},
+  {tree:"Archer", tech:"Truegold Bracers", lv:3, waTier:2, req:[["Truegold Battalion", 3]], dust:74, gold:18000, hours:37},
+  {tree:"Archer", tech:"Truegold Bracers", lv:4, waTier:2, req:[["Truegold Battalion", 4]], dust:102, gold:25000, hours:51},
+  {tree:"Archer", tech:"Truegold Bracers", lv:5, waTier:3, req:[["Truegold Battalion", 5]], dust:136, gold:34000, hours:68},
+  {tree:"Archer", tech:"Truegold Bracers", lv:6, waTier:3, req:[["Truegold Battalion", 5]], dust:184, gold:46000, hours:92},
+  {tree:"Archer", tech:"Truegold Bracers", lv:7, waTier:4, req:[["Truegold Battalion", 5]], dust:248, gold:62000, hours:124},
+  {tree:"Archer", tech:"Truegold Bracers", lv:8, waTier:5, req:[["Truegold Battalion", 5]], dust:334, gold:83000, hours:167},
+  {tree:"Archer", tech:"Truegold Bows", lv:1, waTier:1, req:[["Truegold Battalion", 3]], dust:40, gold:10000, hours:20},
+  {tree:"Archer", tech:"Truegold Bows", lv:2, waTier:2, req:[["Truegold Battalion", 3]], dust:56, gold:14000, hours:28},
+  {tree:"Archer", tech:"Truegold Bows", lv:3, waTier:2, req:[["Truegold Battalion", 3]], dust:74, gold:18000, hours:37},
+  {tree:"Archer", tech:"Truegold Bows", lv:4, waTier:2, req:[["Truegold Battalion", 4]], dust:102, gold:25000, hours:51},
+  {tree:"Archer", tech:"Truegold Bows", lv:5, waTier:3, req:[["Truegold Battalion", 5]], dust:136, gold:34000, hours:68},
+  {tree:"Archer", tech:"Truegold Bows", lv:6, waTier:3, req:[["Truegold Battalion", 5]], dust:184, gold:46000, hours:92},
+  {tree:"Archer", tech:"Truegold Bows", lv:7, waTier:4, req:[["Truegold Battalion", 5]], dust:248, gold:62000, hours:124},
+  {tree:"Archer", tech:"Truegold Bows", lv:8, waTier:5, req:[["Truegold Battalion", 5]], dust:334, gold:83000, hours:167},
+  {tree:"Archer", tech:"Truegold Vests", lv:1, waTier:3, req:[["Truegold Bracers", 6]], dust:54, gold:15000, hours:18.92},
+  {tree:"Archer", tech:"Truegold Vests", lv:2, waTier:3, req:[["Truegold Bracers", 6]], dust:66, gold:18000, hours:23.27},
+  {tree:"Archer", tech:"Truegold Vests", lv:3, waTier:4, req:[["Truegold Bracers", 6]], dust:81, gold:22000, hours:28},
+  {tree:"Archer", tech:"Truegold Vests", lv:4, waTier:4, req:[["Truegold Bracers", 6]], dust:97, gold:27000, hours:34},
+  {tree:"Archer", tech:"Truegold Vests", lv:5, waTier:4, req:[["Truegold Bracers", 6]], dust:118, gold:33000, hours:41},
+  {tree:"Archer", tech:"Truegold Vests", lv:6, waTier:4, req:[["Truegold Bracers", 6]], dust:145, gold:40000, hours:51},
+  {tree:"Archer", tech:"Truegold Vests", lv:7, waTier:5, req:[["Truegold Bracers", 7]], dust:178, gold:49000, hours:62},
+  {tree:"Archer", tech:"Truegold Vests", lv:8, waTier:5, req:[["Truegold Bracers", 8]], dust:216, gold:60000, hours:75},
+  {tree:"Archer", tech:"Truegold Vests", lv:9, waTier:5, req:[["Truegold Bracers", 8]], dust:270, gold:75000, hours:94},
+  {tree:"Archer", tech:"Truegold Vests", lv:10, waTier:5, req:[["Truegold Bracers", 8]], dust:324, gold:90000, hours:113},
+  {tree:"Archer", tech:"Truegold Vests", lv:11, waTier:5, req:[["Truegold Bracers", 8]], dust:388, gold:100000, hours:136},
+  {tree:"Archer", tech:"Truegold Vests", lv:12, waTier:5, req:[["Truegold Bracers", 8]], dust:480, gold:130000, hours:168},
+  {tree:"Archer", tech:"Truegold Legionaries", lv:1, waTier:4, req:[["Truegold Bows", 6], ["Truegold Bracers", 6]], dust:83, gold:23000, hours:29},
+  {tree:"Archer", tech:"Truegold Legionaries", lv:2, waTier:4, req:[["Truegold Bows", 6], ["Truegold Bracers", 6]], dust:102, gold:28000, hours:36},
+  {tree:"Archer", tech:"Truegold Legionaries", lv:3, waTier:4, req:[["Truegold Bows", 6], ["Truegold Bracers", 6]], dust:125, gold:34000, hours:44},
+  {tree:"Archer", tech:"Truegold Legionaries", lv:4, waTier:5, req:[["Truegold Bows", 6], ["Truegold Bracers", 6]], dust:150, gold:41000, hours:52},
+  {tree:"Archer", tech:"Truegold Legionaries", lv:5, waTier:5, req:[["Truegold Bows", 6], ["Truegold Bracers", 6]], dust:184, gold:51000, hours:64},
+  {tree:"Archer", tech:"Truegold Legionaries", lv:6, waTier:5, req:[["Truegold Bows", 6], ["Truegold Bracers", 6]], dust:225, gold:62000, hours:79},
+  {tree:"Archer", tech:"Truegold Legionaries", lv:7, waTier:5, req:[["Truegold Bows", 7], ["Truegold Bracers", 7]], dust:276, gold:76000, hours:96},
+  {tree:"Archer", tech:"Truegold Legionaries", lv:8, waTier:5, req:[["Truegold Bows", 8], ["Truegold Bracers", 8]], dust:334, gold:93000, hours:117},
+  {tree:"Archer", tech:"Truegold Legionaries", lv:9, waTier:5, req:[["Truegold Bows", 8], ["Truegold Bracers", 8]], dust:418, gold:110000, hours:146},
+  {tree:"Archer", tech:"Truegold Legionaries", lv:10, waTier:5, req:[["Truegold Bows", 8], ["Truegold Bracers", 8]], dust:502, gold:130000, hours:176},
+  {tree:"Archer", tech:"Truegold Legionaries", lv:11, waTier:5, req:[["Truegold Bows", 8], ["Truegold Bracers", 8]], dust:602, gold:160000, hours:211},
+  {tree:"Archer", tech:"Truegold Legionaries", lv:12, waTier:5, req:[["Truegold Bows", 8], ["Truegold Bracers", 8]], dust:744, gold:200000, hours:261},
+  {tree:"Archer", tech:"Truegold Arrows", lv:1, waTier:3, req:[["Truegold Bows", 6]], dust:54, gold:15000, hours:18.92},
+  {tree:"Archer", tech:"Truegold Arrows", lv:2, waTier:3, req:[["Truegold Bows", 6]], dust:66, gold:18000, hours:23.27},
+  {tree:"Archer", tech:"Truegold Arrows", lv:3, waTier:4, req:[["Truegold Bows", 6]], dust:81, gold:22000, hours:28},
+  {tree:"Archer", tech:"Truegold Arrows", lv:4, waTier:4, req:[["Truegold Bows", 6]], dust:97, gold:27000, hours:34},
+  {tree:"Archer", tech:"Truegold Arrows", lv:5, waTier:4, req:[["Truegold Bows", 6]], dust:118, gold:33000, hours:41},
+  {tree:"Archer", tech:"Truegold Arrows", lv:6, waTier:4, req:[["Truegold Bows", 6]], dust:145, gold:40000, hours:51},
+  {tree:"Archer", tech:"Truegold Arrows", lv:7, waTier:5, req:[["Truegold Bows", 7]], dust:178, gold:49000, hours:62},
+  {tree:"Archer", tech:"Truegold Arrows", lv:8, waTier:5, req:[["Truegold Bows", 8]], dust:216, gold:60000, hours:75},
+  {tree:"Archer", tech:"Truegold Arrows", lv:9, waTier:5, req:[["Truegold Bows", 8]], dust:270, gold:75000, hours:94},
+  {tree:"Archer", tech:"Truegold Arrows", lv:10, waTier:5, req:[["Truegold Bows", 8]], dust:324, gold:90000, hours:113},
+  {tree:"Archer", tech:"Truegold Arrows", lv:11, waTier:5, req:[["Truegold Bows", 8]], dust:388, gold:100000, hours:136},
+  {tree:"Archer", tech:"Truegold Arrows", lv:12, waTier:5, req:[["Truegold Bows", 8]], dust:480, gold:130000, hours:168},
+  {tree:"Archer", tech:"Truegold Archers", lv:1, waTier:5, req:[["Truegold Arrows", 12], ["Truegold Vests", 12], ["Truegold Legionaries", 12]], dust:2200, gold:1000000, hours:2192},
+  {tree:"Cavalry", tech:"Truegold Battalion", lv:1, waTier:1, req:[], dust:16, gold:5000, hours:8},
+  {tree:"Cavalry", tech:"Truegold Battalion", lv:2, waTier:1, req:[], dust:25, gold:8000, hours:12.8},
+  {tree:"Cavalry", tech:"Truegold Battalion", lv:3, waTier:1, req:[], dust:41, gold:13000, hours:20.8},
+  {tree:"Cavalry", tech:"Truegold Battalion", lv:4, waTier:1, req:[], dust:68, gold:21000, hours:34},
+  {tree:"Cavalry", tech:"Truegold Battalion", lv:5, waTier:1, req:[], dust:108, gold:33000, hours:54},
+  {tree:"Cavalry", tech:"Truegold Charge", lv:1, waTier:1, req:[["Truegold Battalion", 3]], dust:40, gold:10000, hours:20},
+  {tree:"Cavalry", tech:"Truegold Charge", lv:2, waTier:2, req:[["Truegold Battalion", 3]], dust:56, gold:14000, hours:28},
+  {tree:"Cavalry", tech:"Truegold Charge", lv:3, waTier:2, req:[["Truegold Battalion", 3]], dust:74, gold:18000, hours:37},
+  {tree:"Cavalry", tech:"Truegold Charge", lv:4, waTier:2, req:[["Truegold Battalion", 4]], dust:102, gold:25000, hours:51},
+  {tree:"Cavalry", tech:"Truegold Charge", lv:5, waTier:3, req:[["Truegold Battalion", 5]], dust:136, gold:34000, hours:68},
+  {tree:"Cavalry", tech:"Truegold Charge", lv:6, waTier:3, req:[["Truegold Battalion", 5]], dust:184, gold:46000, hours:92},
+  {tree:"Cavalry", tech:"Truegold Charge", lv:7, waTier:4, req:[["Truegold Battalion", 5]], dust:248, gold:62000, hours:124},
+  {tree:"Cavalry", tech:"Truegold Charge", lv:8, waTier:5, req:[["Truegold Battalion", 5]], dust:334, gold:83000, hours:167},
+  {tree:"Cavalry", tech:"Truegold Farriery", lv:1, waTier:1, req:[["Truegold Battalion", 3]], dust:40, gold:10000, hours:20},
+  {tree:"Cavalry", tech:"Truegold Farriery", lv:2, waTier:2, req:[["Truegold Battalion", 3]], dust:56, gold:14000, hours:28},
+  {tree:"Cavalry", tech:"Truegold Farriery", lv:3, waTier:2, req:[["Truegold Battalion", 3]], dust:74, gold:18000, hours:37},
+  {tree:"Cavalry", tech:"Truegold Farriery", lv:4, waTier:2, req:[["Truegold Battalion", 4]], dust:102, gold:25000, hours:51},
+  {tree:"Cavalry", tech:"Truegold Farriery", lv:5, waTier:3, req:[["Truegold Battalion", 5]], dust:136, gold:34000, hours:68},
+  {tree:"Cavalry", tech:"Truegold Farriery", lv:6, waTier:3, req:[["Truegold Battalion", 5]], dust:184, gold:46000, hours:92},
+  {tree:"Cavalry", tech:"Truegold Farriery", lv:7, waTier:4, req:[["Truegold Battalion", 5]], dust:248, gold:62000, hours:124},
+  {tree:"Cavalry", tech:"Truegold Farriery", lv:8, waTier:5, req:[["Truegold Battalion", 5]], dust:334, gold:83000, hours:167},
+  {tree:"Cavalry", tech:"Truegold Lances", lv:1, waTier:3, req:[["Truegold Charge", 6]], dust:54, gold:15000, hours:18.92},
+  {tree:"Cavalry", tech:"Truegold Lances", lv:2, waTier:3, req:[["Truegold Charge", 6]], dust:66, gold:18000, hours:23.27},
+  {tree:"Cavalry", tech:"Truegold Lances", lv:3, waTier:4, req:[["Truegold Charge", 6]], dust:81, gold:22000, hours:28},
+  {tree:"Cavalry", tech:"Truegold Lances", lv:4, waTier:4, req:[["Truegold Charge", 6]], dust:97, gold:27000, hours:34},
+  {tree:"Cavalry", tech:"Truegold Lances", lv:5, waTier:4, req:[["Truegold Charge", 6]], dust:118, gold:33000, hours:41},
+  {tree:"Cavalry", tech:"Truegold Lances", lv:6, waTier:4, req:[["Truegold Charge", 6]], dust:145, gold:40000, hours:51},
+  {tree:"Cavalry", tech:"Truegold Lances", lv:7, waTier:5, req:[["Truegold Charge", 7]], dust:178, gold:49000, hours:62},
+  {tree:"Cavalry", tech:"Truegold Lances", lv:8, waTier:5, req:[["Truegold Charge", 8]], dust:216, gold:60000, hours:75},
+  {tree:"Cavalry", tech:"Truegold Lances", lv:9, waTier:5, req:[["Truegold Charge", 8]], dust:270, gold:75000, hours:94},
+  {tree:"Cavalry", tech:"Truegold Lances", lv:10, waTier:5, req:[["Truegold Charge", 8]], dust:324, gold:90000, hours:113},
+  {tree:"Cavalry", tech:"Truegold Lances", lv:11, waTier:5, req:[["Truegold Charge", 8]], dust:388, gold:100000, hours:136},
+  {tree:"Cavalry", tech:"Truegold Lances", lv:12, waTier:5, req:[["Truegold Charge", 8]], dust:480, gold:130000, hours:168},
+  {tree:"Cavalry", tech:"Truegold Legionaries", lv:1, waTier:4, req:[["Truegold Charge", 6], ["Truegold Farriery", 6]], dust:83, gold:23000, hours:29},
+  {tree:"Cavalry", tech:"Truegold Legionaries", lv:2, waTier:4, req:[["Truegold Charge", 6], ["Truegold Farriery", 6]], dust:102, gold:28000, hours:36},
+  {tree:"Cavalry", tech:"Truegold Legionaries", lv:3, waTier:4, req:[["Truegold Charge", 6], ["Truegold Farriery", 6]], dust:125, gold:34000, hours:44},
+  {tree:"Cavalry", tech:"Truegold Legionaries", lv:4, waTier:5, req:[["Truegold Charge", 6], ["Truegold Farriery", 6]], dust:150, gold:41000, hours:52},
+  {tree:"Cavalry", tech:"Truegold Legionaries", lv:5, waTier:5, req:[["Truegold Charge", 6], ["Truegold Farriery", 6]], dust:184, gold:51000, hours:64},
+  {tree:"Cavalry", tech:"Truegold Legionaries", lv:6, waTier:5, req:[["Truegold Charge", 6], ["Truegold Farriery", 6]], dust:225, gold:62000, hours:79},
+  {tree:"Cavalry", tech:"Truegold Legionaries", lv:7, waTier:5, req:[["Truegold Charge", 7], ["Truegold Farriery", 7]], dust:276, gold:76000, hours:96},
+  {tree:"Cavalry", tech:"Truegold Legionaries", lv:8, waTier:5, req:[["Truegold Charge", 8], ["Truegold Farriery", 8]], dust:334, gold:93000, hours:117},
+  {tree:"Cavalry", tech:"Truegold Legionaries", lv:9, waTier:5, req:[["Truegold Charge", 8], ["Truegold Farriery", 8]], dust:418, gold:110000, hours:146},
+  {tree:"Cavalry", tech:"Truegold Legionaries", lv:10, waTier:5, req:[["Truegold Charge", 8], ["Truegold Farriery", 8]], dust:502, gold:130000, hours:176},
+  {tree:"Cavalry", tech:"Truegold Legionaries", lv:11, waTier:5, req:[["Truegold Charge", 8], ["Truegold Farriery", 8]], dust:602, gold:160000, hours:211},
+  {tree:"Cavalry", tech:"Truegold Legionaries", lv:12, waTier:5, req:[["Truegold Charge", 8], ["Truegold Farriery", 8]], dust:744, gold:200000, hours:261},
+  {tree:"Cavalry", tech:"Truegold Platecraft", lv:1, waTier:3, req:[["Truegold Farriery", 6]], dust:54, gold:15000, hours:18.92},
+  {tree:"Cavalry", tech:"Truegold Platecraft", lv:2, waTier:3, req:[["Truegold Farriery", 6]], dust:66, gold:18000, hours:23.27},
+  {tree:"Cavalry", tech:"Truegold Platecraft", lv:3, waTier:4, req:[["Truegold Farriery", 6]], dust:81, gold:22000, hours:28},
+  {tree:"Cavalry", tech:"Truegold Platecraft", lv:4, waTier:4, req:[["Truegold Farriery", 6]], dust:97, gold:27000, hours:34},
+  {tree:"Cavalry", tech:"Truegold Platecraft", lv:5, waTier:4, req:[["Truegold Farriery", 6]], dust:118, gold:33000, hours:41},
+  {tree:"Cavalry", tech:"Truegold Platecraft", lv:6, waTier:4, req:[["Truegold Farriery", 6]], dust:145, gold:40000, hours:51},
+  {tree:"Cavalry", tech:"Truegold Platecraft", lv:7, waTier:5, req:[["Truegold Farriery", 7]], dust:178, gold:49000, hours:62},
+  {tree:"Cavalry", tech:"Truegold Platecraft", lv:8, waTier:5, req:[["Truegold Farriery", 8]], dust:216, gold:60000, hours:75},
+  {tree:"Cavalry", tech:"Truegold Platecraft", lv:9, waTier:5, req:[["Truegold Farriery", 8]], dust:270, gold:75000, hours:94},
+  {tree:"Cavalry", tech:"Truegold Platecraft", lv:10, waTier:5, req:[["Truegold Farriery", 8]], dust:324, gold:90000, hours:113},
+  {tree:"Cavalry", tech:"Truegold Platecraft", lv:11, waTier:5, req:[["Truegold Farriery", 8]], dust:388, gold:100000, hours:136},
+  {tree:"Cavalry", tech:"Truegold Platecraft", lv:12, waTier:5, req:[["Truegold Farriery", 8]], dust:480, gold:130000, hours:168},
+  {tree:"Cavalry", tech:"Truegold Cavalry", lv:1, waTier:5, req:[["Truegold Lances", 12], ["Truegold Platecraft", 12], ["Truegold Legionaries", 12]], dust:2200, gold:1000000, hours:2192},
+  {tree:"Infantry", tech:"Truegold Infantry Healing", lv:1, waTier:5, req:[["Truegold Infantry", 1]], dust:102, gold:30000, hours:50},
+  {tree:"Infantry", tech:"Truegold Infantry Healing", lv:2, waTier:5, req:[], dust:137, gold:40000, hours:67},
+  {tree:"Infantry", tech:"Truegold Infantry Healing", lv:3, waTier:5, req:[], dust:188, gold:55000, hours:92},
+  {tree:"Infantry", tech:"Truegold Infantry Healing", lv:4, waTier:5, req:[], dust:255, gold:75000, hours:125},
+  {tree:"Infantry", tech:"Truegold Infantry Healing", lv:5, waTier:5, req:[], dust:341, gold:100000, hours:167},
+  {tree:"Infantry", tech:"Truegold Infantry Healing", lv:6, waTier:5, req:[], dust:459, gold:130000, hours:225},
+  {tree:"Infantry", tech:"Truegold Infantry Healing", lv:7, waTier:5, req:[], dust:612, gold:180000, hours:300},
+  {tree:"Infantry", tech:"Truegold Infantry Healing", lv:8, waTier:5, req:[], dust:836, gold:240000, hours:410},
+  {tree:"Infantry", tech:"Truegold Infantry Healing", lv:9, waTier:5, req:[], dust:1100, gold:330000, hours:550},
+  {tree:"Infantry", tech:"Truegold Infantry Healing", lv:10, waTier:5, req:[], dust:1500, gold:450000, hours:750},
+  {tree:"Infantry", tech:"Truegold Infantry Aid", lv:1, waTier:5, req:[["Truegold Infantry", 1]], dust:51, gold:15000, hours:25},
+  {tree:"Infantry", tech:"Truegold Infantry Aid", lv:2, waTier:5, req:[], dust:68, gold:20000, hours:33},
+  {tree:"Infantry", tech:"Truegold Infantry Aid", lv:3, waTier:5, req:[], dust:94, gold:27000, hours:46},
+  {tree:"Infantry", tech:"Truegold Infantry Aid", lv:4, waTier:5, req:[], dust:127, gold:37000, hours:62},
+  {tree:"Infantry", tech:"Truegold Infantry Aid", lv:5, waTier:5, req:[], dust:170, gold:50000, hours:83},
+  {tree:"Infantry", tech:"Truegold Infantry Aid", lv:6, waTier:5, req:[], dust:229, gold:67000, hours:112},
+  {tree:"Infantry", tech:"Truegold Infantry Aid", lv:7, waTier:5, req:[], dust:306, gold:90000, hours:150},
+  {tree:"Infantry", tech:"Truegold Infantry Aid", lv:8, waTier:5, req:[], dust:418, gold:120000, hours:205},
+  {tree:"Infantry", tech:"Truegold Infantry Aid", lv:9, waTier:5, req:[], dust:561, gold:160000, hours:275},
+  {tree:"Infantry", tech:"Truegold Infantry Aid", lv:10, waTier:5, req:[], dust:765, gold:220000, hours:375},
+  {tree:"Infantry", tech:"Truegold Infantry Training", lv:1, waTier:5, req:[["Truegold Infantry", 1]], dust:102, gold:30000, hours:50},
+  {tree:"Infantry", tech:"Truegold Infantry Training", lv:2, waTier:5, req:[], dust:137, gold:40000, hours:67},
+  {tree:"Infantry", tech:"Truegold Infantry Training", lv:3, waTier:5, req:[], dust:188, gold:55000, hours:92},
+  {tree:"Infantry", tech:"Truegold Infantry Training", lv:4, waTier:5, req:[], dust:255, gold:75000, hours:125},
+  {tree:"Infantry", tech:"Truegold Infantry Training", lv:5, waTier:5, req:[], dust:341, gold:100000, hours:167},
+  {tree:"Infantry", tech:"Truegold Infantry Training", lv:6, waTier:5, req:[], dust:459, gold:130000, hours:225},
+  {tree:"Infantry", tech:"Truegold Infantry Training", lv:7, waTier:5, req:[], dust:612, gold:180000, hours:300},
+  {tree:"Infantry", tech:"Truegold Infantry Training", lv:8, waTier:5, req:[], dust:836, gold:240000, hours:410},
+  {tree:"Infantry", tech:"Truegold Infantry Training", lv:9, waTier:5, req:[], dust:1100, gold:330000, hours:550},
+  {tree:"Infantry", tech:"Truegold Infantry Training", lv:10, waTier:5, req:[], dust:1500, gold:450000, hours:750},
+  {tree:"Archer", tech:"Truegold Archer Healing", lv:1, waTier:5, req:[["Truegold Archers", 1]], dust:102, gold:30000, hours:50},
+  {tree:"Archer", tech:"Truegold Archer Healing", lv:2, waTier:5, req:[], dust:137, gold:40000, hours:67},
+  {tree:"Archer", tech:"Truegold Archer Healing", lv:3, waTier:5, req:[], dust:188, gold:55000, hours:92},
+  {tree:"Archer", tech:"Truegold Archer Healing", lv:4, waTier:5, req:[], dust:255, gold:75000, hours:125},
+  {tree:"Archer", tech:"Truegold Archer Healing", lv:5, waTier:5, req:[], dust:341, gold:100000, hours:167},
+  {tree:"Archer", tech:"Truegold Archer Healing", lv:6, waTier:5, req:[], dust:459, gold:130000, hours:225},
+  {tree:"Archer", tech:"Truegold Archer Healing", lv:7, waTier:5, req:[], dust:612, gold:180000, hours:300},
+  {tree:"Archer", tech:"Truegold Archer Healing", lv:8, waTier:5, req:[], dust:836, gold:240000, hours:410},
+  {tree:"Archer", tech:"Truegold Archer Healing", lv:9, waTier:5, req:[], dust:1100, gold:330000, hours:550},
+  {tree:"Archer", tech:"Truegold Archer Healing", lv:10, waTier:5, req:[], dust:1500, gold:450000, hours:750},
+  {tree:"Archer", tech:"Truegold Archer Aid", lv:1, waTier:5, req:[["Truegold Archers", 1]], dust:51, gold:15000, hours:25},
+  {tree:"Archer", tech:"Truegold Archer Aid", lv:2, waTier:5, req:[], dust:68, gold:20000, hours:33},
+  {tree:"Archer", tech:"Truegold Archer Aid", lv:3, waTier:5, req:[], dust:94, gold:27000, hours:46},
+  {tree:"Archer", tech:"Truegold Archer Aid", lv:4, waTier:5, req:[], dust:127, gold:37000, hours:62},
+  {tree:"Archer", tech:"Truegold Archer Aid", lv:5, waTier:5, req:[], dust:170, gold:50000, hours:83},
+  {tree:"Archer", tech:"Truegold Archer Aid", lv:6, waTier:5, req:[], dust:229, gold:67000, hours:112},
+  {tree:"Archer", tech:"Truegold Archer Aid", lv:7, waTier:5, req:[], dust:306, gold:90000, hours:150},
+  {tree:"Archer", tech:"Truegold Archer Aid", lv:8, waTier:5, req:[], dust:418, gold:120000, hours:205},
+  {tree:"Archer", tech:"Truegold Archer Aid", lv:9, waTier:5, req:[], dust:561, gold:160000, hours:275},
+  {tree:"Archer", tech:"Truegold Archer Aid", lv:10, waTier:5, req:[], dust:765, gold:220000, hours:375},
+  {tree:"Archer", tech:"Truegold Archer Training", lv:1, waTier:5, req:[["Truegold Archers", 1]], dust:102, gold:30000, hours:50},
+  {tree:"Archer", tech:"Truegold Archer Training", lv:2, waTier:5, req:[], dust:137, gold:40000, hours:67},
+  {tree:"Archer", tech:"Truegold Archer Training", lv:3, waTier:5, req:[], dust:188, gold:55000, hours:92},
+  {tree:"Archer", tech:"Truegold Archer Training", lv:4, waTier:5, req:[], dust:255, gold:75000, hours:125},
+  {tree:"Archer", tech:"Truegold Archer Training", lv:5, waTier:5, req:[], dust:341, gold:100000, hours:167},
+  {tree:"Archer", tech:"Truegold Archer Training", lv:6, waTier:5, req:[], dust:459, gold:130000, hours:225},
+  {tree:"Archer", tech:"Truegold Archer Training", lv:7, waTier:5, req:[], dust:612, gold:180000, hours:300},
+  {tree:"Archer", tech:"Truegold Archer Training", lv:8, waTier:5, req:[], dust:836, gold:240000, hours:410},
+  {tree:"Archer", tech:"Truegold Archer Training", lv:9, waTier:5, req:[], dust:1100, gold:330000, hours:550},
+  {tree:"Archer", tech:"Truegold Archer Training", lv:10, waTier:5, req:[], dust:1500, gold:450000, hours:750},
+  {tree:"Cavalry", tech:"Truegold Cavalry Healing", lv:1, waTier:5, req:[["Truegold Cavalry", 1]], dust:102, gold:30000, hours:50},
+  {tree:"Cavalry", tech:"Truegold Cavalry Healing", lv:2, waTier:5, req:[], dust:137, gold:40000, hours:67},
+  {tree:"Cavalry", tech:"Truegold Cavalry Healing", lv:3, waTier:5, req:[], dust:188, gold:55000, hours:92},
+  {tree:"Cavalry", tech:"Truegold Cavalry Healing", lv:4, waTier:5, req:[], dust:255, gold:75000, hours:125},
+  {tree:"Cavalry", tech:"Truegold Cavalry Healing", lv:5, waTier:5, req:[], dust:341, gold:100000, hours:167},
+  {tree:"Cavalry", tech:"Truegold Cavalry Healing", lv:6, waTier:5, req:[], dust:459, gold:130000, hours:225},
+  {tree:"Cavalry", tech:"Truegold Cavalry Healing", lv:7, waTier:5, req:[], dust:612, gold:180000, hours:300},
+  {tree:"Cavalry", tech:"Truegold Cavalry Healing", lv:8, waTier:5, req:[], dust:836, gold:240000, hours:410},
+  {tree:"Cavalry", tech:"Truegold Cavalry Healing", lv:9, waTier:5, req:[], dust:1100, gold:330000, hours:550},
+  {tree:"Cavalry", tech:"Truegold Cavalry Healing", lv:10, waTier:5, req:[], dust:1500, gold:450000, hours:750},
+  {tree:"Cavalry", tech:"Truegold Cavalry Aid", lv:1, waTier:5, req:[["Truegold Cavalry", 1]], dust:51, gold:15000, hours:25},
+  {tree:"Cavalry", tech:"Truegold Cavalry Aid", lv:2, waTier:5, req:[], dust:68, gold:20000, hours:33},
+  {tree:"Cavalry", tech:"Truegold Cavalry Aid", lv:3, waTier:5, req:[], dust:94, gold:27000, hours:46},
+  {tree:"Cavalry", tech:"Truegold Cavalry Aid", lv:4, waTier:5, req:[], dust:127, gold:37000, hours:62},
+  {tree:"Cavalry", tech:"Truegold Cavalry Aid", lv:5, waTier:5, req:[], dust:170, gold:50000, hours:83},
+  {tree:"Cavalry", tech:"Truegold Cavalry Aid", lv:6, waTier:5, req:[], dust:229, gold:67000, hours:112},
+  {tree:"Cavalry", tech:"Truegold Cavalry Aid", lv:7, waTier:5, req:[], dust:306, gold:90000, hours:150},
+  {tree:"Cavalry", tech:"Truegold Cavalry Aid", lv:8, waTier:5, req:[], dust:418, gold:120000, hours:205},
+  {tree:"Cavalry", tech:"Truegold Cavalry Aid", lv:9, waTier:5, req:[], dust:561, gold:160000, hours:275},
+  {tree:"Cavalry", tech:"Truegold Cavalry Aid", lv:10, waTier:5, req:[], dust:765, gold:220000, hours:375},
+  {tree:"Cavalry", tech:"Truegold Cavalry Training", lv:1, waTier:5, req:[["Truegold Cavalry", 1]], dust:102, gold:30000, hours:50},
+  {tree:"Cavalry", tech:"Truegold Cavalry Training", lv:2, waTier:5, req:[], dust:137, gold:40000, hours:67},
+  {tree:"Cavalry", tech:"Truegold Cavalry Training", lv:3, waTier:5, req:[], dust:188, gold:55000, hours:92},
+  {tree:"Cavalry", tech:"Truegold Cavalry Training", lv:4, waTier:5, req:[], dust:255, gold:75000, hours:125},
+  {tree:"Cavalry", tech:"Truegold Cavalry Training", lv:5, waTier:5, req:[], dust:341, gold:100000, hours:167},
+  {tree:"Cavalry", tech:"Truegold Cavalry Training", lv:6, waTier:5, req:[], dust:459, gold:130000, hours:225},
+  {tree:"Cavalry", tech:"Truegold Cavalry Training", lv:7, waTier:5, req:[], dust:612, gold:180000, hours:300},
+  {tree:"Cavalry", tech:"Truegold Cavalry Training", lv:8, waTier:5, req:[], dust:836, gold:240000, hours:410},
+  {tree:"Cavalry", tech:"Truegold Cavalry Training", lv:9, waTier:5, req:[], dust:1100, gold:330000, hours:550},
+  {tree:"Cavalry", tech:"Truegold Cavalry Training", lv:10, waTier:5, req:[], dust:1500, gold:450000, hours:750}
+];
+// WA_RESEARCH_ORDER is pre-sorted into the alliance's research plan: the
+// minimum needed to unlock Truegold Infantry, then Truegold Archers, then
+// Truegold Cavalry, then everything left in the Infantry, Archer and
+// Cavalry trees, each step after its prerequisites.
+
+var RESEARCH_SPEED_BASE_PCT = 69.0;      // Michael's profile Research Speed
+var RESEARCH_BUFF_CHIEF_MINISTER_PCT = 10;
+var RESEARCH_BUFF_KVK_PCT = 5;
+var RESEARCH_BUFF_FRESH_IDEAS_PCT = 10;  // King Skill
+var RESEARCH_SPEED_BONUS_PCT = RESEARCH_SPEED_BASE_PCT + RESEARCH_BUFF_CHIEF_MINISTER_PCT +
+  RESEARCH_BUFF_KVK_PCT + RESEARCH_BUFF_FRESH_IDEAS_PCT; // 94%
+var TRUEGOLD_PTS = 2000;
+var TRUEGOLD_DUST_PTS = 1000;
+var SPEEDUP_PTS_PER_DAY = 1440 * 30;
+var TG_TO_DUST_BATCH_TG = 10;
+var TG_TO_DUST_BATCH_DUST = 13;
+
+function msTcTierForLevel(townHallLevel){
+  var n = parseInt(townHallLevel, 10);
+  if(isNaN(n) || n < 35) return 0;
+  return Math.min(5, Math.floor((n - 30) / 5));
+}
+
+// Spends Truegold + speedup-days down the War Academy upgrades. Same rule
+// as the construction path: a stage that can't finish is still started if
+// there's Truegold for it (partial speedups count), and then it stops.
+function msSimWarAcademy(state, tcTier){
+  var EPS = 1e-9;
+  state.waTier = tcTier >= 1 ? 1 : 0;
+  state.waLevel = state.waTier ? 'TG 1' : 'none';
+  state.waResearchPct = state.waTier ? 0.5 : 0;
+  if(!state.waTier) return;
+  for(var i=0; i<WA_UPGRADES.length; i++){
+    var row = WA_UPGRADES[i];
+    if(row.tcTier > tcTier) break;
+    var days = (row.stageDays / CONSTRUCTION_SPEED_DIVISOR) * DOUBLE_TIME_DECREE_MULTIPLIER;
+    if(state.gold + EPS >= row.stageGold && state.days + EPS >= days){
+      state.gold -= row.stageGold; state.goldSpent += row.stageGold;
+      state.days -= days; state.daysSpent += days;
+      state.waLevel = row.level;
+      state.waResearchPct = row.researchSpeedPct;
+      if(row.waTier) state.waTier = row.waTier;
+      continue;
+    }
+    if(state.gold + EPS >= row.stageGold){
+      state.gold -= row.stageGold; state.goldSpent += row.stageGold;
+      var partial = Math.min(state.days, days);
+      state.days -= partial; state.daysSpent += partial;
+      state.waStarted = row.level;
+    }
+    break;
+  }
+}
+
+// Spends Truegold Dust + speedup-days down WA_RESEARCH_ORDER. Steps the
+// War Academy level (or a skipped prerequisite) doesn't allow yet are
+// skipped; the first affordable-but-unfinishable step is started (dust
+// counts, partial speedups count) and research stops there.
+function msSimResearch(state){
+  var EPS = 1e-9;
+  if(!state.waTier) return;
+  var done = state.researchDone;
+  for(var i=0; i<WA_RESEARCH_ORDER.length; i++){
+    var r = WA_RESEARCH_ORDER[i];
+    if(r.waTier > state.waTier) continue;
+    if((done[r.tree + '|' + r.tech] || 0) !== r.lv - 1) continue;
+    var ok = true;
+    for(var j=0; j<r.req.length; j++){
+      if((done[r.tree + '|' + r.req[j][0]] || 0) < r.req[j][1]){ ok = false; break; }
+    }
+    if(!ok) continue;
+    if(state.canConvert && state.dust + EPS < r.dust){
+      var batches = Math.ceil((r.dust - state.dust - EPS) / TG_TO_DUST_BATCH_DUST);
+      if(state.gold + EPS >= batches * TG_TO_DUST_BATCH_TG){
+        state.gold -= batches * TG_TO_DUST_BATCH_TG;
+        state.goldConverted += batches * TG_TO_DUST_BATCH_TG;
+        state.dust += batches * TG_TO_DUST_BATCH_DUST;
+        state.dustFromConversion += batches * TG_TO_DUST_BATCH_DUST;
+      }
+    }
+    var days = (r.hours / 24) / (1 + (RESEARCH_SPEED_BONUS_PCT + state.waResearchPct - 0.5) / 100);
+    if(state.dust + EPS >= r.dust && state.days + EPS >= days){
+      state.dust -= r.dust; state.dustSpent += r.dust;
+      state.days -= days; state.daysSpent += days; state.researchDaysSpent += days;
+      done[r.tree + '|' + r.tech] = r.lv;
+      state.researchSteps++;
+      if(r.lv === 1 && /^Truegold (Infantry|Archers|Cavalry)$/.test(r.tech)) state.t11Unlocked.push(r.tree);
+      continue;
+    }
+    if(state.dust + EPS >= r.dust){
+      state.dust -= r.dust; state.dustSpent += r.dust;
+      var partial = Math.min(state.days, days);
+      state.days -= partial; state.daysSpent += partial; state.researchDaysSpent += partial;
+      state.researchStarted = r.tree + ' ' + r.tech + ' Lv ' + r.lv;
+    }
+    break;
+  }
+}
+
+// Full Day 1 simulation: War Academy, then research, then the construction
+// path. Returns the breakdown; msCalcConstructionPts returns just points.
+function msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, dustAvailable){
+  var state = {
+    gold: Math.max(0, parseFloat(truegoldAvailable) || 0),
+    days: Math.max(0, parseFloat(speedupDaysAvailable) || 0),
+    dust: Math.max(0, parseFloat(dustAvailable) || 0),
+    goldSpent: 0, daysSpent: 0, dustSpent: 0, researchDaysSpent: 0,
+    goldConverted: 0, dustFromConversion: 0,
+    waTier: 0, waLevel: 'none', waResearchPct: 0, waStarted: null,
+    researchDone: {}, researchSteps: 0, researchStarted: null, t11Unlocked: []
+  };
+  msSimConstructionPath(state, townHallLevel);
+  state.constructionGoldSpent = state.goldSpent;
+  state.constructionDaysSpent = state.daysSpent;
+  var tcLevelNow = Math.max(parseInt(townHallLevel, 10) || 0, state.tcLevelReached || 0);
+  msSimWarAcademy(state, msTcTierForLevel(tcLevelNow));
+  state.waGoldSpent = state.goldSpent - state.constructionGoldSpent;
+  state.canConvert = state.buildingsDone && state.waTier >= 5;
+  msSimResearch(state);
+  state.pts = Math.round(state.goldSpent * TRUEGOLD_PTS + state.dustSpent * TRUEGOLD_DUST_PTS + state.daysSpent * SPEEDUP_PTS_PER_DAY);
+  return state;
+}
+
+function msCalcConstructionPts(townHallLevel, truegoldAvailable, speedupDaysAvailable, dustAvailable){
+  return msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, dustAvailable).pts;
+}
+
+// The original construction-path walk, now spending from the shared
+// Day 1 state (whatever War Academy and research left over).
+function msSimConstructionPath(state, townHallLevel){
   var EPS = 1e-9;
   var startOrder = msBaselineOrderForLevel(townHallLevel);
-  var remainingGold = Math.max(0, parseFloat(truegoldAvailable) || 0);
-  var remainingDays = Math.max(0, parseFloat(speedupDaysAvailable) || 0);
+  var remainingGold = state.gold;
+  var remainingDays = state.days;
   var totalGoldSpent = 0, totalDaysSpent = 0;
+  state.buildingsDone = true;
 
   for(var i=0; i<UPGRADE_QUEUE.length; i++){
     var step = UPGRADE_QUEUE[i];
@@ -3992,11 +4441,14 @@ function msCalcConstructionPts(townHallLevel, truegoldAvailable, speedupDaysAvai
         totalDaysSpent += partialDays;
         remainingDays -= partialDays;
       }
+      state.buildingsDone = false;
       break; // stop entirely at the first step that can't fully complete
     }
+    if(step.building === "Town Center" && step.townHallLevel > (state.tcLevelReached || 0)) state.tcLevelReached = step.townHallLevel;
   }
 
-  return Math.round((totalGoldSpent * 2000) + (totalDaysSpent * 1440 * 30));
+  state.gold = remainingGold; state.days = remainingDays;
+  state.goldSpent += totalGoldSpent; state.daysSpent += totalDaysSpent;
 }
 
 // All applicants use an assumed 200% profile Training Speed, including
@@ -4249,7 +4701,7 @@ function msRetrySchedulerTc(key,pid,rerender){
     p.tcLevel=tc;p.currentLevel=tc;p.levelSource='api-retry-'+result.source;
     p.avatarUrl=data&&data.avatar_url?data.avatar_url:null;
     p.allianceName=allianceName;
-    if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,parseFloat(p.sp)||0);
+    if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,parseFloat(p.sp)||0,p.dust||0);
     delete msTcRetrying[pid];delete msTcRetryErrors[pid];
     msRecalcAll();msSyncAndSave();rerender();
     flag('TC level updated for '+p.name+'.');
@@ -4272,7 +4724,7 @@ function msManualSchedulerPlayer(pid,rerender){
   if(!/^\d+$/.test(enteredTc)||parseInt(enteredTc,10)<=0){flag('Enter a valid TC level.');return;}
   var tc=parseInt(enteredTc,10);
   p.name=enteredName;p.tcLevel=tc;p.currentLevel=tc;p.levelSource='manual';
-  if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,parseFloat(p.sp)||0);
+  if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,parseFloat(p.sp)||0,p.dust||0);
   delete msTcRetryErrors[pid];
   msRecalcAll();msSyncAndSave();rerender();
   flag('Player details updated manually.');
@@ -5324,6 +5776,7 @@ function msOpenApplyModal(key){
   document.getElementById('msApplyManualWrap').style.display = 'none';
   document.getElementById('msApplySpeedups').value = '';
   document.getElementById('msApplyTruegold').value = '';
+  document.getElementById('msApplyDust').value = '';
   document.getElementById('msApplyT9').value = '';
   msAvailResetState();
   document.getElementById('msApplyError').style.display = 'none';
@@ -5331,6 +5784,7 @@ function msOpenApplyModal(key){
   var isNobleAdvisor = (key === 'd4');
   document.getElementById('msApplyAutoCalcHint').style.display = isConstruction ? 'block' : 'none';
   document.getElementById('msApplyTruegoldWrap').style.display = isNobleAdvisor ? 'none' : 'block';
+  document.getElementById('msApplyDustWrap').style.display = isConstruction ? 'block' : 'none';
   document.getElementById('msApplyT9Wrap').style.display = isNobleAdvisor ? 'block' : 'none';
   var check = document.getElementById('msApplyIdCheck');
   if(check){ check.textContent = ''; check.className = 'ms-apply-idcheck'; }
@@ -5368,6 +5822,7 @@ function msPrefillFromPriorApplication(kingshotId){
   var speedupDays=parseFloat(prior.sp);
   fillIfEmpty('msApplySpeedups',isNaN(speedupDays)?null:speedupDays);
   fillIfEmpty('msApplyTruegold',prior.tg);
+  fillIfEmpty('msApplyDust',prior.dust);
   fillIfEmpty('msApplyT9',prior.t9);
 
   if(!msAvailRanges.length){
@@ -5438,11 +5893,13 @@ function msApplyGoToStep2(){
   var kingshotId = document.getElementById('msApplyName').value.trim();
   var spRaw = document.getElementById('msApplySpeedups').value.trim();
   var tgRaw = document.getElementById('msApplyTruegold').value.trim();
+  var dustRaw = document.getElementById('msApplyDust').value.trim();
   var t9Raw = document.getElementById('msApplyT9').value.trim();
 
   // Required fields depend on the position (msOpenApplyModal toggles the
   // wraps below per key). T9 count is optional even when its field is visible.
   var truegoldVisible = document.getElementById('msApplyTruegoldWrap').style.display !== 'none';
+  var dustVisible = document.getElementById('msApplyDustWrap').style.display !== 'none';
   var t9Visible = document.getElementById('msApplyT9Wrap').style.display !== 'none';
 
   if(!kingshotId){ msApplyShowError('Please enter your Kingshot ID.'); return; }
@@ -5459,6 +5916,12 @@ function msApplyGoToStep2(){
     if(!tgRaw){ msApplyShowError('Please enter your Truegold Quantity.'); return; }
     var tg = parseFloat(tgRaw);
     if(isNaN(tg) || tg < 0){ msApplyShowError('Truegold quantity must be a positive number.'); return; }
+  }
+
+  if(dustVisible){
+    if(!dustRaw){ msApplyShowError('Please enter your Truegold Dust Quantity (0 if none).'); return; }
+    var dust = parseFloat(dustRaw);
+    if(isNaN(dust) || dust < 0){ msApplyShowError('Truegold Dust quantity must be a positive number.'); return; }
   }
 
   if(t9Visible && t9Raw){
@@ -5481,9 +5944,11 @@ function msSubmitApplication(){
   var kingshotId = document.getElementById('msApplyName').value.trim();
   var spRaw = document.getElementById('msApplySpeedups').value.trim();
   var tgRaw = document.getElementById('msApplyTruegold').value.trim();
+  var dustRaw = document.getElementById('msApplyDust').value.trim();
   var t9Raw = document.getElementById('msApplyT9').value.trim();
 
   var truegoldVisible = document.getElementById('msApplyTruegoldWrap').style.display !== 'none';
+  var dustVisible = document.getElementById('msApplyDustWrap').style.display !== 'none';
   var t9Visible = document.getElementById('msApplyT9Wrap').style.display !== 'none';
 
   if(!kingshotId){ msSetApplyStep(1); msApplyShowError('Please enter your Kingshot ID.'); return; }
@@ -5499,6 +5964,13 @@ function msSubmitApplication(){
     if(!tgRaw){ msSetApplyStep(1); msApplyShowError('Please enter your Truegold Quantity.'); return; }
     tg = parseFloat(tgRaw);
     if(isNaN(tg) || tg < 0){ msSetApplyStep(1); msApplyShowError('Truegold quantity must be a positive number.'); return; }
+  }
+
+  var dust = 0;
+  if(dustVisible){
+    if(!dustRaw){ msSetApplyStep(1); msApplyShowError('Please enter your Truegold Dust Quantity (0 if none).'); return; }
+    dust = parseFloat(dustRaw);
+    if(isNaN(dust) || dust < 0){ msSetApplyStep(1); msApplyShowError('Truegold Dust quantity must be a positive number.'); return; }
   }
 
   var t9 = 0;
@@ -5548,7 +6020,8 @@ function msSubmitApplication(){
     p.sp = sp + 'd';
     p.currentLevel = currentLevel;
     p.levelSource = lookup ? 'api' : (manual ? 'manual' : 'unknown-fallback');
-    p.pts = msCalcConstructionPts(currentLevel, tg, sp);
+    p.dust = dust;
+    p.pts = msCalcConstructionPts(currentLevel, tg, sp, dust);
   } else if(key === 'd4'){
     // Noble Advisor — T11 isn't unlocked yet, so always pass t10:0, t11:false.
     // Assume the same profile Training Speed for everyone, including
@@ -5832,7 +6305,7 @@ function msColsFor(key){
   var playerW = narrow ? '100px' : '160px';
   var cols;
   if(key === 'd1') cols = [
-    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'TC', w:'1fr'}, {h:'TG', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
+    {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'TC', w:'1fr'}, {h:'TG', w:'1fr'}, {h:'Dust', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
   ];
   else if(key === 'd4') cols = [
     {h:'Time', w:timeW}, {h:'Player', w:playerW}, {h:'TC', w:'1fr'}, {h:'T9 Count', w:'1fr'}, {h:'Speedups', w:'1fr'}, {h:'Points', w:'1fr'}
@@ -5875,7 +6348,7 @@ function msRequestedHtml(p,key){
 function msRowValues(key, p){
   var requested=EDIT_MODE?['<span class="notranslate" translate="no">'+msEsc(p.kingshotId || '—')+'</span>',msRequestedHtml(p,key)]:[];
   if(key === 'd1'){
-    return requested.concat([msTcValueHtml(p), msFmtNumFull(p.tg || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)]);
+    return requested.concat([msTcValueHtml(p), msFmtNumFull(p.tg || 0), msFmtNumFull(p.dust || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)]);
   }
   if(key === 'd4'){
     return requested.concat([msTcValueHtml(p), msFmtNum(p.t9 || 0), msEsc(p.sp || '\u2014'), msFmtPts(p.pts || 0)]);
@@ -6371,6 +6844,7 @@ function msCurrentAppointedHtml(key){
   var resourceValue=key==='d1'?msFmtNum(p.tg||0):msFmtNum(p.t9||0);
   var stats=msCurrentStatHtml('TC',String(tc))+
     msCurrentStatHtml(resourceLabel,resourceValue)+
+    (key==='d1'?msCurrentStatHtml('TG Dust',msFmtNum(p.dust||0)):'')+
     msCurrentStatHtml('Speedups',String(p.sp||'—'))+
     msCurrentStatHtml('KvK Potential',msFmtPts(p.pts||0));
 
