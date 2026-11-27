@@ -3975,8 +3975,9 @@ var DOUBLE_TIME_DECREE_MULTIPLIER = 0.8; // -20% Construction Time Reduction
 //  - CSV upgrade/research times are base times. Construction uses the same
 //    speed bonuses as the path above. Research uses RESEARCH_SPEED_BONUS_PCT
 //    (Michael's profile Research Speed, which already includes his War
-//    Academy at TG 1) plus whatever War Academy adds above TG 1's 0.5%.
-//    No Day 1 buff (Chief Minister, Double Time, pet) is applied to research.
+//    Academy at TG 1) plus Day 1 research buffs (Chief Minister 10%, KvK
+//    Bonus 5%, Fresh Ideas King Skill 10%) plus whatever War Academy adds
+//    above TG 1's 0.5%.
 //  - Gold (the research currency) is never the limit.
 //  - Research speedups come out of the same Speedups (Days) pool.
 // Data: war_academy_upgrades.csv and war_academy_research.csv.
@@ -4273,7 +4274,12 @@ var WA_RESEARCH_ORDER = [
 // Truegold Cavalry, then everything left in the Infantry, Archer and
 // Cavalry trees, each step after its prerequisites.
 
-var RESEARCH_SPEED_BONUS_PCT = 69.0;
+var RESEARCH_SPEED_BASE_PCT = 69.0;      // Michael's profile Research Speed
+var RESEARCH_BUFF_CHIEF_MINISTER_PCT = 10;
+var RESEARCH_BUFF_KVK_PCT = 5;
+var RESEARCH_BUFF_FRESH_IDEAS_PCT = 10;  // King Skill
+var RESEARCH_SPEED_BONUS_PCT = RESEARCH_SPEED_BASE_PCT + RESEARCH_BUFF_CHIEF_MINISTER_PCT +
+  RESEARCH_BUFF_KVK_PCT + RESEARCH_BUFF_FRESH_IDEAS_PCT; // 94%
 var TRUEGOLD_PTS = 2000;
 var TRUEGOLD_DUST_PTS = 1000;
 var SPEEDUP_PTS_PER_DAY = 1440 * 30;
