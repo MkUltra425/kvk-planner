@@ -6653,7 +6653,9 @@ function msColsFor(key){
 
 function msGridStyle(key){
   var delCol = EDIT_MODE ? (msIsNarrow() ? ' 18px' : ' 22px') : '';
-  var chooseCol = msIsNarrow() ? '52px' : '62px';
+  // The Choose column only takes space while a NO SLOT player is selected
+  // (msApplyNoSlotHighlights sets --ms-choose-w), so the other columns spread evenly.
+  var chooseCol = 'var(--ms-choose-w,0px)';
   return msColsFor(key).map(function(c){
     return c.w.indexOf('fr') !== -1 ? 'minmax(0,' + c.w + ')' : c.w;
   }).join(' ') + ' ' + chooseCol + delCol;
@@ -6737,6 +6739,7 @@ function msSafePts(value){
 function msApplyNoSlotHighlights(root,key){
   if(!root)return;
   var selected=msNoSlotHighlightByKey[key]||null;
+  root.style.setProperty('--ms-choose-w',selected?(msIsNarrow()?'52px':'62px'):'0px');
   root.querySelectorAll('.ms-row[data-slot]').forEach(function(row){
     var hasLowerPotential=!!selected&&msSafePts(row.getAttribute('data-pts'))<selected.pts;
     // The visual recommendation always remains score-based. Editors may
@@ -7652,7 +7655,9 @@ function kaActiveKey(){
 
 function kaGridStyle(key){
   var delCol = EDIT_MODE ? (msIsNarrow() ? ' 18px' : ' 22px') : '';
-  var chooseCol = msIsNarrow() ? '52px' : '62px';
+  // The Choose column only takes space while a NO SLOT player is selected
+  // (msApplyNoSlotHighlights sets --ms-choose-w), so the other columns spread evenly.
+  var chooseCol = 'var(--ms-choose-w,0px)';
   return msColsFor(key).map(function(c){
     return c.w.indexOf('fr') !== -1 ? 'minmax(0,' + c.w + ')' : c.w;
   }).join(' ') + ' ' + chooseCol + delCol;
