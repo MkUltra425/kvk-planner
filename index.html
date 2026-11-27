@@ -378,6 +378,7 @@
   .ms-bd-table td{padding:5px 6px;border-bottom:1px solid var(--glass-border);vertical-align:top;}
   .ms-bd-table .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
   .ms-bd-table .nowrap{white-space:nowrap;}
+  .ms-bd-table .num.ctr{text-align:center;}
   @media (max-width:480px){.ms-bd-modal{padding:18px 14px;}.ms-bd-table{font-size:12px;}.ms-bd-table td,.ms-bd-table th{padding:5px 4px;}}
   .ms-bd-total td{font-weight:700;border-bottom:none;}
   .ms-bd-table tr.has-rss td{border-bottom:none;}
@@ -7259,11 +7260,11 @@ function msBreakdownRssHtml(r){
   });
   var row = function(label, o, cls){
     return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + label + '</td>' + MS_RSS_TYPES.map(function(t){
-      return '<td class="num">' + msFmtPower(o[t[0]]) + '</td>';
+      return '<td class="num ctr">' + msFmtPower(o[t[0]]) + '</td>';
     }).join('') + '</tr>';
   };
   var html = '<div class="ms-bd-section"><div class="ms-bd-title">Resources used</div><table class="ms-bd-table"><thead><tr><th></th>' +
-    MS_RSS_TYPES.map(function(t){ return '<th class="num">' + itemIconHtml(t[0], t[1]) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    MS_RSS_TYPES.map(function(t){ return '<th class="num ctr">' + itemIconHtml(t[0], t[1]) + '</th>'; }).join('') + '</tr></thead><tbody>' +
     row('Buildings', sums.building) + row('War Academy', sums.wa) + row('Research', sums.research) + row('Total', sums.total, 'ms-bd-total') + '</tbody></table>';
   return html + '</div>';
 }
@@ -7271,7 +7272,7 @@ function msBreakdownRssHtml(r){
 function msBreakdownTable(title, groups, cols){
   if(!groups.length) return '';
   var html = '<div class="ms-bd-section"><div class="ms-bd-title">' + msEsc(title) + '</div><table class="ms-bd-table"><thead><tr>';
-  var cls = function(c){ return c.num ? ' class="num"' : (c.nowrap ? ' class="nowrap"' : ''); };
+  var cls = function(c){ return c.num ? (c.icon ? ' class="num ctr"' : ' class="num"') : (c.nowrap ? ' class="nowrap"' : ''); };
   cols.forEach(function(c){ html += '<th' + cls(c) + '>' + (c.icon ? itemIconHtml(c.icon, c.h) : msEsc(c.h)) + '</th>'; });
   html += '</tr></thead><tbody>';
   groups.forEach(function(g){
