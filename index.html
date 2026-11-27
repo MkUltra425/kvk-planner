@@ -6639,11 +6639,14 @@ function msTcValueHtml(p){
   return '<span class="ms-tc-missing'+(failed?' failed':'')+'">— <button type="button" class="ms-tc-retry" data-ms-tc-retry="'+msEsc(String(p.id))+'" aria-label="Retry TC level for '+msEsc(p.name||'this player')+'"'+(loading?' disabled':'')+'>'+(loading?'↻ retrying':'↻ retry')+'</button>'+(failed?'<button type="button" class="ms-tc-retry ms-tc-manual" data-ms-tc-manual="'+msEsc(String(p.id))+'">manual</button><span class="ms-tc-error">'+msEsc(failed)+'</span>':'')+'</span>';
 }
 
-function msRequestedHtml(p,key){
+function msRequestedRangesText(p){
   var ranges=[];
   if(p.s1!=null&&p.e1!=null)ranges.push(msMinToTime(p.s1)+'–'+msMinToTime(p.e1));
   if(p.s2!=null&&p.e2!=null)ranges.push(msMinToTime(p.s2)+'–'+msMinToTime(p.e2));
-  var text=ranges.length?ranges.join(', '):'—';
+  return ranges.length?ranges.join(', ')+' UTC':'—';
+}
+function msRequestedHtml(p,key){
+  var text=msRequestedRangesText(p);
   return '<span class="ms-requested" title="'+msEsc(text)+'">'+msEsc(text)+'</span>';
 }
 
@@ -7211,7 +7214,8 @@ function msDay1BreakdownHtml(p){
     ic('truegold', 'Truegold') + ' ' + msFmtNumFull(r.startGold) + ' · ' + ic('truegold_dust', 'Truegold Dust') + ' ' + msFmtNumFull(r.startDust) + '<br>Speedups: ' +
     ic('general_speedup', 'General Speedups') + ' ' + msEsc(msFmtDays(r.spIn.general)) + ' · ' +
     ic('construction_speedup', 'Construction Speedups') + ' ' + msEsc(msFmtDays(r.spIn.construction)) + ' · ' +
-    ic('research_speedup', 'Research Speedups') + ' ' + msEsc(msFmtDays(r.spIn.research)) + '</div>';
+    ic('research_speedup', 'Research Speedups') + ' ' + msEsc(msFmtDays(r.spIn.research)) +
+    '<br>Requested time: ' + msEsc(msRequestedRangesText(p)) + '</div>';
   html += '<div class="ms-bd-section"><div class="ms-bd-title">KvK Potential</div><table class="ms-bd-table"><thead><tr><th>Used</th><th class="num">Amount</th><th class="num">Points</th></tr></thead><tbody>' +
     row(itemIconHtml('truegold', 'Truegold') + ' ×' + msFmtNumFull(TRUEGOLD_PTS), msFmtNumFull(r.goldSpent), tgPts) +
     row(itemIconHtml('truegold_dust', 'Truegold Dust') + ' ×' + msFmtNumFull(TRUEGOLD_DUST_PTS), msFmtNumFull(r.dustSpent), dustPts) +
