@@ -3496,7 +3496,9 @@ function scoringIconEl(text){
 // Item focus on the Today tab. Day 1 (Construction): Truegold, Truegold
 // Dust, Construction and Research speedups. Day 4 (Troop training):
 // Training speedups. Every other item goes on the LAST prep day it scores
-// on in the Event Guide (event_guide.csv).
+// on in the Event Guide (event_guide.csv), except: Gathering is a focus
+// every day it scores (2, 4, 5), and pet items (taming marks, Pet
+// Advancement) go on Day 3.
 var ITEM_LABELS = {
   truegold:'Truegold', truegold_dust:'Truegold Dust', construction_speedup:'Construction Speedups', research_speedup:'Research Speedups',
   training_speedup:'Training Speedups', learning_speedup:'Learning Speedups', hero_roulette:'Hero Roulette', masters_emblem:'Master Emblems',
@@ -3506,11 +3508,11 @@ var ITEM_LABELS = {
 };
 var DAY_PRIORITY_ITEMS = {
   'Construction': ['truegold','truegold_dust','construction_speedup','research_speedup'],
-  'Research': [],
-  'Pet training': ['hero_roulette','masters_emblem','mythic_shard','masters_manuscript'],
-  'Troop training': ['training_speedup','charms'],
-  'Power boost': ['intel','learning_speedup','gathering','advanced_taming_mark','common_taming_mark','growth_manual','nutrient_potion','promotion_medallion','mithril','widget','forgehammer','governor_gear']
-};
+  'Research': ['gathering'],
+  'Pet training': ['hero_roulette','masters_emblem','mythic_shard','masters_manuscript','advanced_taming_mark','common_taming_mark','growth_manual','nutrient_potion','promotion_medallion'],
+  'Troop training': ['training_speedup','charms','gathering'],
+  'Power boost': ['intel','learning_speedup','gathering','mithril','widget','forgehammer','governor_gear']
+}
 // Rewrites the bullets under the summary's "Item Focus:" heading (or the
 // older FOCUS TODAY paragraph) so they always match DAY_PRIORITY_ITEMS.
 function summaryWithItemFocus(summary, phase){
