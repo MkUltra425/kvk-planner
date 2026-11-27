@@ -7236,13 +7236,6 @@ function msDay1BreakdownHtml(p){
     row(itemIconHtml('truegold_dust', 'Truegold Dust') + ' ×' + msFmtNumFull(TRUEGOLD_DUST_PTS), msFmtNumFull(r.dustSpent), dustPts) +
     row(itemIconHtml('general_speedup', 'Speedups') + ' 30 per min', msEsc(msFmtDays(r.daysSpent)), spPts) +
     '<tr class="ms-bd-total"><td>Total</td><td></td><td class="num">' + msFmtNumFull(r.pts) + '</td></tr></tbody></table>';
-  html += '<div class="ms-bd-note">Speedups: ' + msEsc(msFmtDays(r.constructionDaysSpent)) + ' buildings, ' +
-    msEsc(msFmtDays(r.daysSpent - r.constructionDaysSpent - r.researchDaysSpent)) + ' War Academy, ' + msEsc(msFmtDays(r.researchDaysSpent)) + ' research. ' +
-    'Construction used ' + msEsc(msFmtDays(r.spUsed.construction)) + ' construction + ' + msEsc(msFmtDays(r.spUsed.generalOnConstruction)) + ' general; research used ' +
-    msEsc(msFmtDays(r.spUsed.research)) + ' research + ' + msEsc(msFmtDays(r.spUsed.generalOnResearch)) + ' general.' +
-    (r.goldConverted ? ' Includes ' + msFmtNumFull(r.goldConverted) + ' Truegold converted to ' + msFmtNumFull(r.dustFromConversion) + ' Dust (converted Truegold scores nothing on its own).' : '') +
-    ' Left over: ' + msFmtNumFull(Math.floor(r.gold + 1e-9)) + ' Truegold, ' + msFmtNumFull(Math.floor(r.dust + 1e-9)) + ' Dust, ' +
-    msEsc(msFmtDays(r.spLeft.general)) + ' general, ' + msEsc(msFmtDays(r.spLeft.construction)) + ' construction and ' + msEsc(msFmtDays(r.spLeft.research)) + ' research speedups.</div>';
   if(Math.round(p.pts || 0) !== r.pts){
     html += '<div class="ms-bd-note warn">The schedule shows ' + msFmtNumFull(p.pts || 0) + ', worked out when they applied. The numbers here use the current calculator.</div>';
   }
