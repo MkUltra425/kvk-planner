@@ -3961,12 +3961,15 @@ var DOUBLE_TIME_DECREE_MULTIPLIER = 0.8; // -20% Construction Time Reduction
 
 // --- Day 1: War Academy + War Academy research --------------------------
 // Day 1 combines construction and research in the same 30-minute slot.
-// Assumed order (from the alliance's plan): upgrade War Academy as far as
-// Truegold allows (up to TG 5), convert all remaining Truegold to Truegold
-// Dust (10 Truegold -> 13 Dust, whole batches only), then research with the
-// Dust. Converted Truegold scores nothing itself; only Dust spent on
-// research scores. The regular construction path above only gets the few
-// Truegold left over from rounding to batches of 10.
+// Assumed order (from the alliance's plan):
+//  1) Spend Truegold + speedups on the regular construction path above,
+//     taking every building to TG 5.
+//  2) Upgrade War Academy as far as the Town Center tier now allows (max TG 5).
+//  3) Research with Truegold Dust. Only once ALL buildings (War Academy
+//     included) are at TG 5, convert leftover Truegold to Dust (10 Truegold
+//     -> 13 Dust, whole batches), and only as much as the next research
+//     step needs. Converted Truegold scores nothing itself; only Dust spent
+//     on research scores.
 // ASSUMPTIONS (guesses, adjust if wrong):
 //  - Every applicant's War Academy starts at TG 1 (just unlocked) with no
 //    War Academy research done yet; their level only reports Town Center.
@@ -4340,6 +4343,15 @@ function msSimResearch(state){
       if((done[r.tree + '|' + r.req[j][0]] || 0) < r.req[j][1]){ ok = false; break; }
     }
     if(!ok) continue;
+    if(state.canConvert && state.dust + EPS < r.dust){
+      var batches = Math.ceil((r.dust - state.dust - EPS) / TG_TO_DUST_BATCH_DUST);
+      if(state.gold + EPS >= batches * TG_TO_DUST_BATCH_TG){
+        state.gold -= batches * TG_TO_DUST_BATCH_TG;
+        state.goldConverted += batches * TG_TO_DUST_BATCH_TG;
+        state.dust += batches * TG_TO_DUST_BATCH_DUST;
+        state.dustFromConversion += batches * TG_TO_DUST_BATCH_DUST;
+      }
+    }
     var days = (r.hours / 24) / (1 + (RESEARCH_SPEED_BONUS_PCT + state.waResearchPct - 0.5) / 100);
     if(state.dust + EPS >= r.dust && state.days + EPS >= days){
       state.dust -= r.dust; state.dustSpent += r.dust;
@@ -4371,19 +4383,14 @@ function msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, 
     waTier: 0, waLevel: 'none', waResearchPct: 0, waStarted: null,
     researchDone: {}, researchSteps: 0, researchStarted: null, t11Unlocked: []
   };
-  msSimWarAcademy(state, msTcTierForLevel(townHallLevel));
-  if(state.waTier){
-    var batches = Math.floor((state.gold + 1e-9) / TG_TO_DUST_BATCH_TG);
-    state.goldConverted = batches * TG_TO_DUST_BATCH_TG;
-    state.dustFromConversion = batches * TG_TO_DUST_BATCH_DUST;
-    state.gold -= state.goldConverted;
-    state.dust += state.dustFromConversion;
-  }
-  msSimResearch(state);
-  var waGold = state.goldSpent, waAndResearchDays = state.daysSpent;
   msSimConstructionPath(state, townHallLevel);
-  state.constructionGoldSpent = state.goldSpent - waGold;
-  state.constructionDaysSpent = state.daysSpent - waAndResearchDays;
+  state.constructionGoldSpent = state.goldSpent;
+  state.constructionDaysSpent = state.daysSpent;
+  var tcLevelNow = Math.max(parseInt(townHallLevel, 10) || 0, state.tcLevelReached || 0);
+  msSimWarAcademy(state, msTcTierForLevel(tcLevelNow));
+  state.waGoldSpent = state.goldSpent - state.constructionGoldSpent;
+  state.canConvert = state.buildingsDone && state.waTier >= 5;
+  msSimResearch(state);
   state.pts = Math.round(state.goldSpent * TRUEGOLD_PTS + state.dustSpent * TRUEGOLD_DUST_PTS + state.daysSpent * SPEEDUP_PTS_PER_DAY);
   return state;
 }
@@ -4400,6 +4407,7 @@ function msSimConstructionPath(state, townHallLevel){
   var remainingGold = state.gold;
   var remainingDays = state.days;
   var totalGoldSpent = 0, totalDaysSpent = 0;
+  state.buildingsDone = true;
 
   for(var i=0; i<UPGRADE_QUEUE.length; i++){
     var step = UPGRADE_QUEUE[i];
@@ -4433,8 +4441,10 @@ function msSimConstructionPath(state, townHallLevel){
         totalDaysSpent += partialDays;
         remainingDays -= partialDays;
       }
+      state.buildingsDone = false;
       break; // stop entirely at the first step that can't fully complete
     }
+    if(step.building === "Town Center" && step.townHallLevel > (state.tcLevelReached || 0)) state.tcLevelReached = step.townHallLevel;
   }
 
   state.gold = remainingGold; state.days = remainingDays;
