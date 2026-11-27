@@ -3497,7 +3497,8 @@ function scoringIconEl(text){
 // Dust, Construction and Research speedups. Day 4 (Troop training):
 // Training speedups. Every other item goes on the LAST prep day it scores
 // on in the Event Guide (event_guide.csv), except: Gathering is a focus
-// every day it scores (2, 4, 5), and pet items (taming marks, Pet
+// every day it scores (2, 4, 5), Intel Missions every day they score
+// (1, 3, 5), and pet items (taming marks, Pet
 // Advancement) go on Day 3.
 var ITEM_LABELS = {
   truegold:'Truegold', truegold_dust:'Truegold Dust', construction_speedup:'Construction Speedups', research_speedup:'Research Speedups',
@@ -3507,9 +3508,9 @@ var ITEM_LABELS = {
   promotion_medallion:'Promotion Medallions', mithril:'Mithril', widget:'Exclusive Widgets', forgehammer:'Forgehammers', governor_gear:'Governor Gear'
 };
 var DAY_PRIORITY_ITEMS = {
-  'Construction': ['truegold','truegold_dust','construction_speedup','research_speedup'],
+  'Construction': ['truegold','truegold_dust','construction_speedup','research_speedup','intel'],
   'Research': ['gathering'],
-  'Pet training': ['hero_roulette','masters_emblem','mythic_shard','masters_manuscript','advanced_taming_mark','common_taming_mark','growth_manual','nutrient_potion','promotion_medallion'],
+  'Pet training': ['intel','hero_roulette','masters_emblem','mythic_shard','masters_manuscript','advanced_taming_mark','common_taming_mark','growth_manual','nutrient_potion','promotion_medallion'],
   'Troop training': ['training_speedup','charms','gathering'],
   'Power boost': ['intel','learning_speedup','gathering','mithril','widget','forgehammer','governor_gear']
 }
