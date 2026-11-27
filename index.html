@@ -3989,8 +3989,9 @@ var DOUBLE_TIME_DECREE_MULTIPLIER = 0.8; // -20% Construction Time Reduction
 //     step needs. Converted Truegold scores nothing itself; only Dust spent
 //     on research scores.
 // ASSUMPTIONS (guesses, adjust if wrong):
-//  - Every applicant's War Academy starts at TG 1 (just unlocked) with no
-//    War Academy research done yet; their level only reports Town Center.
+//  - Below TC 55, War Academy starts at TG 1 (just unlocked). At TC 55
+//    every building, War Academy included, is assumed already at TG 5.
+//    Nobody has War Academy research done yet.
 //  - War Academy can't pass the player's current Town Center tier
 //    (WA TG N-1 .. TG N needs TC TG N), and stops at TG 5.
 //  - CSV upgrade/research times are base times. Construction uses the same
@@ -4304,6 +4305,7 @@ var RESEARCH_SPEED_BONUS_PCT = RESEARCH_SPEED_BASE_PCT + RESEARCH_BUFF_CHIEF_MIN
 var TRUEGOLD_PTS = 2000;
 var TRUEGOLD_DUST_PTS = 1000;
 var SPEEDUP_PTS_PER_DAY = 1440 * 30;
+var MAX_TG5_LEVEL = 55; // TC level of TG 5, today's max building level
 var TG_TO_DUST_BATCH_TG = 10;
 var TG_TO_DUST_BATCH_DUST = 13;
 
@@ -4409,11 +4411,24 @@ function msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, 
     waTier: 0, waLevel: 'none', waResearchPct: 0, waStarted: null,
     researchDone: {}, researchSteps: 0, researchStarted: null, t11Unlocked: []
   };
-  msSimConstructionPath(state, townHallLevel);
+  // A TC 55+ player is assumed to already have every building, War
+  // Academy included, at max TG 5, so everything goes to research.
+  state.allMaxed = (parseInt(townHallLevel, 10) || 0) >= MAX_TG5_LEVEL;
+  if(state.allMaxed){
+    state.buildingsDone = true;
+    state.tcLevelReached = MAX_TG5_LEVEL;
+  } else {
+    msSimConstructionPath(state, townHallLevel);
+  }
   state.constructionGoldSpent = state.goldSpent;
   state.constructionDaysSpent = state.daysSpent;
-  var tcLevelNow = Math.max(parseInt(townHallLevel, 10) || 0, state.tcLevelReached || 0);
-  msSimWarAcademy(state, msTcTierForLevel(tcLevelNow));
+  if(state.allMaxed){
+    var top = WA_UPGRADES[WA_UPGRADES.length - 1];
+    state.waTier = 5; state.waLevel = top.level; state.waResearchPct = top.researchSpeedPct;
+  } else {
+    var tcLevelNow = Math.max(parseInt(townHallLevel, 10) || 0, state.tcLevelReached || 0);
+    msSimWarAcademy(state, msTcTierForLevel(tcLevelNow));
+  }
   state.waGoldSpent = state.goldSpent - state.constructionGoldSpent;
   state.canConvert = state.buildingsDone && state.waTier >= 5;
   msSimResearch(state);
@@ -6979,17 +6994,18 @@ function msDay1BreakdownHtml(p){
   var tgCol = {h:'Truegold', num:true, v:function(g){ return msFmtNumFull(g.gold); }};
   var dustCol = {h:'Dust', num:true, v:function(g){ return msFmtNumFull(g.dust); }};
   var spCol = {h:'Speedups', num:true, v:function(g){ return msEsc(msFmtDays(g.days)); }};
-  html += msBreakdownTable('1. Buildings', msGroupBreakdownSteps(r.steps, ['building']),
+  html += msBreakdownTable('Buildings', msGroupBreakdownSteps(r.steps, ['building']),
     [{h:'Building', v:function(g){ return msEsc(g.name); }}, lvlCol(false), tgCol, spCol]);
-  html += msBreakdownTable('2. War Academy', msGroupBreakdownSteps(r.steps, ['wa']),
+  html += msBreakdownTable('War Academy', msGroupBreakdownSteps(r.steps, ['wa']),
     [{h:'Building', v:function(g){ return msEsc(g.name); }}, lvlCol(false), tgCol, spCol]);
-  html += msBreakdownTable('3. War Academy research', msGroupBreakdownSteps(r.steps, ['research']),
+  html += msBreakdownTable('War Academy research', msGroupBreakdownSteps(r.steps, ['research']),
     [{h:'Tech', v:function(g){ return msEsc(g.tree + ' · ' + g.name.replace(/^Truegold /, '')); }}, lvlCol(true), dustCol, spCol]);
   if(r.goldConverted){
     html += '<div class="ms-bd-note">Truegold converted to Dust when research needed it: ' + msFmtNumFull(r.goldConverted) + ' Truegold → ' + msFmtNumFull(r.dustFromConversion) + ' Dust.</div>';
   }
   if(!r.steps.length) html += '<div class="ms-bd-note">Nothing could be upgraded or researched with these resources.</div>';
-  html += '<div class="ms-bd-note dim">Assumes War Academy starts at TG 1 with no research, construction speed ' + CONSTRUCTION_SPEED_BONUS_PCT +
+  if(r.allMaxed) html += '<div class="ms-bd-note">At TC 55 all buildings, War Academy included, are assumed already at TG 5, so Truegold goes to research as Dust.</div>';
+  html += '<div class="ms-bd-note dim">Assumes ' + (r.allMaxed ? 'no War Academy research yet' : 'War Academy starts at TG 1 with no research') + ', construction speed ' + CONSTRUCTION_SPEED_BONUS_PCT +
     '% plus Double Time, and research speed ' + RESEARCH_SPEED_BONUS_PCT + '% plus War Academy’s bonus.</div>';
   return html;
 }
