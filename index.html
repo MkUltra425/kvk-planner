@@ -1479,6 +1479,11 @@
             <input type="text" inputmode="decimal" id="msApplyTruegold" placeholder="e.g. 1500">
           </div>
 
+          <div class="ms-apply-field" id="msApplyGoldWrap" style="display:none;">
+            <label><span data-item-icon="wa_gold" data-label="Gold"></span> Gold Quantity *</label>
+            <input type="text" inputmode="decimal" id="msApplyGold" placeholder="e.g. 250M or 250000000 (0 if none)">
+          </div>
+
           <div class="ms-apply-field" id="msApplyDustWrap" style="display:none;">
             <label><span data-item-icon="truegold_dust" data-label="Truegold Dust"></span> Truegold Dust Quantity *</label>
             <input type="text" inputmode="decimal" id="msApplyDust" placeholder="e.g. 3000 (0 if none)">
@@ -4590,6 +4595,8 @@ function msSimResearch(state){
       if((done[r.tree + '|' + r.req[j][0]] || 0) < r.req[j][1]){ ok = false; break; }
     }
     if(!ok) continue;
+    // Not enough Gold for this research: stop (no conversion either).
+    if(state.coins + EPS < r.gold){ state.goldShort = {name:r.tree + ' ' + r.tech.replace(/^Truegold /, '') + ' Lv ' + r.lv, need:r.gold}; break; }
     if(state.canConvert && state.dust + EPS < r.dust){
       var batches = Math.ceil((r.dust - state.dust - EPS) / TG_TO_DUST_BATCH_DUST);
       if(state.gold + EPS >= batches * TG_TO_DUST_BATCH_TG){
@@ -4603,19 +4610,21 @@ function msSimResearch(state){
     var days = (r.hours / 24) / (1 + (RESEARCH_SPEED_BONUS_PCT + state.waResearchPct - 0.5) / 100);
     if(state.dust + EPS >= r.dust && state.days + EPS >= days){
       state.dust -= r.dust; state.dustSpent += r.dust;
+      state.coins -= r.gold; state.coinsSpent += r.gold;
       state.days -= days; state.daysSpent += days; state.researchDaysSpent += days;
       done[r.tree + '|' + r.tech] = r.lv;
       state.researchSteps++;
-      state.steps.push({kind:'research', tree:r.tree, name:r.tech, from:r.lv - 1, to:r.lv, gold:0, dust:r.dust, days:days, partial:false, bread:r.bread, wood:r.wood, stone:r.stone, iron:r.iron});
+      state.steps.push({kind:'research', tree:r.tree, name:r.tech, from:r.lv - 1, to:r.lv, gold:0, coins:r.gold, dust:r.dust, days:days, partial:false, bread:r.bread, wood:r.wood, stone:r.stone, iron:r.iron});
       if(r.lv === 1 && /^Truegold (Infantry|Archers|Cavalry)$/.test(r.tech)) state.t11Unlocked.push(r.tree);
       continue;
     }
     if(state.dust + EPS >= r.dust){
       state.dust -= r.dust; state.dustSpent += r.dust;
+      state.coins -= r.gold; state.coinsSpent += r.gold;
       var partial = Math.min(state.days, days);
       state.days -= partial; state.daysSpent += partial; state.researchDaysSpent += partial;
       state.researchStarted = r.tree + ' ' + r.tech + ' Lv ' + r.lv;
-      state.steps.push({kind:'research', tree:r.tree, name:r.tech, from:r.lv - 1, to:r.lv, gold:0, dust:r.dust, days:partial, partial:true, bread:r.bread, wood:r.wood, stone:r.stone, iron:r.iron});
+      state.steps.push({kind:'research', tree:r.tree, name:r.tech, from:r.lv - 1, to:r.lv, gold:0, coins:r.gold, dust:r.dust, days:partial, partial:true, bread:r.bread, wood:r.wood, stone:r.stone, iron:r.iron});
     }
     break;
   }
@@ -4648,8 +4657,11 @@ function msSettleSpeedups(state, typed, available){
   state.spUsed[typed === 'construction' ? 'generalOnConstruction' : 'generalOnResearch'] += used - fromTyped;
 }
 
-function msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, dustAvailable){
+// goldAvailable is regular Gold (not Truegold), which War Academy research
+// also costs. Left out (older applications), Gold is treated as unlimited.
+function msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, dustAvailable, goldAvailable){
   var spIn = msNormalizeSpeedups(speedupDaysAvailable);
+  var coinsKnown = goldAvailable !== undefined && goldAvailable !== null && goldAvailable !== '';
   var state = {
     gold: Math.max(0, parseFloat(truegoldAvailable) || 0),
     days: 0,
@@ -4662,6 +4674,9 @@ function msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, 
     startGold: Math.max(0, parseFloat(truegoldAvailable) || 0),
     startDays: spIn.general + spIn.construction + spIn.research,
     startDust: Math.max(0, parseFloat(dustAvailable) || 0),
+    coins: coinsKnown ? Math.max(0, parseFloat(goldAvailable) || 0) : Infinity,
+    coinsKnown: coinsKnown, coinsSpent: 0,
+    startCoins: coinsKnown ? Math.max(0, parseFloat(goldAvailable) || 0) : null,
     waTier: 0, waLevel: 'none', waResearchPct: 0, waStarted: null,
     researchDone: {}, researchSteps: 0, researchStarted: null, t11Unlocked: []
   };
@@ -4696,8 +4711,8 @@ function msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, 
   return state;
 }
 
-function msCalcConstructionPts(townHallLevel, truegoldAvailable, speedupDaysAvailable, dustAvailable){
-  return msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, dustAvailable).pts;
+function msCalcConstructionPts(townHallLevel, truegoldAvailable, speedupDaysAvailable, dustAvailable, goldAvailable){
+  return msSimulateDay1(townHallLevel, truegoldAvailable, speedupDaysAvailable, dustAvailable, goldAvailable).pts;
 }
 
 // The original construction-path walk, now spending from the shared
@@ -4993,7 +5008,7 @@ function msRetrySchedulerTc(key,pid,rerender){
     p.tcLevel=tc;p.currentLevel=tc;p.levelSource='api-retry-'+result.source;
     p.avatarUrl=data&&data.avatar_url?data.avatar_url:null;
     p.allianceName=allianceName;
-    if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,msDay1Speedups(p),p.dust||0);
+    if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,msDay1Speedups(p),p.dust||0,p.gold);
     delete msTcRetrying[pid];delete msTcRetryErrors[pid];
     msRecalcAll();msSyncAndSave();rerender();
     flag('TC level updated for '+p.name+'.');
@@ -5016,7 +5031,7 @@ function msManualSchedulerPlayer(pid,rerender){
   if(!/^\d+$/.test(enteredTc)||parseInt(enteredTc,10)<=0){flag('Enter a valid TC level.');return;}
   var tc=parseInt(enteredTc,10);
   p.name=enteredName;p.tcLevel=tc;p.currentLevel=tc;p.levelSource='manual';
-  if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,msDay1Speedups(p),p.dust||0);
+  if((msPlayers.d1||[]).indexOf(p)!==-1)p.pts=msCalcConstructionPts(tc,p.tg||0,msDay1Speedups(p),p.dust||0,p.gold);
   delete msTcRetryErrors[pid];
   msRecalcAll();msSyncAndSave();rerender();
   flag('Player details updated manually.');
@@ -6071,6 +6086,7 @@ function msOpenApplyModal(key){
   document.getElementById('msApplySpResearch').value = '';
   document.getElementById('msApplyTruegold').value = '';
   document.getElementById('msApplyDust').value = '';
+  document.getElementById('msApplyGold').value = '';
   document.getElementById('msApplyT9').value = '';
   msAvailResetState();
   document.getElementById('msApplyError').style.display = 'none';
@@ -6079,6 +6095,7 @@ function msOpenApplyModal(key){
   document.getElementById('msApplyAutoCalcHint').style.display = isConstruction ? 'block' : 'none';
   document.getElementById('msApplyTruegoldWrap').style.display = isNobleAdvisor ? 'none' : 'block';
   document.getElementById('msApplyDustWrap').style.display = isConstruction ? 'block' : 'none';
+  document.getElementById('msApplyGoldWrap').style.display = isConstruction ? 'block' : 'none';
   document.getElementById('msApplySpTypedWrap').style.display = isConstruction ? 'block' : 'none';
   document.getElementById('msApplySpeedupsLabel').innerHTML = isConstruction ? itemIconHtml('general_speedup', 'General Speedups') + ' General Speedups (Days) *' : itemIconHtml('training_speedup', 'Training Speedups') + ' Speedups (Days) *';
   document.getElementById('msApplySpeedups').placeholder = isConstruction ? 'e.g. 20 (0 if none)' : 'e.g. 20';
@@ -6124,6 +6141,7 @@ function msPrefillFromPriorApplication(kingshotId){
   }
   fillIfEmpty('msApplyTruegold',prior.tg);
   fillIfEmpty('msApplyDust',prior.dust);
+  fillIfEmpty('msApplyGold',prior.gold);
   fillIfEmpty('msApplyT9',prior.t9);
 
   if(!msAvailRanges.length){
@@ -6239,6 +6257,8 @@ function msApplyGoToStep2(){
     if(!dustRaw){ msApplyShowError('Please enter your Truegold Dust Quantity (0 if none).'); return; }
     var dust = parseFloat(dustRaw);
     if(isNaN(dust) || dust < 0){ msApplyShowError('Truegold Dust quantity must be a positive number.'); return; }
+    var goldErr = msGoldFieldError(document.getElementById('msApplyGold').value.trim());
+    if(goldErr){ msApplyShowError(goldErr); return; }
   }
 
   if(t9Visible && t9Raw){
@@ -6249,6 +6269,18 @@ function msApplyGoToStep2(){
   msSetApplyStep(2);
 }
 
+// Reads amounts like "250M", "1.2B", "35,000,000" or "800k".
+function msParseAmount(raw){
+  var m = String(raw || '').replace(/[,\s_]/g, '').match(/^(\d+(?:\.\d+)?|\.\d+)([kmb])?$/i);
+  if(!m) return NaN;
+  var mult = {k:1e3, m:1e6, b:1e9}[(m[2] || '').toLowerCase()] || 1;
+  return Math.round(parseFloat(m[1]) * mult);
+}
+function msGoldFieldError(raw){
+  if(!raw) return 'Please enter your Gold Quantity (0 if none).';
+  if(isNaN(msParseAmount(raw))) return 'Gold quantity must be a number, like 250M or 250000000.';
+  return null;
+}
 function msSubmitApplication(){
   var key = msApplyTargetKey;
   if(!key) return;
@@ -6292,6 +6324,13 @@ function msSubmitApplication(){
     if(!dustRaw){ msSetApplyStep(1); msApplyShowError('Please enter your Truegold Dust Quantity (0 if none).'); return; }
     dust = parseFloat(dustRaw);
     if(isNaN(dust) || dust < 0){ msSetApplyStep(1); msApplyShowError('Truegold Dust quantity must be a positive number.'); return; }
+  }
+  var gold = 0;
+  if(dustVisible){
+    var goldRaw = document.getElementById('msApplyGold').value.trim();
+    var goldErr2 = msGoldFieldError(goldRaw);
+    if(goldErr2){ msSetApplyStep(1); msApplyShowError(goldErr2); return; }
+    gold = msParseAmount(goldRaw);
   }
 
   var t9 = 0;
@@ -6343,7 +6382,8 @@ function msSubmitApplication(){
     p.currentLevel = currentLevel;
     p.levelSource = lookup ? 'api' : (manual ? 'manual' : 'unknown-fallback');
     p.dust = dust;
-    p.pts = msCalcConstructionPts(currentLevel, tg, {general:sp, construction:spc, research:spr}, dust);
+    p.gold = gold;
+    p.pts = msCalcConstructionPts(currentLevel, tg, {general:sp, construction:spc, research:spr}, dust, gold);
   } else if(key === 'd4'){
     // Noble Advisor — T11 isn't unlocked yet, so always pass t10:0, t11:false.
     // Assume the same profile Training Speed for everyone, including
@@ -7156,11 +7196,11 @@ function msGroupBreakdownSteps(steps, kinds){
     var key = st.kind + '|' + (st.tree || '') + '|' + st.name;
     var g = byKey[key];
     if(!g){
-      g = byKey[key] = {kind:st.kind, tree:st.tree, name:st.name, from:st.from, to:null, started:null, gold:0, dust:0, days:0, bread:0, wood:0, stone:0, iron:0, hasRss:false};
+      g = byKey[key] = {kind:st.kind, tree:st.tree, name:st.name, from:st.from, to:null, started:null, gold:0, coins:0, dust:0, days:0, bread:0, wood:0, stone:0, iron:0, hasRss:false};
       groups.push(g);
     }
     if(st.partial) g.started = st.to; else g.to = st.to;
-    g.gold += st.gold; g.dust += st.dust; g.days += st.days;
+    g.gold += st.gold; g.dust += st.dust; g.days += st.days; g.coins += st.coins || 0;
     if(st.bread !== undefined){
       g.hasRss = true;
       g.bread += st.bread; g.wood += st.wood; g.stone += st.stone; g.iron += st.iron;
@@ -7174,9 +7214,13 @@ function msBreakdownLevelText(g, isResearch){
   if(g.started !== null) txt += ' <span class="ms-bd-started">(+ starts ' + msEsc(fmt(g.started)) + ')</span>';
   return txt;
 }
-var MS_RSS_TYPES = [['bread','Bread'],['wood','Wood'],['stone','Stone'],['iron','Iron']];
+// [step field, label, icon]. 'coins' is regular Gold (research only).
+var MS_RSS_TYPES = [['coins','Gold','wa_gold'],['bread','Bread'],['wood','Wood'],['stone','Stone'],['iron','Iron']];
+function msFmtCompact(v){ return msFmtPower(v || 0).replace(/\.00(?=[KMB])/, '').replace(/(\.\d)0(?=[KMB])/, '$1'); }
 function msRssText(g){
-  return '<div class="ms-bd-rss-pills">' + MS_RSS_TYPES.map(function(t){ return '<span class="ms-bd-rss-item">' + itemIconHtml(t[0], t[1], 'sm') + '<span>' + msFmtPower(g[t[0]]).replace(/\.00(?=[KMB])/, '').replace(/(\.\d)0(?=[KMB])/, '$1') + '</span></span>'; }).join('') + '</div>';
+  return '<div class="ms-bd-rss-pills">' + MS_RSS_TYPES.filter(function(t){ return t[0] !== 'coins'; }).map(function(t){
+    return '<span class="ms-bd-rss-item">' + itemIconHtml(t[2] || t[0], t[1], 'sm') + '<span>' + msFmtCompact(g[t[0]]) + '</span></span>';
+  }).join('') + '</div>';
 }
 // Bread/Wood/Stone/Iron totals by section (costs from
 // building_upgrade_costs.csv, war_academy_upgrades.csv and
@@ -7188,15 +7232,15 @@ function msBreakdownRssHtml(r){
     if(st.bread === undefined) return;
     var bucket = sums[st.kind];
     if(!bucket) return;
-    MS_RSS_TYPES.forEach(function(t){ bucket[t[0]] += st[t[0]]; sums.total[t[0]] += st[t[0]]; });
+    MS_RSS_TYPES.forEach(function(t){ bucket[t[0]] += st[t[0]] || 0; sums.total[t[0]] += st[t[0]] || 0; });
   });
   var row = function(label, o, cls){
     return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + label + '</td>' + MS_RSS_TYPES.map(function(t){
-      return '<td class="num ctr">' + msFmtPower(o[t[0]]) + '</td>';
+      return '<td class="num ctr">' + (o[t[0]] ? msFmtCompact(o[t[0]]) : '\u2014') + '</td>';
     }).join('') + '</tr>';
   };
   var html = '<div class="ms-bd-section"><div class="ms-bd-title">Resources used</div><table class="ms-bd-table"><thead><tr><th></th>' +
-    MS_RSS_TYPES.map(function(t){ return '<th class="num ctr">' + itemIconHtml(t[0], t[1]) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    MS_RSS_TYPES.map(function(t){ return '<th class="num ctr">' + itemIconHtml(t[2] || t[0], t[1]) + '</th>'; }).join('') + '</tr></thead><tbody>' +
     row('Buildings', sums.building) + row('War Academy', sums.wa) + row('Research', sums.research) + row('Total', sums.total, 'ms-bd-total') + '</tbody></table>';
   return html + '</div>';
 }
@@ -7219,14 +7263,15 @@ function msBreakdownTable(title, groups, cols){
 }
 function msDay1BreakdownHtml(p){
   var level = p.currentLevel || p.tcLevel || 0;
-  var r = msSimulateDay1(level, p.tg || 0, msDay1Speedups(p), p.dust || 0);
+  var r = msSimulateDay1(level, p.tg || 0, msDay1Speedups(p), p.dust || 0, p.gold);
   var tgPts = r.goldSpent * TRUEGOLD_PTS, dustPts = r.dustSpent * TRUEGOLD_DUST_PTS, spPts = r.daysSpent * SPEEDUP_PTS_PER_DAY;
   var row = function(label, qty, pts){
     return '<tr><td>' + label + '</td><td class="num">' + qty + '</td><td class="num">' + msFmtNumFull(pts) + '</td></tr>';
   };
   var ic = function(k, l){ return itemIconHtml(k, l, 'sm'); };
   var html = '<div class="ms-bd-sub">TC ' + msEsc(level ? String(level) : 'unknown') + ' · has ' +
-    ic('truegold', 'Truegold') + ' ' + msFmtNumFull(r.startGold) + ' · ' + ic('truegold_dust', 'Truegold Dust') + ' ' + msFmtNumFull(r.startDust) + '<br>Speedups: ' +
+    ic('truegold', 'Truegold') + ' ' + msFmtNumFull(r.startGold) + ' · ' + ic('truegold_dust', 'Truegold Dust') + ' ' + msFmtNumFull(r.startDust) + ' · ' +
+    ic('wa_gold', 'Gold') + ' ' + (r.coinsKnown ? msFmtCompact(r.startCoins) : 'not given') + '<br>Speedups: ' +
     ic('general_speedup', 'General Speedups') + ' ' + msEsc(msFmtDays(r.spIn.general)) + ' · ' +
     ic('construction_speedup', 'Construction Speedups') + ' ' + msEsc(msFmtDays(r.spIn.construction)) + ' · ' +
     ic('research_speedup', 'Research Speedups') + ' ' + msEsc(msFmtDays(r.spIn.research)) +
@@ -7244,16 +7289,18 @@ function msDay1BreakdownHtml(p){
   var lvlCol = function(isResearch){ return {h:'Level', nowrap:true, v:function(g){ return msBreakdownLevelText(g, isResearch); }}; };
   var tgCol = {h:'Truegold', icon:'truegold', num:true, v:function(g){ return msFmtNumFull(g.gold); }};
   var dustCol = {h:'Truegold Dust', icon:'truegold_dust', num:true, v:function(g){ return msFmtNumFull(g.dust); }};
+  var coinCol = {h:'Gold', icon:'wa_gold', num:true, v:function(g){ return msFmtCompact(g.coins); }};
   var spCol = {h:'Speedups', icon:'general_speedup', num:true, v:function(g){ return msEsc(msFmtDays(g.days)); }};
   html += msBreakdownTable('Buildings', msGroupBreakdownSteps(r.steps, ['building']),
     [{h:'Building', v:function(g){ return msEsc(g.name); }}, lvlCol(false), tgCol, spCol]);
   html += msBreakdownTable('War Academy', msGroupBreakdownSteps(r.steps, ['wa']),
     [{h:'Building', v:function(g){ return msEsc(g.name); }}, lvlCol(false), tgCol, spCol]);
   html += msBreakdownTable('War Academy research', msGroupBreakdownSteps(r.steps, ['research']),
-    [{h:'Tech', v:function(g){ return msEsc(g.tree + ' · ' + g.name.replace(/^Truegold /, '')); }}, lvlCol(true), dustCol, spCol]);
+    [{h:'Tech', v:function(g){ return msEsc(g.tree + ' · ' + g.name.replace(/^Truegold /, '')); }}, lvlCol(true), dustCol, coinCol, spCol]);
   if(r.goldConverted){
     html += '<div class="ms-bd-note">Truegold converted to Dust when research needed it: ' + msFmtNumFull(r.goldConverted) + ' Truegold → ' + msFmtNumFull(r.dustFromConversion) + ' Dust.</div>';
   }
+  if(r.goldShort) html += '<div class="ms-bd-note">Research stopped at ' + msEsc(r.goldShort.name) + ': it needs ' + msFmtNumFull(r.goldShort.need) + ' Gold and only ' + msFmtNumFull(Math.floor(r.coins)) + ' is left.</div>';
   if(!r.steps.length) html += '<div class="ms-bd-note">Nothing could be upgraded or researched with these resources.</div>';
   if(r.allMaxed) html += '<div class="ms-bd-note">At TC 55 every building except War Academy is assumed already at TG 5.</div>';
   html += '<div class="ms-bd-note dim">Assumes War Academy starts at TG 1 with no research, construction speed ' + CONSTRUCTION_SPEED_BONUS_PCT +
